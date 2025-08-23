@@ -1,0 +1,637 @@
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { getUserFavorites, isAuthenticated, removeFromFavorites, type Favorite } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    RefreshControl,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+
+const filterOptions = ['All', 'Businesses', 'Offerings'];
+
+export default function FavouritesScreen() {
+  const [favorites, setFavorites] = useState<Favorite[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [filteredFavorites, setFilteredFavorites] = useState<Favorite[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
+  useEffect(() => {
+    checkAuthAndLoadFavorites();
+  }, []);
+
+  useEffect(() => {
+    filterFavorites();
+  }, [searchQuery, selectedFilter, favorites]);
+
+  const checkAuthAndLoadFavorites = async () => {
+    try {
+      console.log('Checking authentication...');
+      const authenticated = await isAuthenticated();
+      console.log('Authentication result:', authenticated);
+      setIsUserAuthenticated(authenticated);
+      
+      if (authenticated) {
+        console.log('User is authenticated, loading favorites...');
+        // Pass the authenticated status directly to avoid state timing issues
+        await loadFavoritesWithAuth(true);
+      } else {
+        console.log('User not authenticated');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsUserAuthenticated(false);
+      setLoading(false);
+    }
+  };
+
+  // Helper function that takes authentication status as parameter
+  const loadFavoritesWithAuth = async (isAuthenticated: boolean, page: number = 1, isRefresh: boolean = false) => {
+    console.log('loadFavoritesWithAuth called. isAuthenticated:', isAuthenticated, 'page:', page, 'isRefresh:', isRefresh);
+    
+    if (!isAuthenticated) {
+      console.log('User not authenticated, skipping favorites load');
+      setLoading(false);
+      setRefreshing(false);
+      setLoadingMore(false);
+      return;
+    }
+
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      console.log('Making getUserFavorites API call...');
+      const response = await getUserFavorites(page);
+      console.log('Favorites response:', response);
+      
+      if (response.success) {
+        console.log('Favorites data:', response.data);
+        console.log('Number of favorites on this page:', response.data.favorites.length);
+        
+        if (page === 1 || isRefresh) {
+          setFavorites(response.data.favorites);
+          setCurrentPage(1);
+        } else {
+          setFavorites(prev => [...prev, ...response.data.favorites]);
+        }
+        
+        setCurrentPage(page);
+        setHasMorePages(response.data.pagination.has_more);
+        
+        console.log('Updated favorites state. Total favorites now:', response.data.favorites.length);
+      } else {
+        console.log('Favorites API returned success: false');
+      }
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+      Alert.alert('Error', 'Failed to load favorites. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadFavorites = async (page: number = 1, isRefresh: boolean = false) => {
+    return loadFavoritesWithAuth(isUserAuthenticated, page, isRefresh);
+  };
+
+  const onRefresh = useCallback(async () => {
+    console.log('onRefresh called');
+    const authenticated = await isAuthenticated();
+    if (authenticated) {
+      setIsUserAuthenticated(true);
+      loadFavoritesWithAuth(true, 1, true);
+    } else {
+      setIsUserAuthenticated(false);
+      checkAuthAndLoadFavorites();
+    }
+  }, []);
+
+  const loadMore = () => {
+    if (hasMorePages && !loadingMore) {
+      loadFavorites(currentPage + 1);
+    }
+  };
+
+  const filterFavorites = () => {
+    let filtered = favorites;
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter((item: Favorite) => {
+        const name = item.type === 'business' 
+          ? item.business?.business_name || ''
+          : item.offering?.name || '';
+        const category = item.type === 'business'
+          ? item.business?.category_name || ''
+          : item.offering?.offering_type || '';
+        
+        return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               category.toLowerCase().includes(searchQuery.toLowerCase());
+      });
+    }
+
+    // Filter by type
+    if (selectedFilter !== 'All') {
+      const filterType = selectedFilter.toLowerCase();
+      filtered = filtered.filter((item: Favorite) => {
+        if (filterType === 'businesses') return item.type === 'business';
+        if (filterType === 'offerings') return item.type === 'offering';
+        return true;
+      });
+    }
+
+    setFilteredFavorites(filtered);
+  };
+
+  const removeFavorite = (favoriteId: number, name: string) => {
+    if (!isUserAuthenticated) {
+      Alert.alert(
+        'Login Required',
+        'Please login first to manage your favorites',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+        ]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Remove Favourite',
+      `Are you sure you want to remove "${name}" from your favourites?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await removeFromFavorites(favoriteId);
+              if (response.success) {
+                setFavorites(prev => prev.filter(item => item.id !== favoriteId));
+                Alert.alert('Success', 'Removed from favourites');
+              } else {
+                throw new Error(response.message || 'Failed to remove from favorites');
+              }
+            } catch (error: any) {
+              console.error('Error removing favorite:', error);
+              
+              if (error.message && error.message.includes('401')) {
+                Alert.alert('Error', 'Please login again to manage favorites');
+                setIsUserAuthenticated(false);
+              } else {
+                Alert.alert('Error', 'Failed to remove from favourites. Please try again.');
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleItemPress = (favorite: Favorite) => {
+    if (favorite.type === 'business' && favorite.business) {
+      // Navigate to business details: /api/v1/businesses/1
+      router.push(`/business/${favorite.business.id}` as any);
+    } else if (favorite.type === 'offering' && favorite.offering) {
+      // Navigate to offering details: /api/v1/businesses/1/offerings/1
+      const businessId = favorite.offering.business_id;
+      const offeringId = favorite.offering.id;
+      router.push(`/offering/${businessId}/${offeringId}` as any);
+    }
+  };
+
+  const renderFavoriteItem = ({ item }: { item: Favorite }) => {
+    const isBusinessFavorite = item.type === 'business';
+    const name = isBusinessFavorite ? item.business?.business_name : item.offering?.name;
+    const category = isBusinessFavorite ? item.business?.category_name : item.offering?.offering_type;
+    const rating = isBusinessFavorite ? item.business?.overall_rating : item.offering?.average_rating;
+    const reviewCount = isBusinessFavorite ? item.business?.total_reviews : item.offering?.total_reviews;
+    const image = isBusinessFavorite ? item.business?.logo_image : item.offering?.image_url;
+    const priceRange = isBusinessFavorite ? 
+      `${'$'.repeat(item.business?.price_range || 1)}` : 
+      item.offering?.price_range;
+
+    return (
+      <TouchableOpacity 
+        style={[styles.favoriteCard, { backgroundColor: colors.background }]}
+        onPress={() => handleItemPress(item)}
+      >
+        <Image 
+          source={{ 
+            uri: image || 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop' 
+          }} 
+          style={styles.favoriteImage} 
+        />
+        <View style={styles.favoriteContent}>
+          <View style={styles.favoriteHeader}>
+            <View style={styles.favoriteInfo}>
+              <Text style={[styles.favoriteName, { color: colors.text }]} numberOfLines={1}>
+                {name}
+              </Text>
+              <Text style={[styles.favoriteCategory, { color: colors.icon }]}>
+                {category}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.removeButton}
+              onPress={() => removeFavorite(item.id, name || '')}
+            >
+              <Ionicons name="heart" size={24} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.favoriteDetails}>
+            <View style={styles.detailRow}>
+              <Ionicons name="star" size={16} color="#FFD700" />
+              <Text style={[styles.rating, { color: colors.text }]}>
+                {parseFloat(rating || '0').toFixed(1)}
+              </Text>
+              <Text style={[styles.reviewCount, { color: colors.icon }]}>
+                ({reviewCount} reviews)
+              </Text>
+            </View>
+            {priceRange && (
+              <View style={styles.detailRow}>
+                <Text style={[styles.priceRange, { color: colors.icon }]}>{priceRange}</Text>
+              </View>
+            )}
+          </View>
+
+          {isBusinessFavorite && item.business?.landmark && (
+            <Text style={[styles.address, { color: colors.icon }]} numberOfLines={1}>
+              {item.business.landmark}
+            </Text>
+          )}
+
+          <View style={styles.favoriteFooter}>
+            <View style={[styles.typeTag, { backgroundColor: colors.tint + '20' }]}>
+              <Text style={[styles.typeTagText, { color: colors.tint }]}>
+                {isBusinessFavorite ? 'Business' : 'Item'}
+              </Text>
+            </View>
+            <Text style={[styles.favoritedDate, { color: colors.icon }]}>
+              Added {new Date(item.favorited_at).toLocaleDateString()}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderFilterItem = ({ item }: { item: string }) => (
+    <TouchableOpacity
+      style={[
+        styles.filterButton,
+        {
+          backgroundColor: selectedFilter === item ? colors.tint : colors.background,
+          borderColor: selectedFilter === item ? colors.tint : colors.icon + '30',
+        },
+      ]}
+      onPress={() => setSelectedFilter(item)}
+    >
+      <Text
+        style={[
+          styles.filterText,
+          { color: selectedFilter === item ? 'white' : colors.text },
+        ]}
+      >
+        {item}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <LinearGradient
+        colors={['#6366f1', '#8b5cf6']}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>My Favourites</Text>
+        <Text style={styles.headerSubtitle}>
+          {isUserAuthenticated 
+            ? `${favorites.length} saved business${favorites.length !== 1 ? 'es' : ''}`
+            : 'Login to view your favorites'
+          }
+        </Text>
+        
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color={colors.icon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Search your favourites..."
+              placeholderTextColor={colors.icon}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={20} color={colors.icon} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Filter Options */}
+      <View style={styles.filtersContainer}>
+        <FlatList
+          data={filterOptions}
+          renderItem={renderFilterItem}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filters}
+        />
+      </View>
+
+      {/* Favourites List */}
+      {!isUserAuthenticated ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="log-in-outline" size={64} color={colors.icon} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Login Required</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+            Please login to view and manage your favorites
+          </Text>
+          <TouchableOpacity 
+            style={[styles.exploreButton, { backgroundColor: colors.tint }]}
+            onPress={() => router.push('/auth/login' as any)}
+          >
+            <Text style={styles.exploreButtonText}>Login Now</Text>
+          </TouchableOpacity>
+        </View>
+      ) : loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.tint} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading favorites...</Text>
+        </View>
+      ) : filteredFavorites.length > 0 ? (
+        <FlatList
+          data={filteredFavorites}
+          renderItem={renderFavoriteItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.favoritesList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.1}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.loadingMore}>
+                <ActivityIndicator size="small" color={colors.tint} />
+              </View>
+            ) : null
+          }
+        />
+      ) : (
+        <View style={styles.emptyState}>
+          <Ionicons 
+            name={searchQuery || selectedFilter !== 'All' ? "search-outline" : "heart-outline"} 
+            size={64} 
+            color={colors.icon} 
+          />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            {searchQuery || selectedFilter !== 'All' ? 'No Results Found' : 'No Favourites Yet'}
+          </Text>
+          <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+            {searchQuery || selectedFilter !== 'All' 
+              ? 'Try adjusting your search or filter'
+              : 'Start exploring and save your favourite businesses'
+            }
+          </Text>
+          {!searchQuery && selectedFilter === 'All' && (
+            <TouchableOpacity 
+              style={[styles.exploreButton, { backgroundColor: colors.tint }]}
+              onPress={() => router.push('/discover' as any)}
+            >
+              <Text style={styles.exploreButtonText}>Explore Now</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: 20,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'white',
+    opacity: 0.9,
+    marginBottom: 20,
+  },
+  searchContainer: {
+    marginBottom: 10,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 0,
+  },
+  filtersContainer: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  filters: {
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  filterButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 12,
+  },
+  loadingMore: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  favoritesList: {
+    padding: 24,
+    gap: 16,
+  },
+  favoriteCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  favoriteImage: {
+    width: '100%',
+    height: 160,
+  },
+  favoriteContent: {
+    padding: 16,
+  },
+  favoriteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  favoriteInfo: {
+    flex: 1,
+  },
+  favoriteName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  favoriteCategory: {
+    fontSize: 14,
+  },
+  removeButton: {
+    padding: 4,
+  },
+  favoriteDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  rating: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  reviewCount: {
+    fontSize: 12,
+  },
+  priceRange: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  address: {
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  favoriteFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  typeTag: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  typeTagText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  favoritedDate: {
+    fontSize: 12,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  exploreButton: {
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  exploreButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

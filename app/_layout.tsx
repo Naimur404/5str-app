@@ -20,7 +20,16 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="search" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+        <Stack.Screen name="category/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="business/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="offer/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="offering/[businessId]/[offeringId]" options={{ headerShown: false }} />
+        <Stack.Screen name="reviews" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
