@@ -78,6 +78,7 @@ export default function DiscoverScreen() {
         <TouchableOpacity 
           style={styles.searchContainer}
           onPress={() => router.push('/search' as any)}
+          activeOpacity={1}
         >
           <View style={styles.searchBar}>
             <Ionicons name="search-outline" size={20} color={colors.icon} />
