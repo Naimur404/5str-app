@@ -23,6 +23,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Dimensions,
+    FlatList,
     Image,
     Linking,
     ScrollView,
@@ -568,6 +569,104 @@ export default function BusinessDetailsScreen() {
     </View>
   );
 
+  const renderMenuItemCard = ({ item }: { item: Offering }) => {
+    const offeringFav = offeringFavorites[item.id] || { isFavorite: false, favoriteId: null };
+    return (
+      <TouchableOpacity 
+        style={[styles.menuItemCard, { backgroundColor: colors.background }]}
+        onPress={() => router.push(`/offering/${businessId}/${item.id}` as any)}
+      >
+        {item.image_url ? (
+          <View style={styles.menuItemCardHeader}>
+            <Image 
+              source={{ uri: getImageUrl(item.image_url) }} 
+              style={styles.menuItemCardImage}
+            />
+            <TouchableOpacity
+              style={styles.menuItemCardFavorite}
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleOfferingFavorite(item.id);
+              }}
+            >
+              <Ionicons 
+                name={offeringFav.isFavorite ? "heart" : "heart-outline"} 
+                size={16} 
+                color={offeringFav.isFavorite ? "#FF6B6B" : "white"} 
+              />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.menuItemCardPlaceholder}>
+            <Ionicons 
+              name={item.offering_type === 'product' ? 'cube-outline' : 'briefcase-outline'} 
+              size={40} 
+              color={colors.icon} 
+            />
+            <TouchableOpacity
+              style={styles.menuItemCardFavoriteNoImage}
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleOfferingFavorite(item.id);
+              }}
+            >
+              <Ionicons 
+                name={offeringFav.isFavorite ? "heart" : "heart-outline"} 
+                size={16} 
+                color={offeringFav.isFavorite ? "#FF6B6B" : colors.icon} 
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        <View style={styles.menuItemCardContent}>
+          <Text style={[styles.menuItemCardName, { color: colors.text }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          
+          <Text style={[styles.menuItemCardDescription, { color: colors.icon }]} numberOfLines={2}>
+            {item.description}
+          </Text>
+          
+          <View style={styles.menuItemCardFooter}>
+            <Text style={[styles.menuItemCardPrice, { color: colors.tint }]}>
+              {item.price_range}
+            </Text>
+            
+            <View style={styles.menuItemCardRating}>
+              <Ionicons name="star" size={12} color="#FFD700" />
+              <Text style={[styles.menuItemCardRatingText, { color: colors.text }]}>
+                {parseFloat(item.average_rating).toFixed(1)}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.menuItemCardBadges}>
+            {item.is_popular && (
+              <View style={[styles.menuItemCardBadge, styles.popularBadge]}>
+                <Ionicons name="flame" size={8} color="white" />
+                <Text style={styles.cardBadgeText}>Popular</Text>
+              </View>
+            )}
+            
+            {item.is_featured && (
+              <View style={[styles.menuItemCardBadge, styles.featuredBadge]}>
+                <Ionicons name="star" size={8} color="white" />
+                <Text style={styles.cardBadgeText}>Featured</Text>
+              </View>
+            )}
+            
+            {!item.is_available && (
+              <View style={[styles.menuItemCardBadge, styles.unavailableBadge]}>
+                <Text style={styles.cardBadgeText}>Unavailable</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   const renderMenuTab = () => (
     <View style={styles.tabContent}>
       {offerings.length > 0 ? (
@@ -575,130 +674,15 @@ export default function BusinessDetailsScreen() {
           <Text style={[styles.menuHeader, { color: colors.text }]}>
             {getOfferingsTabName()} ({offerings.length} items)
           </Text>
-          {offerings.map((item) => {
-            const offeringFav = offeringFavorites[item.id] || { isFavorite: false, favoriteId: null };
-            return (
-              <TouchableOpacity 
-                key={item.id}
-                style={[styles.menuItem, { backgroundColor: colors.background }]}
-                onPress={() => router.push(`/offering/${businessId}/${item.id}` as any)}
-              >
-                {item.image_url ? (
-                  <View style={styles.menuItemHeader}>
-                    <Image 
-                      source={{ uri: getImageUrl(item.image_url) }} 
-                      style={styles.menuItemImage}
-                    />
-                    <TouchableOpacity
-                      style={styles.menuItemFavorite}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        toggleOfferingFavorite(item.id);
-                      }}
-                    >
-                      <Ionicons 
-                        name={offeringFav.isFavorite ? "heart" : "heart-outline"} 
-                        size={20} 
-                        color={offeringFav.isFavorite ? "#FF6B6B" : "white"} 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.menuItemContentWithFavorite}>
-                    <TouchableOpacity
-                      style={styles.menuItemFavoriteNoImage}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        toggleOfferingFavorite(item.id);
-                      }}
-                    >
-                      <Ionicons 
-                        name={offeringFav.isFavorite ? "heart" : "heart-outline"} 
-                        size={20} 
-                        color={offeringFav.isFavorite ? "#FF6B6B" : colors.icon} 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                )}
-                <View style={styles.menuItemContent}>
-                  <View style={styles.menuItemMainInfo}>
-                    <Text style={[styles.menuItemName, { color: colors.text }]}>{item.name}</Text>
-                    <Text style={[styles.menuItemPrice, { color: colors.tint }]}>{item.price_range}</Text>
-                  </View>
-                  
-                  <Text style={[styles.menuItemDescription, { color: colors.icon }]} numberOfLines={2}>
-                    {item.description}
-                  </Text>
-                  
-                  {/* Enhanced offering details */}
-                  <View style={styles.menuItemDetails}>
-                    <View style={styles.menuItemMeta}>
-                      <View style={styles.menuItemType}>
-                        <Ionicons 
-                          name={item.offering_type === 'product' ? 'cube-outline' : 'briefcase-outline'} 
-                          size={12} 
-                          color={colors.icon} 
-                        />
-                        <Text style={[styles.menuItemTypeText, { color: colors.icon }]}>
-                          {item.offering_type === 'product' ? 'Product' : 'Service'}
-                        </Text>
-                      </View>
-                      
-                      {item.currency && (
-                        <View style={styles.menuItemCurrency}>
-                          <Text style={[styles.menuItemCurrencyText, { color: colors.icon }]}>
-                            {item.currency}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    
-                    <View style={styles.menuItemBadges}>
-                      {item.is_popular && (
-                        <View style={[styles.menuItemBadge, styles.popularBadge]}>
-                          <Ionicons name="flame" size={10} color="white" />
-                          <Text style={styles.badgeText}>Popular</Text>
-                        </View>
-                      )}
-                      
-                      {item.is_featured && (
-                        <View style={[styles.menuItemBadge, styles.featuredBadge]}>
-                          <Ionicons name="star" size={10} color="white" />
-                          <Text style={styles.badgeText}>Featured</Text>
-                        </View>
-                      )}
-                      
-                      {!item.is_available && (
-                        <View style={[styles.menuItemBadge, styles.unavailableBadge]}>
-                          <Ionicons name="close-circle" size={10} color="white" />
-                          <Text style={styles.badgeText}>Unavailable</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                  
-                  <View style={styles.menuItemFooter}>
-                    <View style={styles.menuItemRating}>
-                      <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text style={[styles.ratingText, { color: colors.text }]}>
-                        {parseFloat(item.average_rating).toFixed(1)}
-                      </Text>
-                      <Text style={[styles.reviewCountText, { color: colors.icon }]}>
-                        ({item.total_reviews} reviews)
-                      </Text>
-                    </View>
-                    
-                    {item.is_available && (
-                      <View style={[styles.availabilityIndicator, styles.availableIndicator]}>
-                        <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
-                        <Text style={[styles.availabilityText, { color: '#4CAF50' }]}>Available</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          <FlatList
+            data={offerings}
+            renderItem={renderMenuItemCard}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={2}
+            columnWrapperStyle={styles.menuRow}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+          />
         </View>
       ) : (
         <View style={styles.emptyState}>
@@ -1602,5 +1586,106 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  // New card layout styles
+  menuRow: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  menuItemCard: {
+    width: (width - 48) / 2 - 8, // Two columns with padding
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  menuItemCardHeader: {
+    position: 'relative',
+    height: 100,
+  },
+  menuItemCardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  menuItemCardFavorite: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 6,
+  },
+  menuItemCardPlaceholder: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    position: 'relative',
+  },
+  menuItemCardFavoriteNoImage: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    padding: 6,
+  },
+  menuItemCardContent: {
+    padding: 12,
+  },
+  menuItemCardName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  menuItemCardDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  menuItemCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  menuItemCardPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  menuItemCardRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  menuItemCardRatingText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  menuItemCardBadges: {
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  menuItemCardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  cardBadgeText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
 });

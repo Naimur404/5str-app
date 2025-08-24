@@ -1,20 +1,38 @@
 /**
  * Utility function to get the full image URL
- * @param imagePath - The image path from the API
+ * @param imagePath - The image path from the API (can be string, object, or null/undefined)
  * @returns Full image URL
  */
-export const getImageUrl = (imagePath: string | null | undefined): string => {
+export const getImageUrl = (imagePath: any): string => {
+  // Handle null/undefined
   if (!imagePath) {
     return 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop';
   }
 
-  // If the path already includes http:// or https://, return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath;
+  // Handle object with image_url property (from detailed business responses)
+  if (typeof imagePath === 'object' && imagePath.image_url) {
+    const imageUrl = imagePath.image_url;
+    if (typeof imageUrl === 'string' && imageUrl.trim() !== '') {
+      const cleanPath = imageUrl.trim();
+      if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+        return cleanPath;
+      }
+      return `https://5str.xyz/storage/${cleanPath}`;
+    }
+    return 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop';
   }
 
-  // If it's a relative path, add the base URL
-  return `https://5str.xyz/storage/${imagePath}`;
+  // Handle string paths
+  if (typeof imagePath === 'string' && imagePath.trim() !== '') {
+    const cleanPath = imagePath.trim();
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+      return cleanPath;
+    }
+    return `https://5str.xyz/storage/${cleanPath}`;
+  }
+
+  // Fallback for any other case
+  return 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop';
 };
 
 /**

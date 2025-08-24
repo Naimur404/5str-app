@@ -484,12 +484,14 @@ export const removeAuthToken = async (): Promise<void> => {
   }
 };
 
-// API call helper
+// API call helper with JSON validation
 const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<any> => {
   const token = requireAuth ? await getAuthToken() : null;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'User-Agent': 'ReactNative/5StrApp',
     ...(options.headers as Record<string, string>),
   };
 
@@ -507,25 +509,77 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     requireAuth
   });
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    console.error('Network error:', error);
+    throw new Error('Network error. Please check your internet connection.');
+  }
 
   console.log('API Response:', {
     url,
     status: response.status,
-    ok: response.ok
+    ok: response.ok,
+    contentType: response.headers.get('content-type')
   });
 
-  // Parse response body first
-  let responseData;
+  // Get the raw response text first
+  let responseText: string;
   try {
-    responseData = await response.json();
-    console.log('Response data:', responseData);
-  } catch (e) {
-    console.log('Failed to parse response JSON:', e);
-    responseData = null;
+    responseText = await response.text();
+  } catch (error) {
+    console.error('Failed to read response text:', error);
+    throw new Error('Failed to read response from server.');
+  }
+
+  console.log('Raw response text (first 500 chars):', responseText.substring(0, 500));
+
+  // Validate that we received JSON
+  const contentType = response.headers.get('content-type');
+  const isJsonContentType = contentType && contentType.includes('application/json');
+  
+  if (!isJsonContentType) {
+    console.warn('Response is not JSON, content-type:', contentType);
+    
+    // Check if response looks like HTML (common for error pages)
+    if (responseText.trim().startsWith('<')) {
+      if (responseText.includes('Imunify360')) {
+        throw new Error('Request blocked by security system. Please try again later.');
+      } else if (responseText.includes('404') || responseText.includes('Not Found')) {
+        throw new Error('API endpoint not found. Please update the app.');
+      } else if (responseText.includes('500') || responseText.includes('Internal Server Error')) {
+        throw new Error('Server error. Please try again later.');
+      } else {
+        throw new Error('Server returned an HTML page instead of JSON data.');
+      }
+    }
+    
+    // If it's not HTML, it might be plain text error
+    throw new Error(`Server returned non-JSON response: ${responseText.substring(0, 100)}`);
+  }
+
+  // Parse JSON response
+  let responseData: any;
+  try {
+    if (responseText.trim() === '') {
+      responseData = {};
+    } else {
+      responseData = JSON.parse(responseText);
+    }
+    console.log('Parsed response data:', responseData);
+  } catch (parseError) {
+    console.error('JSON parse error:', parseError);
+    console.error('Response text that failed to parse:', responseText);
+    throw new Error('Server returned invalid JSON data.');
+  }
+
+  // Validate that response has expected structure
+  if (typeof responseData !== 'object' || responseData === null) {
+    throw new Error('Server returned invalid response format.');
   }
 
   if (!response.ok) {
@@ -546,9 +600,23 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
       };
     }
     
+    if (response.status === 422) {
+      return {
+        success: false,
+        message: responseData?.message || 'Validation failed',
+        errors: responseData?.errors || {},
+        status: response.status
+      };
+    }
+    
     // For other errors, throw with more info
     const errorMessage = responseData?.message || `HTTP error! status: ${response.status}`;
     throw new Error(errorMessage);
+  }
+
+  // Validate successful response structure
+  if (responseData.success === false) {
+    throw new Error(responseData.message || 'Request failed');
   }
 
   return responseData;
@@ -754,9 +822,114 @@ export const removeVote = async (reviewId: number): Promise<VoteResponse> => {
   }, true);
 };
 
-// Generic API call function for other components to use
+// Helper function to validate and parse JSON responses
+export const validateJsonResponse = async (response: Response): Promise<any> => {
+  // Get the raw response text first
+  let responseText: string;
+  try {
+    responseText = await response.text();
+  } catch (error) {
+    console.error('Failed to read response text:', error);
+    throw new Error('Failed to read response from server.');
+  }
+
+  console.log('Raw response text (first 500 chars):', responseText.substring(0, 500));
+
+  // Validate that we received JSON
+  const contentType = response.headers.get('content-type');
+  const isJsonContentType = contentType && contentType.includes('application/json');
+  
+  if (!isJsonContentType) {
+    console.warn('Response is not JSON, content-type:', contentType);
+    
+    // Check if response looks like HTML (common for error pages)
+    if (responseText.trim().startsWith('<')) {
+      if (responseText.includes('Imunify360')) {
+        throw new Error('Request blocked by security system. Please try again later.');
+      } else if (responseText.includes('404') || responseText.includes('Not Found')) {
+        throw new Error('API endpoint not found. Please update the app.');
+      } else if (responseText.includes('500') || responseText.includes('Internal Server Error')) {
+        throw new Error('Server error. Please try again later.');
+      } else {
+        throw new Error('Server returned an HTML page instead of JSON data.');
+      }
+    }
+    
+    // If it's not HTML, it might be plain text error
+    throw new Error(`Server returned non-JSON response: ${responseText.substring(0, 100)}`);
+  }
+
+  // Parse JSON response
+  let responseData: any;
+  try {
+    if (responseText.trim() === '') {
+      responseData = {};
+    } else {
+      responseData = JSON.parse(responseText);
+    }
+    console.log('Parsed response data:', responseData);
+  } catch (parseError) {
+    console.error('JSON parse error:', parseError);
+    console.error('Response text that failed to parse:', responseText);
+    throw new Error('Server returned invalid JSON data.');
+  }
+
+  // Validate that response has expected structure
+  if (typeof responseData !== 'object' || responseData === null) {
+    throw new Error('Server returned invalid response format.');
+  }
+
+  return responseData;
+};
+
+// Generic API call function for other components to use with validation
 export const apiCall = async (endpoint: string, options: RequestInit = {}): Promise<any> => {
   return makeApiCall(endpoint, options, true);
+};
+
+// Generic fetch with JSON validation for components that need direct fetch
+export const fetchWithJsonValidation = async (url: string, options: RequestInit = {}): Promise<any> => {
+  let response: Response;
+  
+  const defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'User-Agent': 'ReactNative/5StrApp',
+  };
+
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...(options.headers as Record<string, string>),
+      },
+    });
+  } catch (error) {
+    console.error('Network error:', error);
+    throw new Error('Network error. Please check your internet connection.');
+  }
+
+  console.log('Fetch Response:', {
+    url,
+    status: response.status,
+    ok: response.ok,
+    contentType: response.headers.get('content-type')
+  });
+
+  const responseData = await validateJsonResponse(response);
+
+  if (!response.ok) {
+    const errorMessage = responseData?.message || `HTTP error! status: ${response.status}`;
+    throw new Error(errorMessage);
+  }
+
+  // Validate successful response structure for API responses
+  if (responseData.success === false) {
+    throw new Error(responseData.message || 'Request failed');
+  }
+
+  return responseData;
 };
 
 // Helper function to check if user is authenticated

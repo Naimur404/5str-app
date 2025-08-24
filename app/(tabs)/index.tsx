@@ -2,6 +2,7 @@ import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { fetchWithJsonValidation } from '@/services/api';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -36,64 +37,20 @@ export default function HomeScreen() {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   // Sample banner data for display when no API data is available
-  const sampleBanners: Banner[] = [
-    {
-      id: 1,
-      title: "Best Restaurants in Dhaka",
-      subtitle: "Discover amazing dining experiences near you",
-      image_url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      link_type: "category",
-      link_id: 1,
-      link_url: "",
-      position: "hero",
-      target_location: null,
-      is_active: true,
-      sort_order: 1,
-      start_date: "",
-      end_date: "",
-      click_count: 0,
-      view_count: 0
-    },
-    {
-      id: 2,
-      title: "Shopping Destinations",
-      subtitle: "Find the best shops and markets in your area",
-      image_url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      link_type: "category",
-      link_id: 2,
-      link_url: "",
-      position: "hero",
-      target_location: null,
-      is_active: true,
-      sort_order: 2,
-      start_date: "",
-      end_date: "",
-      click_count: 0,
-      view_count: 0
-    },
-    {
-      id: 3,
-      title: "Health & Wellness",
-      subtitle: "Your health is our priority - book services now",
-      image_url: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2331&q=80",
-      link_type: "category",
-      link_id: 3,
-      link_url: "",
-      position: "hero",
-      target_location: null,
-      is_active: true,
-      sort_order: 3,
-      start_date: "",
-      end_date: "",
-      click_count: 0,
-      view_count: 0
-    }
-  ];
-  
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Get banners from API response, fallback to empty array
+  const banners = homeData?.banners || [];
+
+  // Reset banner index when banners change
+  useEffect(() => {
+    if (banners.length > 0 && currentBannerIndex >= banners.length) {
+      setCurrentBannerIndex(0);
+    }
+  }, [banners, currentBannerIndex]);
 
   useEffect(() => {
     requestLocationPermission();
@@ -107,11 +64,11 @@ export default function HomeScreen() {
 
   // Auto-scroll banners every 4 seconds
   useEffect(() => {
-    if (sampleBanners.length <= 1) return;
+    if (banners.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentBannerIndex(prevIndex => {
-        const nextIndex = prevIndex === sampleBanners.length - 1 ? 0 : prevIndex + 1;
+        const nextIndex = prevIndex === banners.length - 1 ? 0 : prevIndex + 1;
         // Use a timeout to ensure the ref is ready
         setTimeout(() => {
           try {
@@ -128,7 +85,7 @@ export default function HomeScreen() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [sampleBanners]);
+  }, [banners]);
 
   const requestLocationPermission = async () => {
     try {
@@ -178,8 +135,7 @@ export default function HomeScreen() {
 
     try {
       const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${location.latitude}&longitude=${location.longitude}&radius=15`;
-      const response = await fetch(url);
-      const data: HomeResponse = await response.json();
+      const data: HomeResponse = await fetchWithJsonValidation(url);
 
       if (data.success) {
         setHomeData(data.data);
@@ -188,7 +144,8 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error fetching home data:', error);
-      Alert.alert('Error', 'Network error. Please check your connection.');
+      const errorMessage = error instanceof Error ? error.message : 'Network error. Please check your connection.';
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -198,6 +155,19 @@ export default function HomeScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchHomeData();
+  };
+
+  const handleBannerPress = (banner: Banner) => {
+    if (banner.link_type === 'category' && banner.link_id) {
+      router.push(`/category/${banner.link_id}` as any);
+    } else if (banner.link_type === 'business' && banner.link_id) {
+      router.push(`/business/${banner.link_id}` as any);
+    } else if (banner.link_type === 'offer' && banner.link_id) {
+      router.push(`/offer/${banner.link_id}` as any);
+    } else if (banner.link_url) {
+      // Handle external URLs if needed
+      console.log('External URL:', banner.link_url);
+    }
   };
 
   const handleSearch = () => {
@@ -344,58 +314,62 @@ export default function HomeScreen() {
       {/* Scrollable Content */}
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Banners - New Clean Implementation */}
-        <View style={styles.heroSection}>
-          <FlatList
-            ref={bannerRef}
-            data={sampleBanners}
-            renderItem={({ item, index }) => (
-              <View style={styles.heroSlide}>
-                <Image 
-                  source={{ uri: item.image_url }} 
-                  style={styles.heroImage}
-                />
-                <LinearGradient
-                  colors={['transparent', 'rgba(0,0,0,0.6)']}
-                  style={styles.heroOverlay}
+        {/* Hero Banners - Use API Response */}
+        {banners.length > 0 && (
+          <View style={styles.heroSection}>
+            <FlatList
+              ref={bannerRef}
+              data={banners}
+              renderItem={({ item, index }) => (
+                <TouchableOpacity 
+                  style={styles.heroSlide}
+                  onPress={() => handleBannerPress(item)}
                 >
-                  <Text style={styles.heroTitle}>{item.title}</Text>
-                  <Text style={styles.heroSubtitle}>{item.subtitle}</Text>
-                </LinearGradient>
-              </View>
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(event) => {
-              const slideIndex = Math.round(event.nativeEvent.contentOffset.x / (width - 48));
-              setCurrentBannerIndex(slideIndex);
-            }}
-          />
-          
-          {/* Dots Indicator */}
-          <View style={styles.dotsContainer}>
-            {sampleBanners.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.dot,
-                  {
-                    backgroundColor: index === currentBannerIndex 
-                      ? '#6366f1' 
-                      : 'rgba(255,255,255,0.5)'
-                  }
-                ]}
-              />
-            ))}
+                  <Image 
+                    source={{ uri: getImageUrl(item.image_url) || getFallbackImageUrl('general') }} 
+                    style={styles.heroImage}
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.6)']}
+                    style={styles.heroOverlay}
+                  >
+                    <Text style={styles.heroTitle}>{item.title}</Text>
+                    <Text style={styles.heroSubtitle}>{item.subtitle}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={(event) => {
+                const slideSize = width - 48;
+                const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+                setCurrentBannerIndex(index);
+              }}
+              scrollEventThrottle={16}
+            />
+            
+            {/* Banner Pagination Dots */}
+            <View style={styles.bannerPagination}>
+              {banners.map((_, index: number) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    index === currentBannerIndex && styles.paginationDotActive
+                  ]}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Top Services */}
         {homeData?.top_services && (
@@ -451,6 +425,26 @@ export default function HomeScreen() {
           </View>
         ))}
 
+        {/* Featured Businesses */}
+        {homeData?.featured_businesses && homeData.featured_businesses.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Businesses</Text>
+              <TouchableOpacity>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={homeData.featured_businesses}
+              renderItem={renderBusinessCard}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.businessContainer}
+            />
+          </View>
+        )}
+
         {/* Special Offers */}
         {homeData?.special_offers && homeData.special_offers.length > 0 && (
           <View style={styles.section}>
@@ -490,6 +484,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  scrollViewContent: {
+    paddingBottom: 24,
   },
   header: {
     paddingTop: 60,
@@ -554,8 +551,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   section: {
-    marginVertical: 16,
+    marginVertical: 20,
     paddingHorizontal: 8,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -663,6 +661,7 @@ const styles = StyleSheet.create({
   businessContainer: {
     paddingHorizontal: 24,
     gap: 12,
+    paddingBottom: 8,
   },
   businessCard: {
     width: 160,
@@ -763,5 +762,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 10,
     fontWeight: '600',
+  },
+  bannerPagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  paginationDotActive: {
+    backgroundColor: 'white',
+    width: 24,
+    borderRadius: 4,
   },
 });

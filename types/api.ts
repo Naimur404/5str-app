@@ -47,7 +47,7 @@ export interface Business {
   distance_km?: string;
   category_name: string;
   subcategory_name: string;
-  logo_image: string;
+  logo_image: string | { image_url: string } | null; // Support both string and object formats
   description?: string;
   area?: string;
   city?: string;
@@ -98,6 +98,7 @@ export interface UserLocation {
 // Home API Response
 export interface HomeResponse {
   success: boolean;
+  message?: string; // Add optional message field for error cases
   data: {
     banners: Banner[];
     top_services: TopService[];
@@ -113,6 +114,7 @@ export interface HomeResponse {
 // Search API Response
 export interface SearchResponse {
   success: boolean;
+  message?: string; // Add optional message field for error cases
   data: {
     search_term: string;
     search_type: string;

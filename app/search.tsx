@@ -3,6 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Business, SearchResponse } from '@/types/api';
+import { fetchWithJsonValidation } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
@@ -65,17 +66,17 @@ export default function SearchScreen() {
     try {
       const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?q=${encodeURIComponent(searchQuery)}&type=all&latitude=${location.latitude}&longitude=${location.longitude}&sort=rating&limit=10`;
       
-      const response = await fetch(url);
-      const data: SearchResponse = await response.json();
+      const data: SearchResponse = await fetchWithJsonValidation(url);
 
       if (data.success) {
         setSearchResults(data.data);
       } else {
-        Alert.alert('Error', 'Search failed');
+        Alert.alert('Error', data.message || 'Search failed');
       }
     } catch (error) {
       console.error('Search error:', error);
-      Alert.alert('Error', 'Network error during search');
+      const errorMessage = error instanceof Error ? error.message : 'Network error during search';
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
