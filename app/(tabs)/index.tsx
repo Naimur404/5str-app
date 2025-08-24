@@ -1,6 +1,6 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeManager } from '@/hooks/useThemeManager';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { fetchWithJsonValidation } from '@/services/api';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
@@ -39,8 +39,8 @@ export default function HomeScreen() {
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useThemeManager();
+  const colors = Colors[colorScheme];
 
   // Get banners from API response, fallback to empty array
   const banners = homeData?.banners || [];

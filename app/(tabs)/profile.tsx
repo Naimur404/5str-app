@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeManager } from '@/hooks/useThemeManager';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getAuthToken,
@@ -77,12 +78,12 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-  const { alertConfig, showConfirm, hideAlert } = useCustomAlert();
+  const { colorScheme } = useThemeManager();
+  const colors = Colors[colorScheme];
+  const { alertConfig, showConfirm, showAlert, hideAlert } = useCustomAlert();
+  const { themePreference, setThemePreference, isDarkMode, isAutoMode } = useThemeManager();
 
   useEffect(() => {
     loadUserData();
@@ -151,6 +152,35 @@ export default function ProfileScreen() {
     router.push('/auth/login' as any);
   };
 
+  const showThemeSelector = () => {
+    showAlert({
+      title: 'Select Theme',
+      message: 'Choose your preferred theme for the app',
+      type: 'info',
+      buttons: [
+        {
+          text: `Light ${themePreference === 'light' ? '✓' : ''}`,
+          onPress: () => setThemePreference('light'),
+          style: 'default',
+        },
+        {
+          text: `Dark ${themePreference === 'dark' ? '✓' : ''}`,
+          onPress: () => setThemePreference('dark'),
+          style: 'default',
+        },
+        {
+          text: `Auto ${themePreference === 'auto' ? '✓' : ''}`,
+          onPress: () => setThemePreference('auto'),
+          style: 'default',
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+    });
+  };
+
   // Ensure user_level exists, fallback to guestUser.user_level if not
   const currentUser = user ? {
     ...user,
@@ -195,13 +225,12 @@ export default function ProfileScreen() {
       onToggle: setLocationEnabled,
     },
     {
-      id: 'dark-mode',
-      title: 'Dark Mode',
-      subtitle: 'Switch to dark theme',
-      icon: 'moon-outline',
-      type: 'toggle' as const,
-      value: darkModeEnabled,
-      onToggle: setDarkModeEnabled,
+      id: 'theme',
+      title: 'Theme',
+      subtitle: themePreference === 'auto' ? 'Auto (follows system)' : themePreference === 'dark' ? 'Dark' : 'Light',
+      icon: themePreference === 'auto' ? 'phone-portrait-outline' : themePreference === 'dark' ? 'moon-outline' : 'sunny-outline',
+      type: 'navigation' as const,
+      onPress: () => showThemeSelector(),
     },
     {
       id: 'privacy',

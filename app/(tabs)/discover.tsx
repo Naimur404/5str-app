@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeManager } from '@/hooks/useThemeManager';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -36,8 +36,8 @@ const trending = [
 export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useThemeManager();
+  const colors = Colors[colorScheme];
 
   const renderCategoryItem = ({ item }: { item: typeof categories[0] }) => (
     <TouchableOpacity style={[styles.categoryCard, { backgroundColor: colors.background }]}>

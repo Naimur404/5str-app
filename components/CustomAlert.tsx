@@ -129,14 +129,14 @@ export default function CustomAlert({
             {message && <Text style={styles.message}>{message}</Text>}
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={buttons.length > 2 ? styles.buttonContainerVertical : styles.buttonContainer}>
             {buttons.map((button, index) => {
               const buttonStyle = getButtonStyle(button.style || 'default');
               return (
                 <TouchableOpacity
                   key={index}
                   style={[
-                    styles.button,
+                    buttons.length > 2 ? styles.buttonVertical : styles.button,
                     { backgroundColor: buttonStyle.backgroundColor },
                     buttons.length === 1 && styles.singleButton,
                   ]}
@@ -214,8 +214,20 @@ const styles = StyleSheet.create({
     minHeight: 48,
     alignItems: 'stretch',
   },
+  buttonContainerVertical: {
+    gap: 8,
+    minHeight: 48,
+  },
   button: {
     flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  buttonVertical: {
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
