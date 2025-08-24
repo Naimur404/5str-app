@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useThemeManager } from '@/hooks/useThemeManager';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -36,11 +36,11 @@ const trending = [
 export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
-  const { colorScheme } = useThemeManager();
+  const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
 
   const renderCategoryItem = ({ item }: { item: typeof categories[0] }) => (
-    <TouchableOpacity style={[styles.categoryCard, { backgroundColor: colors.background }]}>
+    <TouchableOpacity style={[styles.categoryCard, { backgroundColor: colors.card }]}>
       <View style={[styles.categoryIcon, { backgroundColor: item.color + '20' }]}>
         <Ionicons name={item.icon as any} size={32} color={item.color} />
       </View>
@@ -68,7 +68,7 @@ export default function DiscoverScreen() {
       
       {/* Fixed Header */}
       <LinearGradient
-        colors={['#6366f1', '#8b5cf6']}
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Discover</Text>
@@ -122,19 +122,19 @@ export default function DiscoverScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.background }]}>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
               <Ionicons name="location-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Nearby</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.background }]}>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
               <Ionicons name="star-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Top Rated</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.background }]}>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
               <Ionicons name="time-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Open Now</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.background }]}>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
               <Ionicons name="pricetag-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Offers</Text>
             </TouchableOpacity>

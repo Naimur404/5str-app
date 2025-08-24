@@ -1,6 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useThemeManager } from '@/hooks/useThemeManager';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getAuthToken,
@@ -80,10 +79,9 @@ export default function ProfileScreen() {
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const router = useRouter();
-  const { colorScheme } = useThemeManager();
+  const { colorScheme, themePreference, setThemePreference, isDarkMode, isAutoMode } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showConfirm, showAlert, hideAlert } = useCustomAlert();
-  const { themePreference, setThemePreference, isDarkMode, isAutoMode } = useThemeManager();
 
   useEffect(() => {
     loadUserData();
@@ -282,7 +280,7 @@ export default function ProfileScreen() {
     return (
       <TouchableOpacity
         key={item.id}
-        style={[styles.settingItem, { backgroundColor: colors.background }]}
+        style={[styles.settingItem, { backgroundColor: colors.card }]}
         onPress={item.onPress}
         disabled={item.type === 'toggle'}
       >
@@ -331,7 +329,7 @@ export default function ProfileScreen() {
         <>
           {/* Fixed Header */}
           <LinearGradient
-            colors={['#6366f1', '#8b5cf6']}
+            colors={[colors.headerGradientStart, colors.headerGradientEnd]}
             style={styles.header}
           >
             <View style={styles.headerTop}>
@@ -387,17 +385,17 @@ export default function ProfileScreen() {
 
           {/* Stats Cards */}
           <View style={styles.statsContainer}>
-            <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <View style={[styles.statCard, { backgroundColor: colors.card }]}>
               <Ionicons name="star" size={24} color="#FFD700" />
               <Text style={[styles.statNumber, { color: colors.text }]}>{currentUser.total_reviews}</Text>
               <Text style={[styles.statLabel, { color: colors.icon }]}>Reviews</Text>
             </View>
-            <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <View style={[styles.statCard, { backgroundColor: colors.card }]}>
               <Ionicons name="heart" size={24} color="#FF6B6B" />
               <Text style={[styles.statNumber, { color: colors.text }]}>{currentUser.total_favorites}</Text>
               <Text style={[styles.statLabel, { color: colors.icon }]}>Favourites</Text>
             </View>
-            <View style={[styles.statCard, { backgroundColor: colors.background }]}>
+            <View style={[styles.statCard, { backgroundColor: colors.card }]}>
               <Ionicons name="trophy" size={24} color="#4CAF50" />
               <Text style={[styles.statNumber, { color: colors.text }]}>{currentUser.total_points}</Text>
               <Text style={[styles.statLabel, { color: colors.icon }]}>Points</Text>
@@ -408,7 +406,7 @@ export default function ProfileScreen() {
           {isAuthenticated && user && user.user_level && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Level Progress</Text>
-              <View style={[styles.levelCard, { backgroundColor: colors.background }]}>
+              <View style={[styles.levelCard, { backgroundColor: colors.card }]}>
                 <View style={styles.levelHeader}>
                   <Text style={[styles.levelName, { color: colors.text }]}>
                     {user.user_level.level_name}
@@ -449,7 +447,7 @@ export default function ProfileScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.reviewsContainer}>
                   {reviews.slice(0, 3).map((review) => (
-                    <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.background }]}>
+                    <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.card }]}>
                       <View style={styles.reviewHeader}>
                         <View style={styles.ratingContainer}>
                           {[...Array(5)].map((_, i) => (

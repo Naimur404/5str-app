@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getUserFavorites, isAuthenticated, removeFromFavorites, type Favorite } from '@/services/api';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,8 +36,8 @@ export default function FavouritesScreen() {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const { alertConfig, showError, showSuccess, showConfirm, hideAlert } = useCustomAlert();
 
   useEffect(() => {
@@ -240,7 +240,7 @@ export default function FavouritesScreen() {
 
     return (
       <TouchableOpacity 
-        style={[styles.favoriteCard, { backgroundColor: colors.background }]}
+        style={[styles.favoriteCard, { backgroundColor: colors.card }]}
         onPress={() => handleItemPress(item)}
         activeOpacity={0.7}
       >
@@ -336,7 +336,7 @@ export default function FavouritesScreen() {
       <StatusBar style="light" />
       {/* Header */}
       <LinearGradient
-        colors={['#6366f1', '#8b5cf6', '#d946ef']}
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
         <View style={styles.headerContent}>

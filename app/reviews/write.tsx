@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { isAuthenticated, submitReview, SubmitReviewRequest } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -57,8 +57,8 @@ export default function WriteReviewScreen() {
   const businessName = params.businessName as string;
   const offeringName = params.offeringName as string;
 
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const { alertConfig, showError, showSuccess, showInfo, hideAlert } = useCustomAlert();
 
   useEffect(() => {
@@ -247,7 +247,7 @@ export default function WriteReviewScreen() {
       
       {/* Modern Header with Gradient */}
       <LinearGradient
-        colors={['#6366f1', '#8b5cf6', '#a855f7']}
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
         <View style={styles.headerContent}>
@@ -267,7 +267,7 @@ export default function WriteReviewScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Business/Offering Info Card */}
-        <View style={[styles.infoCard, { backgroundColor: colors.background }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.card }]}>
           <View style={styles.infoHeader}>
             <View style={[styles.infoIcon, { backgroundColor: colors.tint + '20' }]}>
               <Ionicons name="business" size={24} color={colors.tint} />
@@ -286,7 +286,7 @@ export default function WriteReviewScreen() {
         </View>
 
         {/* Rating Cards */}
-        <View style={[styles.ratingCard, { backgroundColor: colors.background }]}>
+        <View style={[styles.ratingCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Rating & Experience</Text>
           
           {/* Overall Rating */}
@@ -325,7 +325,7 @@ export default function WriteReviewScreen() {
         </View>
 
         {/* Review Content Card */}
-        <View style={[styles.contentCard, { backgroundColor: colors.background }]}>
+        <View style={[styles.contentCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Your Review</Text>
           
           {/* Review Title */}
@@ -366,7 +366,7 @@ export default function WriteReviewScreen() {
         </View>
 
         {/* Pros & Cons Card */}
-        <View style={[styles.prosConsCard, { backgroundColor: colors.background }]}>
+        <View style={[styles.prosConsCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Pros & Cons (Optional)</Text>
           
           {/* Pros */}
@@ -451,7 +451,7 @@ export default function WriteReviewScreen() {
         </View>
 
         {/* Additional Details Card */}
-        <View style={[styles.detailsCard, { backgroundColor: colors.background }]}>
+        <View style={[styles.detailsCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Additional Details (Optional)</Text>
           
           <View style={styles.detailsRow}>
@@ -544,7 +544,7 @@ export default function WriteReviewScreen() {
           disabled={loading}
         >
           <LinearGradient
-            colors={['#6366f1', '#8b5cf6']}
+            colors={[colors.headerGradientStart, colors.headerGradientEnd]}
             style={styles.submitGradient}
           >
             {loading ? (

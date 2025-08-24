@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { login } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,8 +25,8 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const { alertConfig, showError, showSuccess, hideAlert } = useCustomAlert();
 
   const handleLogin = async () => {

@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getUserReviews, Review } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +18,7 @@ import {
 
 // Skeleton Loader Component
 const ReviewSkeleton = ({ colors }: { colors: any }) => (
-  <View style={[styles.reviewCard, { backgroundColor: colors.background }]}>
+  <View style={[styles.reviewCard, { backgroundColor: colors.card }]}>
     <View style={styles.reviewContent}>
       <View style={styles.reviewHeader}>
         <View style={styles.reviewMetaLeft}>
@@ -56,8 +56,8 @@ export default function ReviewsScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
 
   useEffect(() => {
     loadReviews();
@@ -132,7 +132,7 @@ export default function ReviewsScreen() {
   };
 
   const renderReviewItem = ({ item }: { item: Review }) => (
-    <View style={[styles.reviewCard, { backgroundColor: colors.background }]}>
+    <View style={[styles.reviewCard, { backgroundColor: colors.card }]}>
       <View style={styles.reviewContent}>
         <View style={styles.reviewHeader}>
           <View style={styles.reviewMetaLeft}>
@@ -245,7 +245,7 @@ export default function ReviewsScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
           style={styles.header}
         >
           <Text style={styles.headerTitle}>My Reviews</Text>
@@ -265,7 +265,7 @@ export default function ReviewsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
           style={styles.header}
         >
           <Text style={styles.headerTitle}>My Reviews</Text>

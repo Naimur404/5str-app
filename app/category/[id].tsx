@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Business, Category, getCategoryBusinesses } from '@/services/api';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,12 +39,12 @@ export default function CategoryBusinessesScreen() {
   const categoryName = params.name as string;
   const categoryColor = params.color as string || '#6366f1';
   
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
 
   // Business Card Skeleton Component
   const BusinessSkeleton = ({ colors }: { colors: any }) => (
-    <View style={[styles.businessCard, { backgroundColor: colors.background }]}>
+    <View style={[styles.businessCard, { backgroundColor: colors.card }]}>
       <View style={styles.businessContent}>
         <View style={[styles.skeletonBox, styles.skeletonImage, { backgroundColor: colors.icon + '20' }]} />
         <View style={styles.businessInfo}>
@@ -177,7 +177,7 @@ export default function CategoryBusinessesScreen() {
 
   const renderBusinessItem = ({ item }: { item: Business }) => (
     <TouchableOpacity 
-      style={[styles.businessCard, { backgroundColor: colors.background }]}
+      style={[styles.businessCard, { backgroundColor: colors.card }]}
       onPress={() => {
         console.log('Business card clicked:', item.business_name, 'ID:', item.id);
         router.push(`/business/${item.id}` as any);

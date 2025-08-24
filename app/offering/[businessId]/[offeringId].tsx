@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
     getOfferingDetails,
     getOfferingReviews,
@@ -33,8 +33,8 @@ export default function OfferingDetailsScreen() {
   const businessId = parseInt(params.businessId as string);
   const offeringId = parseInt(params.offeringId as string);
   
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
 
   useEffect(() => {
     if (businessId && offeringId) {

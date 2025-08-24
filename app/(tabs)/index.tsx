@@ -1,6 +1,6 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
-import { useThemeManager } from '@/hooks/useThemeManager';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { fetchWithJsonValidation } from '@/services/api';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
@@ -39,7 +39,7 @@ export default function HomeScreen() {
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
-  const { colorScheme } = useThemeManager();
+  const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
 
   // Get banners from API response, fallback to empty array
@@ -197,7 +197,7 @@ export default function HomeScreen() {
 
   const renderBusinessCard = ({ item }: { item: Business }) => (
     <TouchableOpacity 
-      style={[styles.businessCard, { backgroundColor: colors.background }]}
+      style={[styles.businessCard, { backgroundColor: colors.card }]}
       onPress={() => {
         router.push(`/business/${item.id}` as any);
       }}
@@ -228,7 +228,7 @@ export default function HomeScreen() {
 
   const renderOfferCard = ({ item }: { item: SpecialOffer }) => (
     <TouchableOpacity 
-      style={[styles.offerCard, { backgroundColor: colors.background }]}
+      style={[styles.offerCard, { backgroundColor: colors.card }]}
       onPress={() => {
         router.push(`/offer/${item.id}` as any);
       }}
@@ -279,7 +279,7 @@ export default function HomeScreen() {
       
       {/* Fixed Header */}
       <LinearGradient
-        colors={['#6366f1', '#8b5cf6', '#a855f7']}
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
         <View style={styles.headerTop}>

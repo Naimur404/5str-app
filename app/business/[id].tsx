@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     addToFavorites,
@@ -56,8 +56,8 @@ export default function BusinessDetailsScreen() {
   const params = useLocalSearchParams();
   const businessId = parseInt(params.id as string);
   
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
 
   useEffect(() => {
     if (businessId) {
@@ -412,7 +412,7 @@ export default function BusinessDetailsScreen() {
   const renderOverviewTab = () => (
     <View style={styles.tabContent}>
       {/* Business Info Card */}
-      <View style={[styles.section, { backgroundColor: colors.background }]}>
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.businessInfoHeader}>
           <View style={styles.businessInfoLeft}>
             <Text style={[styles.businessInfoName, { color: colors.text }]}>
@@ -443,7 +443,7 @@ export default function BusinessDetailsScreen() {
       </View>
 
       {/* Location and Contact */}
-      <View style={[styles.section, { backgroundColor: colors.background }]}>
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Location And Contact</Text>
         
         <TouchableOpacity style={styles.contactItem} onPress={handleDirections}>
@@ -506,7 +506,7 @@ export default function BusinessDetailsScreen() {
 
       {/* About this Business */}
       {business?.description && (
-        <View style={[styles.section, { backgroundColor: colors.background }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>About this Business</Text>
           <Text style={[styles.description, { color: colors.text }]}>
             {business.description}
@@ -516,7 +516,7 @@ export default function BusinessDetailsScreen() {
 
       {/* Opening Hours */}
       {business?.opening_hours && (
-        <View style={[styles.section, { backgroundColor: colors.background }]}>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
           <View style={styles.hoursContainer}>
             {formatOpeningHours(business.opening_hours).map((item, index) => (
@@ -532,7 +532,7 @@ export default function BusinessDetailsScreen() {
       )}
 
       {/* Overall Rating */}
-      <View style={[styles.section, { backgroundColor: colors.background }]}>
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.ratingHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Overall rating</Text>
           <TouchableOpacity 
@@ -573,7 +573,7 @@ export default function BusinessDetailsScreen() {
     const offeringFav = offeringFavorites[item.id] || { isFavorite: false, favoriteId: null };
     return (
       <TouchableOpacity 
-        style={[styles.menuItemCard, { backgroundColor: colors.background }]}
+        style={[styles.menuItemCard, { backgroundColor: colors.card }]}
         onPress={() => router.push(`/offering/${businessId}/${item.id}` as any)}
       >
         {item.image_url ? (
@@ -686,7 +686,7 @@ export default function BusinessDetailsScreen() {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.background }]}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
             <Ionicons name="restaurant-outline" size={48} color={colors.icon} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No {getOfferingsTabName().toLowerCase()} Available</Text>
@@ -731,7 +731,7 @@ export default function BusinessDetailsScreen() {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.background }]}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
             <Ionicons name="chatbubble-outline" size={48} color={colors.icon} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No Reviews Yet</Text>
@@ -838,7 +838,7 @@ export default function BusinessDetailsScreen() {
       </View>
 
       {/* Quick Actions Bar */}
-      <View style={[styles.quickActions, { backgroundColor: colors.background }]}>
+      <View style={[styles.quickActions, { backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
           <View style={[styles.actionIcon, { backgroundColor: '#4CAF50' }]}>
             <Ionicons name="call" size={20} color="white" />
@@ -871,7 +871,7 @@ export default function BusinessDetailsScreen() {
       </View>
 
       {/* Tab Navigation */}
-      <View style={[styles.tabBar, { backgroundColor: colors.background }]}>
+      <View style={[styles.tabBar, { backgroundColor: colors.card }]}>
         {[
           { key: 'overview', label: 'OVERVIEW' },
           { key: 'menu', label: getOfferingsTabName() },

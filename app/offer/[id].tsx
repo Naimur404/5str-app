@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getOfferDetails,
@@ -29,8 +29,8 @@ export default function OfferDetailsScreen() {
   const params = useLocalSearchParams();
   const offerId = parseInt(params.id as string);
   
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
 
   useEffect(() => {
     if (offerId) {
@@ -168,7 +168,7 @@ export default function OfferDetailsScreen() {
         {/* Business Info */}
         <View style={styles.content}>
           <TouchableOpacity 
-            style={[styles.businessCard, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}
+            style={[styles.businessCard, { backgroundColor: colors.card, borderColor: colors.icon + '30' }]}
             onPress={handleBusinessPress}
           >
             <Image 

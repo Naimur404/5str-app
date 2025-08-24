@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,43 +17,35 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Business, SearchResponse } from '@/types/api';
 import { fetchWithJsonValidation } from '@/services/api';
 
-interface SearchState {
-  searchQuery: string;
-  searchResults: SearchResponse['data'] | null;
-  loading: boolean;
-  location: { latitude: number; longitude: number } | null;
-  showMinCharsMessage: boolean;
-}
+export default function SearchScreen() {
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResponse['data'] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showMinCharsMessage, setShowMinCharsMessage] = useState(false);
+  
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-class SearchScreen extends Component<{}, SearchState> {
-  private searchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-  constructor(props: {}) {
-    super(props);
-    this.state = {
-      searchQuery: '',
-      searchResults: null,
-      loading: false,
-      location: null,
-      showMinCharsMessage: false,
+  useEffect(() => {
+    getCurrentLocation();
+    
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
     };
-  }
+  }, []);
 
-  componentDidMount() {
-    this.getCurrentLocation();
-  }
-
-  componentWillUnmount() {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
-    }
-  }
-
-  getCurrentLocation = async () => {
+  const getCurrentLocation = async () => {
     try {
       console.log('Getting current location...');
       
@@ -63,67 +55,53 @@ class SearchScreen extends Component<{}, SearchState> {
       
       if (status !== 'granted') {
         console.log('Location permission denied, using default location');
-        this.setState({
-          location: { latitude: 22.3569, longitude: 91.7832 },
-        });
+        setLocation({ latitude: 22.3569, longitude: 91.7832 });
         return;
       }
       
       const currentLocation = await Location.getCurrentPositionAsync({});
       console.log('Location obtained:', currentLocation.coords);
-      this.setState({
-        location: {
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-        },
+      setLocation({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
       });
     } catch (error) {
       console.log('Location error, using default location:', error);
-      this.setState({
-        location: { latitude: 22.3569, longitude: 91.7832 },
-      });
+      setLocation({ latitude: 22.3569, longitude: 91.7832 });
     }
   };
 
-  handleSearchChange = (text: string) => {
-    this.setState({ searchQuery: text });
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
 
     // Clear existing timeout
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
     }
 
     // Handle different text lengths
     if (text.length === 0) {
-      this.setState({
-        searchResults: null,
-        loading: false,
-        showMinCharsMessage: false,
-      });
+      setSearchResults(null);
+      setLoading(false);
+      setShowMinCharsMessage(false);
     } else if (text.length === 1) {
-      this.setState({
-        searchResults: null,
-        loading: false,
-        showMinCharsMessage: true,
-      });
+      setSearchResults(null);
+      setLoading(false);
+      setShowMinCharsMessage(true);
     } else if (text.length >= 2) {
       console.log('Setting search timeout for query:', text);
-      this.setState({
-        showMinCharsMessage: false,
-        loading: true,
-      });
+      setShowMinCharsMessage(false);
+      setLoading(true);
 
       // Debounce search
-      this.searchTimeout = setTimeout(() => {
+      searchTimeout.current = setTimeout(() => {
         console.log('Search timeout triggered for:', text);
-        this.performSearch(text);
+        performSearch(text);
       }, 800);
     }
   };
 
-  performSearch = async (query: string) => {
-    const { location } = this.state;
-
+  const performSearch = async (query: string) => {
     console.log('performSearch called with:', {
       query,
       queryLength: query?.length,
@@ -137,12 +115,12 @@ class SearchScreen extends Component<{}, SearchState> {
         queryLength: query?.length,
         hasLocation: !!location
       });
-      this.setState({ loading: false });
+      setLoading(false);
       return;
     }
 
     console.log('Starting API search...');
-    this.setState({ loading: true });
+    setLoading(true);
 
     try {
       const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?q=${encodeURIComponent(query)}&type=all&latitude=${location.latitude}&longitude=${location.longitude}&sort=rating&limit=10`;
@@ -152,48 +130,40 @@ class SearchScreen extends Component<{}, SearchState> {
       console.log('Search API response:', data);
 
       if (data.success) {
-        this.setState({
-          searchResults: data.data,
-          loading: false,
-        });
+        setSearchResults(data.data);
+        setLoading(false);
       } else {
         Alert.alert('Error', data.message || 'Search failed');
-        this.setState({
-          searchResults: null,
-          loading: false,
-        });
+        setSearchResults(null);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Search error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Network error during search';
       Alert.alert('Error', errorMessage);
-      this.setState({
-        searchResults: null,
-        loading: false,
-      });
+      setSearchResults(null);
+      setLoading(false);
     }
   };
 
-  clearSearch = () => {
-    if (this.searchTimeout) {
-      clearTimeout(this.searchTimeout);
+  const clearSearch = () => {
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
     }
-    this.setState({
-      searchQuery: '',
-      searchResults: null,
-      loading: false,
-      showMinCharsMessage: false,
-    });
+    setSearchQuery('');
+    setSearchResults(null);
+    setLoading(false);
+    setShowMinCharsMessage(false);
   };
 
-  renderBusinessItem = ({ item }: { item: Business }) => {
+  const renderBusinessItem = ({ item }: { item: Business }) => {
     if (!item || !item.id) {
       return null;
     }
     
     return (
       <TouchableOpacity 
-        style={styles.businessItem}
+        style={[styles.businessItem, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => router.push(`/business/${item.id}`)}
         activeOpacity={0.7}
       >
@@ -203,7 +173,7 @@ class SearchScreen extends Component<{}, SearchState> {
         />
         <View style={styles.businessInfo}>
           <View style={styles.businessHeader}>
-            <Text style={styles.businessName} numberOfLines={1}>
+            <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
               {item.business_name || 'Unknown Business'}
             </Text>
             {item.is_verified ? (
@@ -212,11 +182,11 @@ class SearchScreen extends Component<{}, SearchState> {
               </View>
             ) : null}
           </View>
-          <Text style={styles.businessCategory}>
+          <Text style={[styles.businessCategory, { color: colors.icon }]}>
             {`${item.category?.name || 'Category'} • ${item.subcategory_name || 'Subcategory'}`}
           </Text>
           {item.description ? (
-            <Text style={styles.businessDescription} numberOfLines={2}>
+            <Text style={[styles.businessDescription, { color: colors.icon }]} numberOfLines={2}>
               {item.description}
             </Text>
           ) : null}
@@ -231,125 +201,123 @@ class SearchScreen extends Component<{}, SearchState> {
               ) : null}
             </View>
             {item.distance_km ? (
-              <Text style={styles.distance}>{item.distance_km} km</Text>
+              <Text style={[styles.distance, { color: colors.tint }]}>
+                {item.distance_km} km
+              </Text>
             ) : null}
           </View>
         </View>
         <View style={styles.chevronContainer}>
-          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          <Ionicons name="chevron-forward" size={20} color={colors.icon} />
         </View>
       </TouchableOpacity>
     );
   };
 
-  render() {
-    const { searchQuery, searchResults, loading, showMinCharsMessage } = this.state;
+  console.log('Render called with state:', { 
+    searchQuery, 
+    hasResults: !!searchResults, 
+    loading, 
+    showMinCharsMessage,
+    businessCount: searchResults?.results?.businesses?.data?.length || 0
+  });
 
-    console.log('Render called with state:', { 
-      searchQuery, 
-      hasResults: !!searchResults, 
-      loading, 
-      showMinCharsMessage,
-      businessCount: searchResults?.results?.businesses?.data?.length || 0
-    });
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <LinearGradient colors={[colors.headerGradientStart, colors.headerGradientEnd]} style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <View style={[styles.searchBar, { backgroundColor: colors.card }]}>
+            <Ionicons name="search-outline" size={20} color={colors.icon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Search businesses..."
+              placeholderTextColor={colors.icon}
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              autoFocus
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <Ionicons name="close-circle" size={20} color={colors.icon} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </LinearGradient>
 
-    return (
-      <View style={styles.container}>
-        {/* Header */}
-        <LinearGradient colors={['#6366f1', '#8b5cf6']} style={styles.header}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={20} color="#666" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search businesses..."
-                placeholderTextColor="#666"
-                value={searchQuery}
-                onChangeText={this.handleSearchChange}
-                autoFocus
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={this.clearSearch} style={styles.clearButton}>
-                  <Ionicons name="close-circle" size={20} color="#666" />
+      {/* Content */}
+      <ScrollView style={styles.content}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.tint} />
+            <Text style={[styles.loadingText, { color: colors.tint }]}>Searching...</Text>
+          </View>
+        ) : showMinCharsMessage ? (
+          <View style={[styles.messageContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.messageText, { color: colors.icon }]}>Type at least 2 characters to search</Text>
+          </View>
+        ) : searchResults && searchResults.results && searchResults.results.businesses ? (
+          <View>
+            <View style={[styles.resultsSummary, { backgroundColor: colors.card }]}>
+              <Text style={[styles.resultsText, { color: colors.text }]}>
+                {searchResults.total_results || 0} results found
+              </Text>
+            </View>
+
+            {searchResults.results.businesses.data && searchResults.results.businesses.data.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Businesses</Text>
+                <FlatList
+                  data={searchResults.results.businesses.data.filter((item: any) => item && item.id)}
+                  renderItem={renderBusinessItem}
+                  keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                  scrollEnabled={false}
+                />
+              </View>
+            ) : (
+              <View style={[styles.noResults, { backgroundColor: colors.card }]}>
+                <Ionicons name="search-outline" size={80} color={colors.icon} />
+                <Text style={[styles.noResultsTitle, { color: colors.text }]}>No businesses found</Text>
+                <Text style={[styles.noResultsText, { color: colors.icon }]}>
+                  Try searching with different keywords
+                </Text>
+                <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.tint }]} onPress={clearSearch}>
+                  <Text style={styles.retryButtonText}>Try different search</Text>
                 </TouchableOpacity>
-              )}
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={[styles.initialState, { backgroundColor: colors.card }]}>
+            <Ionicons name="search-outline" size={80} color={colors.icon} />
+            <Text style={[styles.initialTitle, { color: colors.text }]}>Search for businesses</Text>
+            <Text style={[styles.initialText, { color: colors.icon }]}>
+              Find restaurants, shops, services and more near you
+            </Text>
+            <View style={styles.searchSuggestions}>
+              <Text style={[styles.suggestionsTitle, { color: colors.text }]}>Popular searches:</Text>
+              <View style={styles.suggestionTags}>
+                {['Restaurant', 'Coffee', 'Shopping', 'Beauty'].map((tag) => (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[styles.suggestionTag, { borderColor: colors.border, backgroundColor: colors.background }]}
+                    onPress={() => handleSearchChange(tag)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.suggestionTagText, { color: colors.tint }]}>{tag}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
-        </LinearGradient>
-
-        {/* Content */}
-        <ScrollView style={styles.content}>
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366f1" />
-              <Text style={styles.loadingText}>Searching...</Text>
-            </View>
-          ) : showMinCharsMessage ? (
-            <View style={styles.messageContainer}>
-              <Text style={styles.messageText}>Type at least 2 characters to search</Text>
-            </View>
-          ) : searchResults && searchResults.results && searchResults.results.businesses ? (
-            <View>
-              <View style={styles.resultsSummary}>
-                <Text style={styles.resultsText}>
-                  {searchResults.total_results || 0} results found
-                </Text>
-              </View>
-
-              {searchResults.results.businesses.data && searchResults.results.businesses.data.length > 0 ? (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Businesses</Text>
-                  <FlatList
-                    data={searchResults.results.businesses.data.filter(item => item && item.id)}
-                    renderItem={this.renderBusinessItem}
-                    keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-                    scrollEnabled={false}
-                  />
-                </View>
-              ) : (
-                <View style={styles.noResults}>
-                  <Ionicons name="search-outline" size={80} color="#e0e0e0" />
-                  <Text style={styles.noResultsTitle}>No businesses found</Text>
-                  <Text style={styles.noResultsText}>
-                    Try searching with different keywords
-                  </Text>
-                  <TouchableOpacity style={styles.retryButton} onPress={this.clearSearch}>
-                    <Text style={styles.retryButtonText}>Try different search</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          ) : (
-            <View style={styles.initialState}>
-              <Ionicons name="search-outline" size={80} color="#e0e0e0" />
-              <Text style={styles.initialTitle}>Search for businesses</Text>
-              <Text style={styles.initialText}>
-                Find restaurants, shops, services and more near you
-              </Text>
-              <View style={styles.searchSuggestions}>
-                <Text style={styles.suggestionsTitle}>Popular searches:</Text>
-                <View style={styles.suggestionTags}>
-                  {['Restaurant', 'Coffee', 'Shopping', 'Beauty'].map((tag) => (
-                    <TouchableOpacity
-                      key={tag}
-                      style={styles.suggestionTag}
-                      onPress={() => this.handleSearchChange(tag)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.suggestionTagText}>{tag}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    );
-  }
+        )}
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -668,4 +636,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchScreen;
+
