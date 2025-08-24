@@ -20,6 +20,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import ReviewCard from '@/components/ReviewCard';
 
 export default function OfferingDetailsScreen() {
   const [offering, setOffering] = useState<Offering | null>(null);
@@ -91,6 +92,21 @@ export default function OfferingDetailsScreen() {
         businessName: offering?.business?.business_name || 'Business'
       }
     });
+  };
+
+  const handleVoteUpdate = (reviewId: number, newHelpfulCount: number, newNotHelpfulCount: number, userVoteStatus: any) => {
+    setReviews(prevReviews => 
+      prevReviews.map(review => 
+        review.id === reviewId 
+          ? { 
+              ...review, 
+              helpful_count: newHelpfulCount, 
+              not_helpful_count: newNotHelpfulCount,
+              user_vote_status: userVoteStatus 
+            }
+          : review
+      )
+    );
   };
 
   if (loading) {
@@ -182,47 +198,16 @@ export default function OfferingDetailsScreen() {
           </View>
           
           {reviews.length > 0 ? (
-            <FlatList
-              data={reviews}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <View style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <View style={styles.reviewUser}>
-                      <View style={[styles.userAvatar, { backgroundColor: colors.tint }]}>
-                        <Text style={styles.userInitial}>
-                          {item.user.name.charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                      <View>
-                        <Text style={[styles.userName, { color: colors.text }]}>{item.user.name}</Text>
-                        <Text style={[styles.reviewDate, { color: colors.icon }]}>{item.created_at}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.reviewRating}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Ionicons
-                          key={star}
-                          name="star"
-                          size={14}
-                          color={star <= item.overall_rating ? '#FFD700' : colors.icon}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                  <Text style={[styles.reviewText, { color: colors.text }]}>{item.review_text}</Text>
-                  {item.helpful_count > 0 && (
-                    <View style={styles.reviewFooter}>
-                      <Ionicons name="thumbs-up" size={14} color={colors.icon} />
-                      <Text style={[styles.helpfulText, { color: colors.icon }]}>
-                        {item.helpful_count} found this helpful
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-            />
+            <View>
+              {reviews.map((item) => (
+                <ReviewCard
+                  key={item.id}
+                  review={item}
+                  onVoteUpdate={handleVoteUpdate}
+                  flat={true}
+                />
+              ))}
+            </View>
           ) : (
             <View style={styles.emptyState}>
               <Ionicons name="chatbubble-outline" size={48} color={colors.icon} />

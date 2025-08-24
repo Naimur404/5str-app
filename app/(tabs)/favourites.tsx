@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getUserFavorites, isAuthenticated, removeFromFavorites, type Favorite } from '@/services/api';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -252,7 +253,7 @@ export default function FavouritesScreen() {
           <View style={styles.favoriteImageContainer}>
             <Image 
               source={{ 
-                uri: image || 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop' 
+                uri: getImageUrl(image) || getFallbackImageUrl(isBusinessFavorite ? 'business' : 'offering') 
               }} 
               style={styles.favoriteImage} 
             />

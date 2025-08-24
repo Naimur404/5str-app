@@ -11,6 +11,7 @@ export const API_CONFIG = {
     USER_REVIEWS: '/api/v1/user/reviews',
     USER_FAVORITES: '/api/v1/user/favorites',
     SUBMIT_REVIEW: '/api/v1/reviews',
+    REVIEW_VOTE: '/api/v1/reviews', // Base endpoint for voting, reviewId will be appended
     CATEGORY_BUSINESSES: '/api/v1/categories',
     BUSINESS_DETAILS: '/api/v1/businesses',
     BUSINESS_OFFERINGS: '/api/v1/businesses',

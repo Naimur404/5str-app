@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getOfferDetails,
     OfferDetails
@@ -116,7 +117,7 @@ export default function OfferDetailsScreen() {
       {/* Hero Section with Background */}
       <View style={styles.heroSection}>
         {offer.banner_image ? (
-          <Image source={{ uri: offer.banner_image }} style={styles.heroImage} />
+          <Image source={{ uri: getImageUrl(offer.banner_image) }} style={styles.heroImage} />
         ) : (
           <LinearGradient
             colors={['#6366f1', '#8b5cf6', '#d946ef']}
@@ -172,7 +173,7 @@ export default function OfferDetailsScreen() {
           >
             <Image 
               source={{ 
-                uri: offer.business.logo_image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop' 
+                uri: getImageUrl(offer.business.logo_image) || getFallbackImageUrl('business') 
               }} 
               style={styles.businessLogo} 
             />

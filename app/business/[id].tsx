@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     addToFavorites,
     DetailedBusiness,
@@ -11,7 +12,8 @@ import {
     isAuthenticated,
     Offering,
     removeFromFavorites,
-    Review
+    Review,
+    getAuthToken
 } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,6 +31,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import ReviewCard from '@/components/ReviewCard';
 
 const { width } = Dimensions.get('window');
 
@@ -583,7 +586,7 @@ export default function BusinessDetailsScreen() {
                 {item.image_url ? (
                   <View style={styles.menuItemHeader}>
                     <Image 
-                      source={{ uri: item.image_url }} 
+                      source={{ uri: getImageUrl(item.image_url) }} 
                       style={styles.menuItemImage}
                     />
                     <TouchableOpacity
@@ -622,16 +625,75 @@ export default function BusinessDetailsScreen() {
                     <Text style={[styles.menuItemName, { color: colors.text }]}>{item.name}</Text>
                     <Text style={[styles.menuItemPrice, { color: colors.tint }]}>{item.price_range}</Text>
                   </View>
+                  
                   <Text style={[styles.menuItemDescription, { color: colors.icon }]} numberOfLines={2}>
                     {item.description}
                   </Text>
+                  
+                  {/* Enhanced offering details */}
+                  <View style={styles.menuItemDetails}>
+                    <View style={styles.menuItemMeta}>
+                      <View style={styles.menuItemType}>
+                        <Ionicons 
+                          name={item.offering_type === 'product' ? 'cube-outline' : 'briefcase-outline'} 
+                          size={12} 
+                          color={colors.icon} 
+                        />
+                        <Text style={[styles.menuItemTypeText, { color: colors.icon }]}>
+                          {item.offering_type === 'product' ? 'Product' : 'Service'}
+                        </Text>
+                      </View>
+                      
+                      {item.currency && (
+                        <View style={styles.menuItemCurrency}>
+                          <Text style={[styles.menuItemCurrencyText, { color: colors.icon }]}>
+                            {item.currency}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    <View style={styles.menuItemBadges}>
+                      {item.is_popular && (
+                        <View style={[styles.menuItemBadge, styles.popularBadge]}>
+                          <Ionicons name="flame" size={10} color="white" />
+                          <Text style={styles.badgeText}>Popular</Text>
+                        </View>
+                      )}
+                      
+                      {item.is_featured && (
+                        <View style={[styles.menuItemBadge, styles.featuredBadge]}>
+                          <Ionicons name="star" size={10} color="white" />
+                          <Text style={styles.badgeText}>Featured</Text>
+                        </View>
+                      )}
+                      
+                      {!item.is_available && (
+                        <View style={[styles.menuItemBadge, styles.unavailableBadge]}>
+                          <Ionicons name="close-circle" size={10} color="white" />
+                          <Text style={styles.badgeText}>Unavailable</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  
                   <View style={styles.menuItemFooter}>
                     <View style={styles.menuItemRating}>
                       <Ionicons name="star" size={14} color="#FFD700" />
                       <Text style={[styles.ratingText, { color: colors.text }]}>
                         {parseFloat(item.average_rating).toFixed(1)}
                       </Text>
+                      <Text style={[styles.reviewCountText, { color: colors.icon }]}>
+                        ({item.total_reviews} reviews)
+                      </Text>
                     </View>
+                    
+                    {item.is_available && (
+                      <View style={[styles.availabilityIndicator, styles.availableIndicator]}>
+                        <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
+                        <Text style={[styles.availabilityText, { color: '#4CAF50' }]}>Available</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               </TouchableOpacity>
@@ -652,6 +714,21 @@ export default function BusinessDetailsScreen() {
     </View>
   );
 
+  const handleVoteUpdate = (reviewId: number, newHelpfulCount: number, newNotHelpfulCount: number, userVoteStatus: any) => {
+    setReviews(prevReviews => 
+      prevReviews.map(review => 
+        review.id === reviewId 
+          ? { 
+              ...review, 
+              helpful_count: newHelpfulCount, 
+              not_helpful_count: newNotHelpfulCount,
+              user_vote_status: userVoteStatus 
+            }
+          : review
+      )
+    );
+  };
+
   const renderRatingsTab = () => (
     <View style={styles.tabContent}>
       {reviews.length > 0 ? (
@@ -660,53 +737,12 @@ export default function BusinessDetailsScreen() {
             Customer Reviews ({reviews.length})
           </Text>
           {reviews.map((item) => (
-            <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.background }]}>
-              <View style={styles.reviewHeader}>
-                <View style={styles.reviewUser}>
-                  <View style={[styles.userAvatar, { backgroundColor: colors.tint }]}>
-                    <Text style={styles.userInitial}>
-                      {item.user.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.reviewUserInfo}>
-                    <Text style={[styles.userName, { color: colors.text }]}>{item.user.name}</Text>
-                    <Text style={[styles.reviewDate, { color: colors.icon }]}>
-                      {new Date(item.created_at).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.reviewRatingContainer}>
-                  <View style={styles.reviewRating}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Ionicons
-                        key={star}
-                        name="star"
-                        size={14}
-                        color={star <= item.overall_rating ? '#FFD700' : colors.icon}
-                      />
-                    ))}
-                  </View>
-                  <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-                    {item.overall_rating}/5
-                  </Text>
-                </View>
-              </View>
-              <Text style={[styles.reviewText, { color: colors.text }]}>{item.review_text}</Text>
-              {item.helpful_count > 0 && (
-                <View style={styles.reviewFooter}>
-                  <TouchableOpacity style={styles.helpfulButton}>
-                    <Ionicons name="thumbs-up" size={14} color={colors.tint} />
-                    <Text style={[styles.helpfulText, { color: colors.tint }]}>
-                      {item.helpful_count} found this helpful
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+            <ReviewCard
+              key={item.id}
+              review={item}
+              onVoteUpdate={handleVoteUpdate}
+              flat={true}
+            />
           ))}
         </View>
       ) : (
@@ -768,7 +804,7 @@ export default function BusinessDetailsScreen() {
       {/* Header with Hero Image */}
       <View style={styles.heroSection}>
         <Image 
-          source={{ uri: business.logo_image?.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop' }} 
+          source={{ uri: getImageUrl(business.logo_image?.image_url) || getFallbackImageUrl('business') }} 
           style={styles.heroImage} 
         />
         <LinearGradient
@@ -1200,6 +1236,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  reviewCountText: {
+    fontSize: 12,
+    marginLeft: 2,
+  },
+  menuItemDetails: {
+    marginBottom: 12,
+  },
+  menuItemMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  menuItemType: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  menuItemTypeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  menuItemCurrency: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  menuItemCurrencyText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  menuItemBadges: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  menuItemBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  popularBadge: {
+    backgroundColor: '#FF6B6B',
+  },
+  featuredBadge: {
+    backgroundColor: '#4CAF50',
+  },
+  unavailableBadge: {
+    backgroundColor: '#9E9E9E',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  availabilityIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  availableIndicator: {
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  availabilityText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   ratingText: {
     fontSize: 14,

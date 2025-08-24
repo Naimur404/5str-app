@@ -1,6 +1,7 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Business, SearchResponse } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -89,7 +90,7 @@ export default function SearchScreen() {
   const renderBusinessItem = ({ item }: { item: Business }) => (
     <TouchableOpacity style={[styles.businessItem, { backgroundColor: colors.background }]}>
       <Image 
-        source={{ uri: item.logo_image || 'https://via.placeholder.com/80' }} 
+        source={{ uri: getImageUrl(item.logo_image) || getFallbackImageUrl('business') }} 
         style={styles.businessImage} 
       />
       <View style={styles.businessInfo}>

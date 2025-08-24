@@ -1,6 +1,7 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -231,7 +232,7 @@ export default function HomeScreen() {
         router.push(`/business/${item.id}` as any);
       }}
     >
-      <Image source={{ uri: item.logo_image }} style={styles.businessImage} />
+      <Image source={{ uri: getImageUrl(item.logo_image) || getFallbackImageUrl('business') }} style={styles.businessImage} />
       <View style={styles.businessInfo}>
         <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
           {item.business_name}
@@ -262,7 +263,7 @@ export default function HomeScreen() {
         router.push(`/offer/${item.id}` as any);
       }}
     >
-      <Image source={{ uri: item.business.logo_image }} style={styles.offerImage} />
+      <Image source={{ uri: getImageUrl(item.business.logo_image) || getFallbackImageUrl('business') }} style={styles.offerImage} />
       <View style={styles.discountBadge}>
         <Text style={styles.discountText}>{item.discount_percentage}% OFF</Text>
       </View>

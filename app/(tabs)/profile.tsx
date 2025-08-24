@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getAuthToken,
     getUserProfile,
@@ -323,10 +324,10 @@ export default function ProfileScreen() {
             <View style={styles.profileSection}>
               <Image 
                 source={{ 
-                  uri: currentUser.profile_image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'
-                }} 
-                style={styles.avatar}
-                defaultSource={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face' }}
+                  uri: getImageUrl(currentUser.profile_image) || getFallbackImageUrl('user')
+                }}
+                style={styles.profileImage}
+                defaultSource={{ uri: getFallbackImageUrl('user') }}
               />
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{currentUser.name}</Text>

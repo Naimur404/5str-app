@@ -44,6 +44,10 @@ export interface Review {
   status: string;
   created_at: string;
   type: 'business' | 'offering';
+  user_vote_status?: {
+    has_voted: boolean;
+    user_vote: boolean;
+  };
   user: {
     id: number;
     name: string;
@@ -659,7 +663,9 @@ export const getBusinessOfferings = async (businessId: number): Promise<Business
 };
 
 export const getBusinessReviews = async (businessId: number, page: number = 1): Promise<BusinessReviewsResponse> => {
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_REVIEWS}/${businessId}/reviews?page=${page}`, {}, false);
+  // Check if user is authenticated to send token conditionally for vote status
+  const isAuth = await isAuthenticated();
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_REVIEWS}/${businessId}/reviews?page=${page}`, {}, isAuth);
 };
 
 export const getBusinessOffers = async (businessId: number): Promise<any> => {
@@ -673,7 +679,9 @@ export const getOfferingDetails = async (businessId: number, offeringId: number)
 };
 
 export const getOfferingReviews = async (businessId: number, offeringId: number, page: number = 1): Promise<OfferingReviewsResponse> => {
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_REVIEWS}/${businessId}/offerings/${offeringId}/reviews?page=${page}`, {}, false);
+  // Check if user is authenticated to send token conditionally for vote status
+  const isAuth = await isAuthenticated();
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_REVIEWS}/${businessId}/offerings/${offeringId}/reviews?page=${page}`, {}, isAuth);
 };
 
 // Offer Details API Functions
@@ -714,6 +722,35 @@ export const submitReview = async (reviewData: SubmitReviewRequest): Promise<Sub
   return makeApiCall(API_CONFIG.ENDPOINTS.SUBMIT_REVIEW, {
     method: 'POST',
     body: JSON.stringify(reviewData),
+  }, true);
+};
+
+// Vote API Functions
+export interface VoteResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    helpful_count: number;
+    not_helpful_count?: number; // Made optional in case API doesn't return it
+    user_vote_status: {
+      has_voted: boolean;
+      user_vote: boolean;
+    };
+  };
+}
+
+export const voteReview = async (reviewId: number, isHelpful: boolean): Promise<VoteResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.REVIEW_VOTE}/${reviewId}/vote`, {
+    method: 'POST',
+    body: JSON.stringify({
+      is_helpful: isHelpful ? 1 : 0
+    }),
+  }, true);
+};
+
+export const removeVote = async (reviewId: number): Promise<VoteResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.REVIEW_VOTE}/${reviewId}/vote`, {
+    method: 'DELETE',
   }, true);
 };
 
