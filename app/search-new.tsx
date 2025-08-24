@@ -17,6 +17,7 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
+import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Business, SearchResponse } from '@/types/api';
 import { fetchWithJsonValidation } from '@/services/api';
@@ -55,22 +56,7 @@ class SearchScreen extends Component<{}, SearchState> {
 
   getCurrentLocation = async () => {
     try {
-      console.log('Getting current location...');
-      
-      // Request permission first
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      console.log('Location permission status:', status);
-      
-      if (status !== 'granted') {
-        console.log('Location permission denied, using default location');
-        this.setState({
-          location: { latitude: 22.3569, longitude: 91.7832 },
-        });
-        return;
-      }
-      
       const currentLocation = await Location.getCurrentPositionAsync({});
-      console.log('Location obtained:', currentLocation.coords);
       this.setState({
         location: {
           latitude: currentLocation.coords.latitude,
@@ -78,7 +64,6 @@ class SearchScreen extends Component<{}, SearchState> {
         },
       });
     } catch (error) {
-      console.log('Location error, using default location:', error);
       this.setState({
         location: { latitude: 22.3569, longitude: 91.7832 },
       });
@@ -107,7 +92,6 @@ class SearchScreen extends Component<{}, SearchState> {
         showMinCharsMessage: true,
       });
     } else if (text.length >= 2) {
-      console.log('Setting search timeout for query:', text);
       this.setState({
         showMinCharsMessage: false,
         loading: true,
@@ -115,7 +99,6 @@ class SearchScreen extends Component<{}, SearchState> {
 
       // Debounce search
       this.searchTimeout = setTimeout(() => {
-        console.log('Search timeout triggered for:', text);
         this.performSearch(text);
       }, 800);
     }
@@ -124,32 +107,15 @@ class SearchScreen extends Component<{}, SearchState> {
   performSearch = async (query: string) => {
     const { location } = this.state;
 
-    console.log('performSearch called with:', {
-      query,
-      queryLength: query?.length,
-      location,
-      hasLocation: !!location
-    });
-
     if (!query || query.length < 2 || !location) {
-      console.log('Search cancelled - conditions not met:', {
-        hasQuery: !!query,
-        queryLength: query?.length,
-        hasLocation: !!location
-      });
       this.setState({ loading: false });
       return;
     }
 
-    console.log('Starting API search...');
-    this.setState({ loading: true });
-
     try {
       const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?q=${encodeURIComponent(query)}&type=all&latitude=${location.latitude}&longitude=${location.longitude}&sort=rating&limit=10`;
-      console.log('Search URL:', url);
       
       const data: SearchResponse = await fetchWithJsonValidation(url);
-      console.log('Search API response:', data);
 
       if (data.success) {
         this.setState({
@@ -187,16 +153,8 @@ class SearchScreen extends Component<{}, SearchState> {
   };
 
   renderBusinessItem = ({ item }: { item: Business }) => {
-    if (!item || !item.id) {
-      return null;
-    }
-    
     return (
-      <TouchableOpacity 
-        style={styles.businessItem}
-        onPress={() => router.push(`/business/${item.id}`)}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={styles.businessItem}>
         <Image 
           source={{ uri: getImageUrl(item.logo_image) || getFallbackImageUrl('business') }} 
           style={styles.businessImage} 
@@ -206,52 +164,42 @@ class SearchScreen extends Component<{}, SearchState> {
             <Text style={styles.businessName} numberOfLines={1}>
               {item.business_name || 'Unknown Business'}
             </Text>
-            {item.is_verified ? (
+            {item.is_verified && (
               <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
               </View>
-            ) : null}
+            )}
           </View>
           <Text style={styles.businessCategory}>
-            {`${item.category?.name || 'Category'} • ${item.subcategory_name || 'Subcategory'}`}
+            {item.category?.name || 'Category'} • {item.subcategory_name || 'Subcategory'}
           </Text>
-          {item.description ? (
+          {item.description && (
             <Text style={styles.businessDescription} numberOfLines={2}>
               {item.description}
             </Text>
-          ) : null}
+          )}
           <View style={styles.businessMeta}>
             <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={14} color="#d97706" />
+              <Ionicons name="star" size={14} color="#FFD700" />
               <Text style={styles.rating}>{item.overall_rating || '0.0'}</Text>
-              {item.total_reviews ? (
+              {item.total_reviews && (
                 <Text style={styles.reviewCount}>
                   ({item.total_reviews})
                 </Text>
-              ) : null}
+              )}
             </View>
-            {item.distance_km ? (
-              <Text style={styles.distance}>{item.distance_km} km</Text>
-            ) : null}
+            {item.distance_km && (
+              <Text style={styles.distance}>{item.distance_km} km away</Text>
+            )}
           </View>
         </View>
-        <View style={styles.chevronContainer}>
-          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-        </View>
+        <Ionicons name="chevron-forward" size={20} color="#666" />
       </TouchableOpacity>
     );
   };
 
   render() {
     const { searchQuery, searchResults, loading, showMinCharsMessage } = this.state;
-
-    console.log('Render called with state:', { 
-      searchQuery, 
-      hasResults: !!searchResults, 
-      loading, 
-      showMinCharsMessage,
-      businessCount: searchResults?.results?.businesses?.data?.length || 0
-    });
 
     return (
       <View style={styles.container}>
@@ -291,11 +239,11 @@ class SearchScreen extends Component<{}, SearchState> {
             <View style={styles.messageContainer}>
               <Text style={styles.messageText}>Type at least 2 characters to search</Text>
             </View>
-          ) : searchResults && searchResults.results && searchResults.results.businesses ? (
+          ) : searchResults?.results?.businesses ? (
             <View>
               <View style={styles.resultsSummary}>
                 <Text style={styles.resultsText}>
-                  {searchResults.total_results || 0} results found
+                  {searchResults.total_results || 0} results for "{searchResults.search_term || ''}"
                 </Text>
               </View>
 
@@ -303,9 +251,9 @@ class SearchScreen extends Component<{}, SearchState> {
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Businesses</Text>
                   <FlatList
-                    data={searchResults.results.businesses.data.filter(item => item && item.id)}
+                    data={searchResults.results.businesses.data}
                     renderItem={this.renderBusinessItem}
-                    keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                    keyExtractor={(item) => item.id.toString()}
                     scrollEnabled={false}
                   />
                 </View>
@@ -337,7 +285,6 @@ class SearchScreen extends Component<{}, SearchState> {
                       key={tag}
                       style={styles.suggestionTag}
                       onPress={() => this.handleSearchChange(tag)}
-                      activeOpacity={0.7}
                     >
                       <Text style={styles.suggestionTagText}>{tag}</Text>
                     </TouchableOpacity>
@@ -355,12 +302,11 @@ class SearchScreen extends Component<{}, SearchState> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'white',
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 4,
+    paddingBottom: 16,
   },
   headerContent: {
     flexDirection: 'row',
@@ -369,87 +315,55 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: {
-    padding: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 4,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 16,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    paddingVertical: 12,
+    gap: 8,
+    elevation: 3,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: '#333',
-    fontWeight: '500',
   },
   clearButton: {
     padding: 4,
-    borderRadius: 8,
   },
   content: {
     flex: 1,
-    paddingTop: 8,
   },
   loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 100,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#6366f1',
-    fontWeight: '500',
+    color: '#333',
   },
   messageContainer: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 60,
     paddingHorizontal: 32,
-    backgroundColor: 'white',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 16,
-    paddingVertical: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   messageText: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    fontWeight: '500',
   },
   resultsSummary: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: 'white',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
   },
   resultsText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
   },
@@ -457,37 +371,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: 'bold',
     marginBottom: 16,
     paddingHorizontal: 4,
-    color: '#1f2937',
+    color: '#333',
   },
   businessItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    gap: 16,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
+    backgroundColor: 'white',
+    elevation: 2,
+    gap: 12,
   },
   businessImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
-    backgroundColor: '#f1f5f9',
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
   },
   businessInfo: {
     flex: 1,
-    gap: 4,
   },
   businessHeader: {
     flexDirection: 'row',
@@ -497,22 +404,20 @@ const styles = StyleSheet.create({
   },
   businessName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
     flex: 1,
-    color: '#1f2937',
-    lineHeight: 20,
+    color: '#333',
   },
   businessCategory: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
-    marginBottom: 6,
+    fontSize: 14,
+    marginBottom: 4,
+    color: '#666',
   },
   businessDescription: {
     fontSize: 14,
-    color: '#4b5563',
-    lineHeight: 18,
+    lineHeight: 20,
     marginBottom: 8,
+    color: '#666',
   },
   businessMeta: {
     flexDirection: 'row',
@@ -523,115 +428,72 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#fef3c7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
   rating: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#d97706',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
   reviewCount: {
     fontSize: 12,
-    color: '#d97706',
-    fontWeight: '500',
+    color: '#666',
   },
   distance: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#6366f1',
-    backgroundColor: '#ede9fe',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
   verifiedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  verifiedText: {
-    fontSize: 12,
-    color: '#059669',
-    fontWeight: '600',
-    marginLeft: 4,
-  },
   noResults: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 120,
     paddingHorizontal: 32,
-    backgroundColor: 'white',
-    marginHorizontal: 16,
-    borderRadius: 16,
-    paddingVertical: 60,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   noResultsTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    marginTop: 20,
-    marginBottom: 8,
-    color: '#1f2937',
+    fontWeight: 'bold',
+    marginTop: 24,
+    marginBottom: 12,
+    color: '#333',
   },
   noResultsText: {
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 22,
-    color: '#6b7280',
-    marginBottom: 24,
+    lineHeight: 24,
+    color: '#666',
   },
   initialState: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 120,
     paddingHorizontal: 32,
-    backgroundColor: 'white',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 16,
-    paddingVertical: 60,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   initialTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 20,
-    marginBottom: 8,
-    color: '#1f2937',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 24,
+    marginBottom: 12,
+    color: '#333',
   },
   initialText: {
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 22,
-    color: '#6b7280',
-  },
-  emptyStateIcon: {
-    marginBottom: 16,
+    lineHeight: 24,
+    color: '#666',
   },
   retryButton: {
-    marginTop: 24,
+    marginTop: 20,
     backgroundColor: '#6366f1',
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 8,
   },
   retryButtonText: {
     color: 'white',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
   searchSuggestions: {
     marginTop: 32,
@@ -640,31 +502,27 @@ const styles = StyleSheet.create({
   suggestionsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
-    color: '#374151',
+    color: '#333',
   },
   suggestionTags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
   },
   suggestionTag: {
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#6366f1',
+    borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#f9fafb',
   },
   suggestionTagText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#6366f1',
-  },
-  chevronContainer: {
-    padding: 4,
   },
 });
 

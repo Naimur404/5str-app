@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Business, Category, getCategoryBusinesses } from '@/services/api';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
@@ -171,8 +172,7 @@ export default function CategoryBusinessesScreen() {
   };
 
   const getBusinessImage = (business: Business) => {
-    return business.logo_image?.image_url || 
-           'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop';
+    return getImageUrl(business.logo_image) || getFallbackImageUrl('business');
   };
 
   const renderBusinessItem = ({ item }: { item: Business }) => (
