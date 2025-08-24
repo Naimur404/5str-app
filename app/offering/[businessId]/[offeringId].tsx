@@ -20,6 +20,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import ReviewCard from '@/components/ReviewCard';
 
 export default function OfferingDetailsScreen() {
@@ -146,7 +147,7 @@ export default function OfferingDetailsScreen() {
       <StatusBar style="light" />
       
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.tint }]}>
+      <LinearGradient colors={[colors.headerGradientStart, colors.headerGradientEnd]} style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
@@ -154,11 +155,11 @@ export default function OfferingDetailsScreen() {
           <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{offering.name}</Text>
-      </View>
+      </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         {/* Offering Details */}
-        <View style={[styles.section, { backgroundColor: colors.background }]}>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.offeringName, { color: colors.text }]}>{offering.name}</Text>
           <Text style={[styles.offeringDescription, { color: colors.icon }]}>{offering.description}</Text>
           
@@ -184,7 +185,7 @@ export default function OfferingDetailsScreen() {
         </View>
 
         {/* Reviews Section */}
-        <View style={[styles.section, { backgroundColor: colors.background }]}>
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.reviewsHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Reviews ({reviews.length})
@@ -272,6 +273,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 16,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerTitle: {
     fontSize: 18,
@@ -281,20 +285,22 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   section: {
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 2,
   },
   offeringName: {
     fontSize: 24,
@@ -365,7 +371,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
   },
   reviewHeader: {
     flexDirection: 'row',
