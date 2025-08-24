@@ -132,10 +132,10 @@ export default function OfferingDetailsScreen() {
             {error || 'Unable to load offering information'}
           </Text>
           <TouchableOpacity 
-            style={[styles.retryButton, { backgroundColor: colors.tint }]}
+            style={[styles.retryButton, { backgroundColor: colors.buttonPrimary }]}
             onPress={loadOfferingData}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={[styles.retryButtonText, { color: colors.buttonText }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -191,10 +191,10 @@ export default function OfferingDetailsScreen() {
               Reviews ({reviews.length})
             </Text>
             <TouchableOpacity 
-              style={[styles.writeReviewButton, { backgroundColor: colors.tint }]}
+              style={[styles.writeReviewButton, { backgroundColor: colors.buttonPrimary }]}
               onPress={handleWriteReview}
             >
-              <Text style={styles.writeReviewText}>Write Review</Text>
+              <Text style={[styles.writeReviewText, { color: colors.buttonText }]}>Write Review</Text>
             </TouchableOpacity>
           </View>
           
@@ -260,7 +260,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -363,7 +362,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   writeReviewText: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '600',
   },

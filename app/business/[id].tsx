@@ -536,10 +536,10 @@ export default function BusinessDetailsScreen() {
         <View style={styles.ratingHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Overall rating</Text>
           <TouchableOpacity 
-            style={[styles.writeReviewButton, { backgroundColor: colors.tint }]}
+            style={[styles.writeReviewButton, { backgroundColor: colors.buttonPrimary }]}
             onPress={handleWriteReview}
           >
-            <Text style={styles.writeReviewText}>Write a review</Text>
+            <Text style={[styles.writeReviewText, { color: colors.buttonText }]}>Write a review</Text>
           </TouchableOpacity>
         </View>
         
@@ -739,10 +739,10 @@ export default function BusinessDetailsScreen() {
             Be the first to share your experience with this business!
           </Text>
           <TouchableOpacity 
-            style={[styles.writeFirstReviewButton, { backgroundColor: colors.tint }]}
+            style={[styles.writeFirstReviewButton, { backgroundColor: colors.buttonPrimary }]}
             onPress={handleWriteReview}
           >
-            <Text style={styles.writeFirstReviewText}>Write the First Review</Text>
+            <Text style={[styles.writeFirstReviewText, { color: colors.buttonText }]}>Write the First Review</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -771,10 +771,10 @@ export default function BusinessDetailsScreen() {
             {error || 'Unable to load business information'}
           </Text>
           <TouchableOpacity 
-            style={[styles.retryButton, { backgroundColor: colors.tint }]}
+            style={[styles.retryButton, { backgroundColor: colors.buttonPrimary }]}
             onPress={loadBusinessData}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={[styles.retryButtonText, { color: colors.buttonText }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -863,7 +863,7 @@ export default function BusinessDetailsScreen() {
         )}
         
         <TouchableOpacity style={styles.actionButton} onPress={handleWriteReview}>
-          <View style={[styles.actionIcon, { backgroundColor: colors.tint }]}>
+          <View style={[styles.actionIcon, { backgroundColor: colors.buttonPrimary }]}>
             <Ionicons name="star" size={20} color="white" />
           </View>
           <Text style={[styles.actionLabel, { color: colors.text }]}>Review</Text>
@@ -939,7 +939,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1130,7 +1129,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   writeReviewText: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1582,7 +1580,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   writeFirstReviewText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',

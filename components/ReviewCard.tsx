@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Review, voteReview, removeVote, getAuthToken } from '@/services/api';
 import { useRouter } from 'expo-router';
 
@@ -19,8 +19,8 @@ interface ReviewCardProps {
 }
 
 export default function ReviewCard({ review, onVoteUpdate, flat = false }: ReviewCardProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const router = useRouter();
   const [isVoting, setIsVoting] = useState(false);
   const [localReview, setLocalReview] = useState(review);
@@ -144,7 +144,7 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
     ]}>
       <View style={styles.reviewHeader}>
         <View style={styles.reviewUser}>
-          <View style={[styles.userAvatar, { backgroundColor: colors.tint }]}>
+          <View style={[styles.userAvatar, { backgroundColor: colors.buttonPrimary }]}>
             <Text style={styles.userInitial}>
               {localReview.user.name.charAt(0).toUpperCase()}
             </Text>
@@ -196,7 +196,7 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
               size={16} 
               color={
                 localReview.user_vote_status?.has_voted && localReview.user_vote_status.user_vote === true 
-                  ? colors.tint 
+                  ? colors.buttonPrimary 
                   : colors.icon
               } 
             />
@@ -204,7 +204,7 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
               styles.voteText, 
               { 
                 color: localReview.user_vote_status?.has_voted && localReview.user_vote_status.user_vote === true 
-                  ? colors.tint 
+                  ? colors.buttonPrimary 
                   : colors.icon 
               }
             ]}>

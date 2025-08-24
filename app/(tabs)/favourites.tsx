@@ -283,7 +283,7 @@ export default function FavouritesScreen() {
               </View>
               
               {priceRange && (
-                <Text style={[styles.priceText, { color: colors.tint }]}>{priceRange}</Text>
+                <Text style={[styles.priceText, { color: colors.buttonPrimary }]}>{priceRange}</Text>
               )}
             </View>
 
@@ -298,8 +298,8 @@ export default function FavouritesScreen() {
           </View>
 
           <View style={styles.favoriteActions}>
-            <View style={[styles.typeBadge, { backgroundColor: colors.tint + '20' }]}>
-              <Text style={[styles.typeBadgeText, { color: colors.tint }]}>
+            <View style={[styles.typeBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
+              <Text style={[styles.typeBadgeText, { color: colors.buttonPrimary }]}>
                 {isBusinessFavorite ? 'Business' : 'Item'}
               </Text>
             </View>
@@ -314,8 +314,8 @@ export default function FavouritesScreen() {
       style={[
         styles.filterButton,
         {
-          backgroundColor: selectedFilter === item ? colors.tint : colors.background,
-          borderColor: selectedFilter === item ? colors.tint : colors.icon + '30',
+          backgroundColor: selectedFilter === item ? colors.buttonPrimary : colors.background,
+          borderColor: selectedFilter === item ? colors.buttonPrimary : colors.icon + '30',
         },
       ]}
       onPress={() => setSelectedFilter(item)}
@@ -323,7 +323,7 @@ export default function FavouritesScreen() {
       <Text
         style={[
           styles.filterText,
-          { color: selectedFilter === item ? 'white' : colors.text },
+          { color: selectedFilter === item ? colors.buttonText : colors.text },
         ]}
       >
         {item}
@@ -391,23 +391,23 @@ export default function FavouritesScreen() {
       {/* Favourites List */}
       {!isUserAuthenticated ? (
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIconContainer, { backgroundColor: colors.tint + '20' }]}>
-            <Ionicons name="log-in-outline" size={48} color={colors.tint} />
+          <View style={[styles.emptyIconContainer, { backgroundColor: colors.buttonPrimary + '20' }]}>
+            <Ionicons name="log-in-outline" size={48} color={colors.buttonPrimary} />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Login Required</Text>
           <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
             Please login to view and manage your favorites
           </Text>
           <TouchableOpacity 
-            style={[styles.exploreButton, { backgroundColor: colors.tint }]}
+            style={[styles.exploreButton, { backgroundColor: colors.buttonPrimary }]}
             onPress={() => router.push('/auth/login' as any)}
           >
-            <Text style={styles.exploreButtonText}>Login Now</Text>
+            <Text style={[styles.exploreButtonText, { color: colors.buttonText }]}>Login Now</Text>
           </TouchableOpacity>
         </View>
       ) : loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
+          <ActivityIndicator size="large" color={colors.buttonPrimary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading favorites...</Text>
         </View>
       ) : filteredFavorites.length > 0 ? (
@@ -425,7 +425,7 @@ export default function FavouritesScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.loadingMore}>
-                <ActivityIndicator size="small" color={colors.tint} />
+                <ActivityIndicator size="small" color={colors.buttonPrimary} />
               </View>
             ) : null
           }
@@ -450,10 +450,10 @@ export default function FavouritesScreen() {
           </Text>
           {!searchQuery && selectedFilter === 'All' && (
             <TouchableOpacity 
-              style={[styles.exploreButton, { backgroundColor: colors.tint }]}
+              style={[styles.exploreButton, { backgroundColor: colors.buttonPrimary }]}
               onPress={() => router.push('/(tabs)/index' as any)}
             >
-              <Text style={styles.exploreButtonText}>Explore Now</Text>
+              <Text style={[styles.exploreButtonText, { color: colors.buttonText }]}>Explore Now</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -697,7 +697,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   exploreButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

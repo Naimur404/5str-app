@@ -18,6 +18,8 @@ export const Colors = {
     border: '#e5e5e5',
     headerGradientStart: '#6366f1',
     headerGradientEnd: '#8b5cf6',
+    buttonPrimary: '#6366f1',
+    buttonText: '#fff',
   },
   dark: {
     text: '#ECEDEE',
@@ -30,5 +32,7 @@ export const Colors = {
     border: '#374151',
     headerGradientStart: '#1f2937',
     headerGradientEnd: '#374151',
+    buttonPrimary: '#6366f1',
+    buttonText: '#fff',
   },
 };
