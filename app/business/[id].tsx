@@ -140,11 +140,11 @@ export default function BusinessDetailsScreen() {
     
     if (!isUserAuthenticated) {
       Alert.alert(
-        'Login Required',
-        'Please login first to add businesses to your favorites',
+        'Sign Up to Save Favorites',
+        'Create an account to save your favorite businesses and get personalized recommendations',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+          { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
       );
       return;
@@ -231,11 +231,11 @@ export default function BusinessDetailsScreen() {
   const toggleOfferingFavorite = async (offeringId: number) => {
     if (!isUserAuthenticated) {
       Alert.alert(
-        'Login Required',
-        'Please login first to add items to your favorites',
+        'Sign Up to Save Favorites',
+        'Create an account to save your favorite items and get personalized recommendations',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+          { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
       );
       return;
@@ -337,11 +337,11 @@ export default function BusinessDetailsScreen() {
   const handleWriteReview = async () => {
     if (!isUserAuthenticated) {
       Alert.alert(
-        'Login Required',
-        'Please login first to write a review',
+        'Sign Up to Write Reviews',
+        'Create an account to share your experience and help others discover great places',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+          { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
       );
       return;

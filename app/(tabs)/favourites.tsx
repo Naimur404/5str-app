@@ -246,63 +246,67 @@ export default function FavouritesScreen() {
       <TouchableOpacity 
         style={[styles.favoriteCard, { backgroundColor: colors.background }]}
         onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
       >
-        <Image 
-          source={{ 
-            uri: image || 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop' 
-          }} 
-          style={styles.favoriteImage} 
-        />
-        <View style={styles.favoriteContent}>
-          <View style={styles.favoriteHeader}>
-            <View style={styles.favoriteInfo}>
+        <View style={styles.favoriteRow}>
+          <View style={styles.favoriteImageContainer}>
+            <Image 
+              source={{ 
+                uri: image || 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop' 
+              }} 
+              style={styles.favoriteImage} 
+            />
+            <TouchableOpacity
+              style={styles.heartButton}
+              onPress={() => removeFavorite(item.id, name || '')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="heart" size={18} color="#FF6B6B" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.favoriteContent}>
+            <View style={styles.favoriteMainInfo}>
               <Text style={[styles.favoriteName, { color: colors.text }]} numberOfLines={1}>
                 {name}
               </Text>
-              <Text style={[styles.favoriteCategory, { color: colors.icon }]}>
+              <Text style={[styles.favoriteCategory, { color: colors.icon }]} numberOfLines={1}>
                 {category}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => removeFavorite(item.id, name || '')}
-            >
-              <Ionicons name="heart" size={24} color="#FF6B6B" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.favoriteDetails}>
-            <View style={styles.detailRow}>
-              <Ionicons name="star" size={16} color="#FFD700" />
-              <Text style={[styles.rating, { color: colors.text }]}>
-                {parseFloat(rating || '0').toFixed(1)}
-              </Text>
-              <Text style={[styles.reviewCount, { color: colors.icon }]}>
-                ({reviewCount} reviews)
-              </Text>
+            
+            <View style={styles.favoriteMetrics}>
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={12} color="#FFD700" />
+                <Text style={[styles.ratingText, { color: colors.text }]}>
+                  {parseFloat(rating || '0').toFixed(1)}
+                </Text>
+                <Text style={[styles.reviewCountText, { color: colors.icon }]}>
+                  ({reviewCount})
+                </Text>
+              </View>
+              
+              {priceRange && (
+                <Text style={[styles.priceText, { color: colors.tint }]}>{priceRange}</Text>
+              )}
             </View>
-            {priceRange && (
-              <View style={styles.detailRow}>
-                <Text style={[styles.priceRange, { color: colors.icon }]}>{priceRange}</Text>
+
+            {isBusinessFavorite && item.business?.landmark && (
+              <View style={styles.locationContainer}>
+                <Ionicons name="location-outline" size={12} color={colors.icon} />
+                <Text style={[styles.locationText, { color: colors.icon }]} numberOfLines={1}>
+                  {item.business.landmark}
+                </Text>
               </View>
             )}
           </View>
 
-          {isBusinessFavorite && item.business?.landmark && (
-            <Text style={[styles.address, { color: colors.icon }]} numberOfLines={1}>
-              {item.business.landmark}
-            </Text>
-          )}
-
-          <View style={styles.favoriteFooter}>
-            <View style={[styles.typeTag, { backgroundColor: colors.tint + '20' }]}>
-              <Text style={[styles.typeTagText, { color: colors.tint }]}>
+          <View style={styles.favoriteActions}>
+            <View style={[styles.typeBadge, { backgroundColor: colors.tint + '20' }]}>
+              <Text style={[styles.typeBadgeText, { color: colors.tint }]}>
                 {isBusinessFavorite ? 'Business' : 'Item'}
               </Text>
             </View>
-            <Text style={[styles.favoritedDate, { color: colors.icon }]}>
-              Added {new Date(item.favorited_at).toLocaleDateString()}
-            </Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -336,35 +340,44 @@ export default function FavouritesScreen() {
       <StatusBar style="light" />
       {/* Header */}
       <LinearGradient
-        colors={['#6366f1', '#8b5cf6']}
+        colors={['#6366f1', '#8b5cf6', '#d946ef']}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>My Favourites</Text>
-        <Text style={styles.headerSubtitle}>
-          {isUserAuthenticated 
-            ? `${favorites.length} saved business${favorites.length !== 1 ? 'es' : ''}`
-            : 'Login to view your favorites'
-          }
-        </Text>
-        
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color={colors.icon} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search your favourites..."
-              placeholderTextColor={colors.icon}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color={colors.icon} />
-              </TouchableOpacity>
-            ) : null}
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleContainer}>
+            <Ionicons name="heart" size={32} color="white" style={styles.headerIcon} />
+            <View>
+              <Text style={styles.headerTitle}>My Favourites</Text>
+              <Text style={styles.headerSubtitle}>
+                {isUserAuthenticated 
+                  ? `${favorites.length} saved item${favorites.length !== 1 ? 's' : ''}`
+                  : 'Login to view your favorites'
+                }
+              </Text>
+            </View>
           </View>
         </View>
+        
+        {/* Search Bar */}
+        {isUserAuthenticated && (
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={20} color={colors.icon} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.text }]}
+                placeholder="Search your favourites..."
+                placeholderTextColor={colors.icon}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery ? (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color={colors.icon} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        )}
       </LinearGradient>
 
       {/* Filter Options */}
@@ -382,7 +395,9 @@ export default function FavouritesScreen() {
       {/* Favourites List */}
       {!isUserAuthenticated ? (
         <View style={styles.emptyState}>
-          <Ionicons name="log-in-outline" size={64} color={colors.icon} />
+          <View style={[styles.emptyIconContainer, { backgroundColor: colors.tint + '20' }]}>
+            <Ionicons name="log-in-outline" size={48} color={colors.tint} />
+          </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>Login Required</Text>
           <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
             Please login to view and manage your favorites
@@ -421,11 +436,13 @@ export default function FavouritesScreen() {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons 
-            name={searchQuery || selectedFilter !== 'All' ? "search-outline" : "heart-outline"} 
-            size={64} 
-            color={colors.icon} 
-          />
+          <View style={[styles.emptyIconContainer, { backgroundColor: colors.icon + '20' }]}>
+            <Ionicons 
+              name={searchQuery || selectedFilter !== 'All' ? "search-outline" : "heart-outline"} 
+              size={48} 
+              color={colors.icon} 
+            />
+          </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
             {searchQuery || selectedFilter !== 'All' ? 'No Results Found' : 'No Favourites Yet'}
           </Text>
@@ -438,7 +455,7 @@ export default function FavouritesScreen() {
           {!searchQuery && selectedFilter === 'All' && (
             <TouchableOpacity 
               style={[styles.exploreButton, { backgroundColor: colors.tint }]}
-              onPress={() => router.push('/discover' as any)}
+              onPress={() => router.push('/(tabs)/index' as any)}
             >
               <Text style={styles.exploreButtonText}>Explore Now</Text>
             </TouchableOpacity>
@@ -454,61 +471,71 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    marginBottom: 16,
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerIcon: {
+    opacity: 0.9,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: 'white',
     opacity: 0.9,
-    marginBottom: 20,
   },
   searchContainer: {
-    marginBottom: 10,
+    marginBottom: 8,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    gap: 12,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     paddingVertical: 0,
   },
   filtersContainer: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   filters: {
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: 20,
+    gap: 10,
   },
   filterButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
     borderWidth: 1,
   },
   filterText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   loadingContainer: {
@@ -526,92 +553,124 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   favoritesList: {
-    padding: 24,
-    gap: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   favoriteCard: {
+    backgroundColor: 'white',
     borderRadius: 16,
     overflow: 'hidden',
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  favoriteRow: {
+    flexDirection: 'row',
+    padding: 12,
+  },
+  favoriteImageContainer: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginRight: 12,
   },
   favoriteImage: {
     width: '100%',
-    height: 160,
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  heartButton: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   favoriteContent: {
-    padding: 16,
-  },
-  favoriteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  favoriteInfo: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  favoriteMainInfo: {
+    marginBottom: 6,
   },
   favoriteName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+    lineHeight: 20,
   },
   favoriteCategory: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '400',
+    opacity: 0.7,
   },
-  removeButton: {
-    padding: 4,
+  favoriteMetrics: {
+    marginBottom: 6,
   },
-  favoriteDetails: {
+  ratingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  detailRow: {
+  ratingText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginLeft: 4,
+    marginRight: 4,
+  },
+  reviewCountText: {
+    fontSize: 11,
+    opacity: 0.6,
+  },
+  priceText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  rating: {
-    fontSize: 14,
+  locationText: {
+    fontSize: 12,
+    flex: 1,
+    opacity: 0.6,
+  },
+  favoriteActions: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  typeBadgeText: {
+    fontSize: 10,
     fontWeight: '600',
-  },
-  reviewCount: {
-    fontSize: 12,
-  },
-  priceRange: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  address: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  favoriteFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  typeTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  typeTagText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  favoritedDate: {
-    fontSize: 12,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 20,
@@ -624,6 +683,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 24,
+    opacity: 0.8,
+    lineHeight: 22,
   },
   exploreButton: {
     paddingHorizontal: 32,

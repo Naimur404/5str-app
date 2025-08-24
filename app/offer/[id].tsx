@@ -113,48 +113,59 @@ export default function OfferDetailsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="light" />
       
-      {/* Header */}
-      <LinearGradient
-        colors={['#6366f1', '#8b5cf6']}
-        style={styles.header}
-      >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+      {/* Hero Section with Background */}
+      <View style={styles.heroSection}>
+        {offer.banner_image ? (
+          <Image source={{ uri: offer.banner_image }} style={styles.heroImage} />
+        ) : (
+          <LinearGradient
+            colors={['#6366f1', '#8b5cf6', '#d946ef']}
+            style={styles.heroImage}
+          />
+        )}
+        
+        <LinearGradient
+          colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.7)']}
+          style={styles.heroOverlay}
         >
-          <Ionicons name="arrow-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Offer Details</Text>
-      </LinearGradient>
+          <View style={styles.heroHeader}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="chevron-back" size={24} color="white" />
+            </TouchableOpacity>
+            
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>{getDiscountText()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.heroContent}>
+            <Text style={styles.offerTitle}>{offer.title}</Text>
+            <Text style={styles.offerSubtitle}>{offer.description}</Text>
+            
+            <View style={styles.heroMeta}>
+              <View style={styles.validityInfo}>
+                <Ionicons name="time-outline" size={16} color="white" />
+                <Text style={styles.validityText}>
+                  {Math.ceil(offer.remaining_days)} days left
+                </Text>
+              </View>
+              <View style={styles.usageInfo}>
+                <Ionicons name="people-outline" size={16} color="white" />
+                <Text style={styles.usageText}>
+                  {offer.current_usage} used
+                </Text>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Offer Banner */}
-        <View style={styles.bannerContainer}>
-          {offer.banner_image ? (
-            <Image source={{ uri: offer.banner_image }} style={styles.bannerImage} />
-          ) : (
-            <LinearGradient
-              colors={['#6366f1', '#8b5cf6']}
-              style={styles.defaultBanner}
-            >
-              <Ionicons name="pricetag" size={48} color="white" />
-            </LinearGradient>
-          )}
-          
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>{getDiscountText()}</Text>
-          </View>
-        </View>
-
-        {/* Offer Content */}
+        {/* Business Info */}
         <View style={styles.content}>
-          {/* Title and Description */}
-          <View style={styles.section}>
-            <Text style={[styles.offerTitle, { color: colors.text }]}>{offer.title}</Text>
-            <Text style={[styles.offerDescription, { color: colors.icon }]}>{offer.description}</Text>
-          </View>
-
-          {/* Business Info */}
           <TouchableOpacity 
             style={[styles.businessCard, { backgroundColor: colors.background, borderColor: colors.icon + '30' }]}
             onPress={handleBusinessPress}
@@ -286,57 +297,109 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  header: {
+  // Hero Section Styles
+  heroSection: {
+    height: 280,
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'space-between',
+    padding: 20,
+    paddingTop: 50,
+  },
+  heroHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  bannerContainer: {
-    position: 'relative',
-    height: 200,
-  },
-  bannerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  defaultBanner: {
-    width: '100%',
-    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   discountBadge: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
     backgroundColor: '#EF4444',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
   },
   discountText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  heroContent: {
+    justifyContent: 'flex-end',
+  },
+  offerTitle: {
+    color: 'white',
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  offerSubtitle: {
+    color: 'white',
+    fontSize: 16,
+    opacity: 0.9,
+    lineHeight: 22,
+    marginBottom: 12,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  validityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  validityText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  usageInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  usageText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: 20,
@@ -349,15 +412,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  offerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  offerDescription: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
   businessCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -365,6 +419,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   businessLogo: {
     width: 48,
@@ -428,6 +487,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   actionButtonText: {
     color: 'white',

@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Dimensions,
@@ -32,7 +32,64 @@ export default function HomeScreen() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState('Chittagong');
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  // Sample banner data for display when no API data is available
+  const sampleBanners: Banner[] = [
+    {
+      id: 1,
+      title: "Best Restaurants in Dhaka",
+      subtitle: "Discover amazing dining experiences near you",
+      image_url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+      link_type: "category",
+      link_id: 1,
+      link_url: "",
+      position: "hero",
+      target_location: null,
+      is_active: true,
+      sort_order: 1,
+      start_date: "",
+      end_date: "",
+      click_count: 0,
+      view_count: 0
+    },
+    {
+      id: 2,
+      title: "Shopping Destinations",
+      subtitle: "Find the best shops and markets in your area",
+      image_url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+      link_type: "category",
+      link_id: 2,
+      link_url: "",
+      position: "hero",
+      target_location: null,
+      is_active: true,
+      sort_order: 2,
+      start_date: "",
+      end_date: "",
+      click_count: 0,
+      view_count: 0
+    },
+    {
+      id: 3,
+      title: "Health & Wellness",
+      subtitle: "Your health is our priority - book services now",
+      image_url: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2331&q=80",
+      link_type: "category",
+      link_id: 3,
+      link_url: "",
+      position: "hero",
+      target_location: null,
+      is_active: true,
+      sort_order: 3,
+      start_date: "",
+      end_date: "",
+      click_count: 0,
+      view_count: 0
+    }
+  ];
   
+  const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -46,6 +103,31 @@ export default function HomeScreen() {
       fetchHomeData();
     }
   }, [location]);
+
+  // Auto-scroll banners every 4 seconds
+  useEffect(() => {
+    if (sampleBanners.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentBannerIndex(prevIndex => {
+        const nextIndex = prevIndex === sampleBanners.length - 1 ? 0 : prevIndex + 1;
+        // Use a timeout to ensure the ref is ready
+        setTimeout(() => {
+          try {
+            bannerRef.current?.scrollToOffset({ 
+              offset: nextIndex * (width - 48), 
+              animated: true 
+            });
+          } catch (error) {
+            console.warn('Auto-scroll failed');
+          }
+        }, 50);
+        return nextIndex;
+      });
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [sampleBanners]);
 
   const requestLocationPermission = async () => {
     try {
@@ -121,19 +203,6 @@ export default function HomeScreen() {
     if (!searchQuery.trim()) return;
     router.push(`/search?q=${encodeURIComponent(searchQuery)}` as any);
   };
-
-  const renderBanner = ({ item }: { item: Banner }) => (
-    <TouchableOpacity style={styles.bannerItem}>
-      <Image source={{ uri: item.image_url }} style={styles.bannerImage} />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
-        style={styles.bannerOverlay}
-      >
-        <Text style={styles.bannerTitle}>{item.title}</Text>
-        <Text style={styles.bannerSubtitle}>{item.subtitle}</Text>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
 
   const renderServiceItem = ({ item }: { item: TopService }) => (
     <TouchableOpacity 
@@ -279,21 +348,53 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Banners */}
-        {homeData?.banners && homeData.banners.filter(b => b.position === 'hero').length > 0 && (
-          <View style={styles.section}>
-            <FlatList
-              data={homeData.banners.filter(b => b.position === 'hero')}
-              renderItem={renderBanner}
-              keyExtractor={(item) => item.id.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.bannerContainer}
-              snapToInterval={BANNER_WIDTH + 16}
-              decelerationRate="fast"
-            />
+        {/* Hero Banners - New Clean Implementation */}
+        <View style={styles.heroSection}>
+          <FlatList
+            ref={bannerRef}
+            data={sampleBanners}
+            renderItem={({ item, index }) => (
+              <View style={styles.heroSlide}>
+                <Image 
+                  source={{ uri: item.image_url }} 
+                  style={styles.heroImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.6)']}
+                  style={styles.heroOverlay}
+                >
+                  <Text style={styles.heroTitle}>{item.title}</Text>
+                  <Text style={styles.heroSubtitle}>{item.subtitle}</Text>
+                </LinearGradient>
+              </View>
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(event) => {
+              const slideIndex = Math.round(event.nativeEvent.contentOffset.x / (width - 48));
+              setCurrentBannerIndex(slideIndex);
+            }}
+          />
+          
+          {/* Dots Indicator */}
+          <View style={styles.dotsContainer}>
+            {sampleBanners.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  {
+                    backgroundColor: index === currentBannerIndex 
+                      ? '#6366f1' 
+                      : 'rgba(255,255,255,0.5)'
+                  }
+                ]}
+              />
+            ))}
           </View>
-        )}
+        </View>
 
         {/* Top Services */}
         {homeData?.top_services && (
@@ -452,55 +553,80 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   section: {
-    marginVertical: 20,
+    marginVertical: 16,
+    paddingHorizontal: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
   },
   viewAll: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
-  bannerContainer: {
-    paddingHorizontal: 20,
+  // New Hero Carousel Styles
+  heroSection: {
+    marginTop: 16,
+    marginBottom: 20,
+    marginHorizontal: 24,
   },
-  bannerItem: {
-    width: BANNER_WIDTH,
-    height: 200,
+  heroSlide: {
+    width: width - 48,
+    height: 160,
     borderRadius: 16,
     overflow: 'hidden',
-    marginHorizontal: 4,
+    marginRight: 0,
+    backgroundColor: '#f0f0f0',
   },
-  bannerImage: {
+  heroImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
-  bannerOverlay: {
+  heroOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  bannerTitle: {
+  heroTitle: {
     color: 'white',
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  bannerSubtitle: {
+  heroSubtitle: {
     color: 'white',
-    fontSize: 15,
-    opacity: 0.95,
-    lineHeight: 20,
+    fontSize: 14,
+    opacity: 0.9,
+    lineHeight: 18,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 6,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   servicesContainer: {
     paddingHorizontal: 24,
@@ -511,61 +637,64 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingHorizontal: 24,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   serviceItem: {
     alignItems: 'center',
     width: SERVICE_ITEM_WIDTH,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   serviceIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   serviceName: {
-    fontSize: 13,
+    fontSize: 12,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 14,
     fontWeight: '500',
-    marginTop: 4,
+    marginTop: 2,
   },
   businessContainer: {
     paddingHorizontal: 24,
-    gap: 16,
+    gap: 12,
   },
   businessCard: {
-    width: 200,
+    width: 160,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
     elevation: 3,
   },
   businessImage: {
     width: '100%',
-    height: 120,
+    height: 90,
   },
   businessInfo: {
-    padding: 12,
+    padding: 10,
   },
   businessName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 3,
+    lineHeight: 16,
   },
   businessCategory: {
-    fontSize: 12,
+    fontSize: 11,
     marginBottom: 2,
+    opacity: 0.7,
   },
   businessLandmark: {
-    fontSize: 12,
-    marginBottom: 8,
+    fontSize: 11,
+    marginBottom: 6,
+    opacity: 0.7,
   },
   businessMeta: {
     flexDirection: 'row',
@@ -575,60 +704,63 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   rating: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
   },
   priceRange: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontWeight: '600',
   },
   offerCard: {
-    width: 280,
-    borderRadius: 16,
+    width: 220,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
     marginBottom: 4,
   },
   offerImage: {
     width: '100%',
-    height: 140,
+    height: 100,
   },
   offerInfo: {
-    padding: 16,
+    padding: 12,
   },
   offerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    lineHeight: 18,
   },
   offerDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 6,
+    opacity: 0.8,
   },
   offerBusiness: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
+    opacity: 0.7,
   },
   discountBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 8,
+    right: 8,
     backgroundColor: '#ef4444',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
   discountText: {
     color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });

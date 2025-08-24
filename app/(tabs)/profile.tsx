@@ -6,7 +6,9 @@ import {
     getUserReviews,
     logout,
     Review,
-    User
+    User,
+    updateProfile,
+    UpdateProfilePayload
 } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +27,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EditProfileModal from '@/components/EditProfileModal';
 
 // Guest user data
 const guestUser = {
@@ -73,6 +76,7 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -94,7 +98,12 @@ export default function ProfileScreen() {
         ]);
         
         if (userResponse.success) {
-          setUser(userResponse.data.user);
+          const userData = userResponse.data.user;
+          // Ensure user_level exists
+          if (!userData.user_level) {
+            userData.user_level = guestUser.user_level;
+          }
+          setUser(userData);
         }
         
         if (reviewsResponse.success) {
@@ -146,7 +155,11 @@ export default function ProfileScreen() {
     router.push('/auth/login' as any);
   };
 
-  const currentUser = user || guestUser;
+  // Ensure user_level exists, fallback to guestUser.user_level if not
+  const currentUser = user ? {
+    ...user,
+    user_level: user.user_level || guestUser.user_level
+  } : guestUser;
 
   const settingsData: SettingItem[] = [
     ...(isAuthenticated ? [
@@ -156,7 +169,7 @@ export default function ProfileScreen() {
         subtitle: 'Update your personal information',
         icon: 'person-outline',
         type: 'navigation' as const,
-        onPress: () => console.log('Edit Profile'),
+        onPress: () => setShowEditModal(true),
       },
       {
         id: 'reviews',
@@ -296,13 +309,24 @@ export default function ProfileScreen() {
             colors={['#6366f1', '#8b5cf6']}
             style={styles.header}
           >
-            <Text style={styles.headerTitle}>Profile</Text>
+            <View style={styles.headerTop}>
+              <Text style={styles.headerTitle}>Profile</Text>
+              {isAuthenticated && (
+                <TouchableOpacity 
+                  style={styles.editButton} 
+                  onPress={() => setShowEditModal(true)}
+                >
+                  <Ionicons name="create-outline" size={24} color="white" />
+                </TouchableOpacity>
+              )}
+            </View>
             <View style={styles.profileSection}>
               <Image 
                 source={{ 
                   uri: currentUser.profile_image || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face'
                 }} 
-                style={styles.avatar} 
+                style={styles.avatar}
+                defaultSource={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face' }}
               />
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{currentUser.name}</Text>
@@ -310,7 +334,7 @@ export default function ProfileScreen() {
                   <Text style={styles.userEmail}>{currentUser.email}</Text>
                 )}
                 <View style={styles.userStats}>
-                  <Text style={styles.userLevel}>{currentUser.user_level.level_name}</Text>
+                  <Text style={styles.userLevel}>{currentUser.user_level?.level_name || 'Guest'}</Text>
                   {isAuthenticated && (
                     <Text style={styles.userJoinDate}>
                       {currentUser.total_points} points
@@ -324,6 +348,7 @@ export default function ProfileScreen() {
           {/* Scrollable Content */}
           <ScrollView 
             style={styles.scrollView} 
+            contentContainerStyle={styles.scrollViewContent}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -355,7 +380,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* User Level Progress (Only for authenticated users) */}
-          {isAuthenticated && user && (
+          {isAuthenticated && user && user.user_level && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Level Progress</Text>
               <View style={[styles.levelCard, { backgroundColor: colors.background }]}>
@@ -389,7 +414,7 @@ export default function ProfileScreen() {
 
           {/* Recent Reviews (Only for authenticated users with reviews) */}
           {isAuthenticated && reviews.length > 0 && (
-            <View style={styles.section}>
+            <View style={[styles.section, styles.reviewsSection]}>
               <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Reviews</Text>
                 <TouchableOpacity onPress={() => router.push('/reviews' as any)}>
@@ -448,6 +473,20 @@ export default function ProfileScreen() {
         </ScrollView>
         </>
       )}
+
+      {/* Edit Profile Modal */}
+      {isAuthenticated && user && (
+        <EditProfileModal
+          visible={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          user={user}
+          onUpdate={(updatedUser) => {
+            setUser(updatedUser);
+            // Reload the complete profile data to ensure everything is in sync
+            loadUserData();
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -470,10 +509,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  scrollViewContent: {
+    paddingBottom: 100, // Add bottom padding to ensure content is not hidden behind tab bar
+  },
   header: {
     paddingTop: 60,
     paddingBottom: 32,
     paddingHorizontal: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  editButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerTitle: {
     fontSize: 28,
@@ -557,6 +610,10 @@ const styles = StyleSheet.create({
   section: {
     marginVertical: 12,
   },
+  reviewsSection: {
+    marginVertical: 12,
+    marginBottom: 32, // More space at the bottom for better visibility
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -614,6 +671,7 @@ const styles = StyleSheet.create({
   reviewsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
+    paddingBottom: 16,
     gap: 16,
   },
   reviewCard: {

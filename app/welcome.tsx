@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AppState } from '@/utils/appState';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -105,6 +106,9 @@ export default function WelcomeScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
+          <Text style={[styles.footerText, { color: colors.icon }]}>
+            Sign up to save favorites, write reviews, and get personalized recommendations
+          </Text>
           <Text style={[styles.footerText, { color: colors.icon }]}>
             By continuing, you agree to our{' '}
             <Text style={[styles.footerLink, { color: colors.tint }]}>Terms</Text>

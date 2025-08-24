@@ -95,6 +95,7 @@ export interface SubmitReviewResponse {
 
 export interface UserResponse {
   success: boolean;
+  message?: string;
   data: {
     user: User;
   };
@@ -578,6 +579,23 @@ export const register = async (userData: any): Promise<any> => {
 
 export const getUserProfile = async (): Promise<UserResponse> => {
   return makeApiCall(API_CONFIG.ENDPOINTS.USER_PROFILE, {}, true);
+};
+
+// Update Profile interface
+export interface UpdateProfilePayload {
+  name: string;
+  phone: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  profile_image: string;
+}
+
+export const updateProfile = async (payload: UpdateProfilePayload): Promise<UserResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.UPDATE_PROFILE, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  }, true);
 };
 
 export const getUserReviews = async (page: number = 1): Promise<ReviewsResponse> => {

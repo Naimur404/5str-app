@@ -71,11 +71,11 @@ export default function OfferingDetailsScreen() {
     
     if (!authenticated) {
       Alert.alert(
-        'Login Required',
-        'Please login first to write a review',
+        'Sign Up to Write Reviews',
+        'Create an account to share your experience and help others discover great offerings',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+          { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
       );
       return;

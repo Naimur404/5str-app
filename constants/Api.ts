@@ -3,10 +3,11 @@ export const API_CONFIG = {
   ENDPOINTS: {
     LOGIN: '/api/v1/login',
     REGISTER: '/api/v1/register',
-    LOGOUT: '/api/v1/logout',
+    LOGOUT: '/api/v1/auth/logout',
     HOME: '/api/v1/home',
     SEARCH: '/api/v1/search',
     USER_PROFILE: '/api/v1/auth/user',
+    UPDATE_PROFILE: '/api/v1/auth/profile',
     USER_REVIEWS: '/api/v1/user/reviews',
     USER_FAVORITES: '/api/v1/user/favorites',
     SUBMIT_REVIEW: '/api/v1/reviews',
