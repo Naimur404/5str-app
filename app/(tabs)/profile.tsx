@@ -11,13 +11,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     Image,
     RefreshControl,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Switch,
@@ -282,26 +282,16 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style="light" />
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading profile...</Text>
         </View>
       ) : (
-        <ScrollView 
-          style={styles.scrollView} 
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.tint]}
-              tintColor={colors.tint}
-            />
-          }
-        >
-          {/* Header */}
+        <>
+          {/* Fixed Header */}
           <LinearGradient
             colors={['#6366f1', '#8b5cf6']}
             style={styles.header}
@@ -330,6 +320,20 @@ export default function ProfileScreen() {
               </View>
             </View>
           </LinearGradient>
+
+          {/* Scrollable Content */}
+          <ScrollView 
+            style={styles.scrollView} 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.tint]}
+                tintColor={colors.tint}
+              />
+            }
+          >
 
           {/* Stats Cards */}
           <View style={styles.statsContainer}>
@@ -442,8 +446,9 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </ScrollView>
+        </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -463,9 +468,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 32,
     paddingHorizontal: 24,
   },

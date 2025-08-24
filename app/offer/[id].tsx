@@ -12,7 +12,6 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -85,17 +84,17 @@ export default function OfferDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
         <StatusBar style="light" />
         <ActivityIndicator size="large" color={colors.tint} />
         <Text style={[styles.loadingText, { color: colors.text }]}>Loading offer details...</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error || !offer) {
     return (
-      <SafeAreaView style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
         <StatusBar style="light" />
         <Ionicons name="alert-circle-outline" size={64} color={colors.icon} />
         <Text style={[styles.errorTitle, { color: colors.text }]}>Unable to Load Offer</Text>
@@ -106,16 +105,19 @@ export default function OfferDetailsScreen() {
         >
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="light" />
       
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: '#FF6B6B' }]}>
+      <LinearGradient
+        colors={['#6366f1', '#8b5cf6']}
+        style={styles.header}
+      >
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
@@ -123,7 +125,7 @@ export default function OfferDetailsScreen() {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Offer Details</Text>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Offer Banner */}
@@ -271,7 +273,7 @@ export default function OfferDetailsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -287,7 +289,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },

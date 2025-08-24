@@ -12,7 +12,6 @@ import {
     Alert,
     FlatList,
     Image,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -132,7 +131,7 @@ export default function SearchScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header with Gradient */}
       <LinearGradient
         colors={['#6366f1', '#8b5cf6']}
@@ -236,7 +235,7 @@ export default function SearchScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -245,7 +244,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 16,
   },
   headerContent: {

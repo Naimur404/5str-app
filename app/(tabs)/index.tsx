@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
@@ -13,7 +14,6 @@ import {
     FlatList,
     Image,
     RefreshControl,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -224,16 +224,54 @@ export default function HomeScreen() {
 
   if (loading && !homeData) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style="light" />
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style="light" />
+      
+      {/* Fixed Header */}
+      <LinearGradient
+        colors={['#6366f1', '#8b5cf6', '#a855f7']}
+        style={styles.header}
+      >
+        <View style={styles.headerTop}>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.greeting}>Hello, Naimur</Text>
+            <TouchableOpacity style={styles.locationContainer}>
+              <Ionicons name="location-outline" size={16} color="white" />
+              <Text style={styles.location}>{userLocation}</Text>
+              <Ionicons name="airplane-outline" size={16} color="white" />
+              <Text style={styles.changeLocation}>Change</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons name="notifications-outline" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar */}
+        <TouchableOpacity 
+          style={styles.searchContainer}
+          onPress={() => router.push('/search' as any)}
+        >
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color={colors.icon} />
+            <Text style={[styles.searchPlaceholder, { color: colors.icon }]}>
+              Search for nearby restaurants...
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </LinearGradient>
+
+      {/* Scrollable Content */}
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -241,40 +279,6 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <LinearGradient
-          colors={['#6366f1', '#8b5cf6', '#a855f7']}
-          style={styles.header}
-        >
-          <View style={styles.headerTop}>
-            <View style={styles.welcomeSection}>
-              <Text style={styles.greeting}>Hello, Naimur</Text>
-              <TouchableOpacity style={styles.locationContainer}>
-                <Ionicons name="location-outline" size={16} color="white" />
-                <Text style={styles.location}>{userLocation}</Text>
-                <Ionicons name="airplane-outline" size={16} color="white" />
-                <Text style={styles.changeLocation}>Change</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons name="notifications-outline" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Search Bar */}
-          <TouchableOpacity 
-            style={styles.searchContainer}
-            onPress={() => router.push('/search' as any)}
-          >
-            <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={20} color={colors.icon} />
-              <Text style={[styles.searchPlaceholder, { color: colors.icon }]}>
-                Search for nearby restaurants...
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </LinearGradient>
-
         {/* Hero Banners */}
         {homeData?.banners && homeData.banners.filter(b => b.position === 'hero').length > 0 && (
           <View style={styles.section}>
@@ -365,7 +369,7 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -383,9 +387,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 24,
     paddingHorizontal: 24,
   },

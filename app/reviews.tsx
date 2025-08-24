@@ -10,7 +10,6 @@ import {
     FlatList,
     Image,
     RefreshControl,
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -243,7 +242,7 @@ export default function ReviewsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <LinearGradient
           colors={['#6366f1', '#8b5cf6']}
@@ -258,12 +257,12 @@ export default function ReviewsScreen() {
             <ReviewSkeleton key={index} colors={colors} />
           ))}
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <LinearGradient
           colors={['#6366f1', '#8b5cf6']}
@@ -298,7 +297,7 @@ export default function ReviewsScreen() {
       ) : (
         renderEmptyState()
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -307,7 +306,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 24,
     paddingHorizontal: 24,
   },

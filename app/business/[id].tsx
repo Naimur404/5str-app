@@ -407,58 +407,125 @@ export default function BusinessDetailsScreen() {
 
   const renderOverviewTab = () => (
     <View style={styles.tabContent}>
+      {/* Business Info Card */}
+      <View style={[styles.section, { backgroundColor: colors.background }]}>
+        <View style={styles.businessInfoHeader}>
+          <View style={styles.businessInfoLeft}>
+            <Text style={[styles.businessInfoName, { color: colors.text }]}>
+              {business?.business_name}
+            </Text>
+            <Text style={[styles.businessInfoCategory, { color: colors.icon }]}>
+              {business?.category.name} • {business?.subcategory.name}
+            </Text>
+            <View style={styles.businessInfoMeta}>
+              <View style={styles.businessInfoRating}>
+                <Ionicons name="star" size={16} color="#FFD700" />
+                <Text style={[styles.businessInfoRatingText, { color: colors.text }]}>
+                  {business?.overall_rating} ({business?.total_reviews} reviews)
+                </Text>
+              </View>
+              <Text style={[styles.businessInfoPrice, { color: colors.tint }]}>
+                {getPriceRangeText(business?.price_range || 2)}
+              </Text>
+            </View>
+          </View>
+          {business?.is_verified && (
+            <View style={styles.businessVerifiedBadge}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+              <Text style={styles.businessVerifiedText}>Verified</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
       {/* Location and Contact */}
       <View style={[styles.section, { backgroundColor: colors.background }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Location And Contact</Text>
         
         <TouchableOpacity style={styles.contactItem} onPress={handleDirections}>
-          <Ionicons name="location" size={20} color={colors.text} />
-          <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={2}>
-            {business?.full_address}
-          </Text>
+          <View style={[styles.contactIconContainer, { backgroundColor: '#2196F3' }]}>
+            <Ionicons name="location" size={20} color="white" />
+          </View>
+          <View style={styles.contactTextContainer}>
+            <Text style={[styles.contactLabel, { color: colors.icon }]}>Address</Text>
+            <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={2}>
+              {business?.full_address}
+            </Text>
+          </View>
           <Ionicons name="chevron-forward" size={16} color={colors.icon} />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
-          <Ionicons name="call" size={20} color={colors.text} />
-          <Text style={[styles.contactText, { color: colors.text }]}>
-            {business?.business_phone}
-          </Text>
+          <View style={[styles.contactIconContainer, { backgroundColor: '#4CAF50' }]}>
+            <Ionicons name="call" size={20} color="white" />
+          </View>
+          <View style={styles.contactTextContainer}>
+            <Text style={[styles.contactLabel, { color: colors.icon }]}>Phone</Text>
+            <Text style={[styles.contactText, { color: colors.text }]}>
+              {business?.business_phone}
+            </Text>
+          </View>
         </TouchableOpacity>
 
+        {business?.website_url && (
+          <TouchableOpacity style={styles.contactItem} onPress={handleWebsite}>
+            <View style={[styles.contactIconContainer, { backgroundColor: '#FF9800' }]}>
+              <Ionicons name="globe" size={20} color="white" />
+            </View>
+            <View style={styles.contactTextContainer}>
+              <Text style={[styles.contactLabel, { color: colors.icon }]}>Website</Text>
+              <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
+                {business.website_url}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.icon} />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.socialLinks}>
-          {business?.website_url && (
-            <TouchableOpacity onPress={handleWebsite}>
-              <Ionicons name="globe" size={24} color={colors.icon} />
+          <Text style={[styles.socialTitle, { color: colors.text }]}>Follow Us</Text>
+          <View style={styles.socialIconsContainer}>
+            {business?.website_url && (
+              <TouchableOpacity style={[styles.socialIcon, { backgroundColor: '#FF9800' }]} onPress={handleWebsite}>
+                <Ionicons name="globe" size={20} color="white" />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={[styles.socialIcon, { backgroundColor: '#E4405F' }]}>
+              <Ionicons name="logo-instagram" size={20} color="white" />
             </TouchableOpacity>
-          )}
-          <TouchableOpacity>
-            <Ionicons name="logo-instagram" size={24} color={colors.icon} />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="logo-facebook" size={24} color={colors.icon} />
-          </TouchableOpacity>
+            <TouchableOpacity style={[styles.socialIcon, { backgroundColor: '#1877F2' }]}>
+              <Ionicons name="logo-facebook" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
       {/* About this Business */}
-      <View style={[styles.section, { backgroundColor: colors.background }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>About this Business</Text>
-        <Text style={[styles.description, { color: colors.text }]}>
-          {business?.description}
-        </Text>
-      </View>
+      {business?.description && (
+        <View style={[styles.section, { backgroundColor: colors.background }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About this Business</Text>
+          <Text style={[styles.description, { color: colors.text }]}>
+            {business.description}
+          </Text>
+        </View>
+      )}
 
       {/* Opening Hours */}
-      <View style={[styles.section, { backgroundColor: colors.background }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
-        {business?.opening_hours && formatOpeningHours(business.opening_hours).map((item, index) => (
-          <View key={index} style={styles.hourItem}>
-            <Text style={[styles.dayText, { color: colors.text }]}>{item.day}</Text>
-            <Text style={[styles.hoursText, { color: colors.icon }]}>{item.hours}</Text>
+      {business?.opening_hours && (
+        <View style={[styles.section, { backgroundColor: colors.background }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
+          <View style={styles.hoursContainer}>
+            {formatOpeningHours(business.opening_hours).map((item, index) => (
+              <View key={index} style={styles.hourItem}>
+                <Text style={[styles.dayText, { color: colors.text }]}>{item.day}</Text>
+                <Text style={[styles.hoursText, { color: item.hours === 'Closed' ? '#ef4444' : colors.tint }]}>
+                  {item.hours}
+                </Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
+        </View>
+      )}
 
       {/* Overall Rating */}
       <View style={[styles.section, { backgroundColor: colors.background }]}>
@@ -473,22 +540,26 @@ export default function BusinessDetailsScreen() {
         </View>
         
         <View style={styles.ratingContainer}>
-          <Text style={[styles.ratingNumber, { color: colors.text }]}>
-            {business?.overall_rating}
-          </Text>
-          <View style={styles.ratingStars}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Ionicons
-                key={star}
-                name="star"
-                size={16}
-                color={star <= Math.floor(parseFloat(business?.overall_rating || '0')) ? '#FFD700' : colors.icon}
-              />
-            ))}
+          <View style={styles.ratingMainInfo}>
+            <Text style={[styles.ratingNumber, { color: colors.text }]}>
+              {business?.overall_rating}
+            </Text>
+            <View style={styles.ratingStarsContainer}>
+              <View style={styles.ratingStars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Ionicons
+                    key={star}
+                    name="star"
+                    size={16}
+                    color={star <= Math.floor(parseFloat(business?.overall_rating || '0')) ? '#FFD700' : colors.icon}
+                  />
+                ))}
+              </View>
+              <Text style={[styles.reviewCount, { color: colors.icon }]}>
+                Based on {business?.total_reviews} review{business?.total_reviews !== 1 ? 's' : ''}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.reviewCount, { color: colors.icon }]}>
-            ({business?.total_reviews} review{business?.total_reviews !== 1 ? 's' : ''})
-          </Text>
         </View>
       </View>
     </View>
@@ -498,6 +569,9 @@ export default function BusinessDetailsScreen() {
     <View style={styles.tabContent}>
       {offerings.length > 0 ? (
         <View>
+          <Text style={[styles.menuHeader, { color: colors.text }]}>
+            {getOfferingsTabName()} ({offerings.length} items)
+          </Text>
           {offerings.map((item) => {
             const offeringFav = offeringFavorites[item.id] || { isFavorite: false, favoriteId: null };
             return (
@@ -522,7 +596,7 @@ export default function BusinessDetailsScreen() {
                       <Ionicons 
                         name={offeringFav.isFavorite ? "heart" : "heart-outline"} 
                         size={20} 
-                        color={offeringFav.isFavorite ? "#FF6B6B" : colors.icon} 
+                        color={offeringFav.isFavorite ? "#FF6B6B" : "white"} 
                       />
                     </TouchableOpacity>
                   </View>
@@ -544,12 +618,14 @@ export default function BusinessDetailsScreen() {
                   </View>
                 )}
                 <View style={styles.menuItemContent}>
-                  <Text style={[styles.menuItemName, { color: colors.text }]}>{item.name}</Text>
+                  <View style={styles.menuItemMainInfo}>
+                    <Text style={[styles.menuItemName, { color: colors.text }]}>{item.name}</Text>
+                    <Text style={[styles.menuItemPrice, { color: colors.tint }]}>{item.price_range}</Text>
+                  </View>
                   <Text style={[styles.menuItemDescription, { color: colors.icon }]} numberOfLines={2}>
                     {item.description}
                   </Text>
                   <View style={styles.menuItemFooter}>
-                    <Text style={[styles.menuItemPrice, { color: colors.tint }]}>{item.price_range}</Text>
                     <View style={styles.menuItemRating}>
                       <Ionicons name="star" size={14} color="#FFD700" />
                       <Text style={[styles.ratingText, { color: colors.text }]}>
@@ -564,10 +640,12 @@ export default function BusinessDetailsScreen() {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="restaurant-outline" size={64} color={colors.icon} />
+          <View style={[styles.emptyIcon, { backgroundColor: colors.background }]}>
+            <Ionicons name="restaurant-outline" size={48} color={colors.icon} />
+          </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No {getOfferingsTabName().toLowerCase()} Available</Text>
           <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
-            This business hasn't added their {getOfferingsTabName().toLowerCase()} yet
+            This business hasn't added their {getOfferingsTabName().toLowerCase()} yet. Check back later!
           </Text>
         </View>
       )}
@@ -578,6 +656,9 @@ export default function BusinessDetailsScreen() {
     <View style={styles.tabContent}>
       {reviews.length > 0 ? (
         <View>
+          <Text style={[styles.reviewsHeader, { color: colors.text }]}>
+            Customer Reviews ({reviews.length})
+          </Text>
           {reviews.map((item) => (
             <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.background }]}>
               <View style={styles.reviewHeader}>
@@ -587,29 +668,42 @@ export default function BusinessDetailsScreen() {
                       {item.user.name.charAt(0).toUpperCase()}
                     </Text>
                   </View>
-                  <View>
+                  <View style={styles.reviewUserInfo}>
                     <Text style={[styles.userName, { color: colors.text }]}>{item.user.name}</Text>
-                    <Text style={[styles.reviewDate, { color: colors.icon }]}>{item.created_at}</Text>
+                    <Text style={[styles.reviewDate, { color: colors.icon }]}>
+                      {new Date(item.created_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.reviewRating}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Ionicons
-                      key={star}
-                      name="star"
-                      size={14}
-                      color={star <= item.overall_rating ? '#FFD700' : colors.icon}
-                    />
-                  ))}
+                <View style={styles.reviewRatingContainer}>
+                  <View style={styles.reviewRating}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Ionicons
+                        key={star}
+                        name="star"
+                        size={14}
+                        color={star <= item.overall_rating ? '#FFD700' : colors.icon}
+                      />
+                    ))}
+                  </View>
+                  <Text style={[styles.reviewRatingText, { color: colors.text }]}>
+                    {item.overall_rating}/5
+                  </Text>
                 </View>
               </View>
               <Text style={[styles.reviewText, { color: colors.text }]}>{item.review_text}</Text>
               {item.helpful_count > 0 && (
                 <View style={styles.reviewFooter}>
-                  <Ionicons name="thumbs-up" size={14} color={colors.icon} />
-                  <Text style={[styles.helpfulText, { color: colors.icon }]}>
-                    {item.helpful_count} found this helpful
-                  </Text>
+                  <TouchableOpacity style={styles.helpfulButton}>
+                    <Ionicons name="thumbs-up" size={14} color={colors.tint} />
+                    <Text style={[styles.helpfulText, { color: colors.tint }]}>
+                      {item.helpful_count} found this helpful
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -617,11 +711,19 @@ export default function BusinessDetailsScreen() {
         </View>
       ) : (
         <View style={styles.emptyState}>
-          <Ionicons name="chatbubble-outline" size={64} color={colors.icon} />
+          <View style={[styles.emptyIcon, { backgroundColor: colors.background }]}>
+            <Ionicons name="chatbubble-outline" size={48} color={colors.icon} />
+          </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>No Reviews Yet</Text>
           <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
-            Be the first to write a review
+            Be the first to share your experience with this business!
           </Text>
+          <TouchableOpacity 
+            style={[styles.writeFirstReviewButton, { backgroundColor: colors.tint }]}
+            onPress={handleWriteReview}
+          >
+            <Text style={styles.writeFirstReviewText}>Write the First Review</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -670,7 +772,7 @@ export default function BusinessDetailsScreen() {
           style={styles.heroImage} 
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          colors={['transparent', 'rgba(0,0,0,0.9)']}
           style={styles.heroOverlay}
         >
           <TouchableOpacity 
@@ -695,12 +797,13 @@ export default function BusinessDetailsScreen() {
           <View style={styles.heroContent}>
             <Text style={styles.businessName}>{business.business_name}</Text>
             <Text style={styles.businessSubtitle}>
-              {business.category.name} | {business.subcategory.name}
+              {business.category.name} • {business.subcategory.name}
             </Text>
             <View style={styles.businessMeta}>
               <View style={styles.ratingBadge}>
                 <Ionicons name="star" size={16} color="#FFD700" />
                 <Text style={styles.ratingBadgeText}>{business.overall_rating}</Text>
+                <Text style={styles.ratingBadgeText}>({business.total_reviews})</Text>
               </View>
               <Text style={styles.priceRange}>{getPriceRangeText(business.price_range)}</Text>
               {business.is_verified && (
@@ -712,6 +815,39 @@ export default function BusinessDetailsScreen() {
             </View>
           </View>
         </LinearGradient>
+      </View>
+
+      {/* Quick Actions Bar */}
+      <View style={[styles.quickActions, { backgroundColor: colors.background }]}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
+          <View style={[styles.actionIcon, { backgroundColor: '#4CAF50' }]}>
+            <Ionicons name="call" size={20} color="white" />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Call</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.actionButton} onPress={handleDirections}>
+          <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
+            <Ionicons name="navigate" size={20} color="white" />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Directions</Text>
+        </TouchableOpacity>
+        
+        {business?.website_url && (
+          <TouchableOpacity style={styles.actionButton} onPress={handleWebsite}>
+            <View style={[styles.actionIcon, { backgroundColor: '#FF9800' }]}>
+              <Ionicons name="globe" size={20} color="white" />
+            </View>
+            <Text style={[styles.actionLabel, { color: colors.text }]}>Website</Text>
+          </TouchableOpacity>
+        )}
+        
+        <TouchableOpacity style={styles.actionButton} onPress={handleWriteReview}>
+          <View style={[styles.actionIcon, { backgroundColor: colors.tint }]}>
+            <Ionicons name="star" size={20} color="white" />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Review</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Tab Navigation */}
@@ -788,7 +924,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   heroSection: {
-    height: 300,
+    height: 320,
     position: 'relative',
   },
   heroImage: {
@@ -884,6 +1020,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   tabItem: {
     flex: 1,
@@ -924,17 +1068,19 @@ const styles = StyleSheet.create({
   contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   contactText: {
     flex: 1,
     fontSize: 16,
   },
   socialLinks: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
   },
   description: {
     fontSize: 16,
@@ -985,17 +1131,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   menuItem: {
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 8,
+    elevation: 6,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   menuItemHeader: {
     position: 'relative',
@@ -1058,17 +1206,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   reviewCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -1134,5 +1284,211 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     opacity: 0.7,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: 'white',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionButton: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 8,
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  businessInfoHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  businessInfoLeft: {
+    flex: 1,
+  },
+  businessInfoName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  businessInfoCategory: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  businessInfoMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  businessInfoRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  businessInfoRatingText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  businessInfoPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  businessVerifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  businessVerifiedText: {
+    color: '#4CAF50',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  contactIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contactTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  contactLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  socialTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  socialIconsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  socialIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hoursContainer: {
+    gap: 8,
+  },
+  ratingMainInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  ratingStarsContainer: {
+    alignItems: 'flex-start',
+  },
+  menuHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  menuItemMainInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  menuItemTags: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  menuTag: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  menuTagText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reviewsHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  reviewUserInfo: {
+    marginLeft: 12,
+  },
+  reviewRatingContainer: {
+    alignItems: 'flex-end',
+  },
+  reviewRatingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  helpfulButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  writeFirstReviewButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 16,
+  },
+  writeFirstReviewText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

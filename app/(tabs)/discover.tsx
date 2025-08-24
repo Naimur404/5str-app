@@ -3,11 +3,11 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
     FlatList,
     Image,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     Text,
@@ -63,29 +63,33 @@ export default function DiscoverScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
-          style={styles.header}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style="light" />
+      
+      {/* Fixed Header */}
+      <LinearGradient
+        colors={['#6366f1', '#8b5cf6']}
+        style={styles.header}
+      >
+        <Text style={styles.headerTitle}>Discover</Text>
+        <Text style={styles.headerSubtitle}>Explore categories and find what you need</Text>
+        
+        {/* Search Bar */}
+        <TouchableOpacity 
+          style={styles.searchContainer}
+          onPress={() => router.push('/search' as any)}
         >
-          <Text style={styles.headerTitle}>Discover</Text>
-          <Text style={styles.headerSubtitle}>Explore categories and find what you need</Text>
-          
-          {/* Search Bar */}
-          <TouchableOpacity 
-            style={styles.searchContainer}
-            onPress={() => router.push('/search' as any)}
-          >
-            <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={20} color={colors.icon} />
-              <Text style={[styles.searchPlaceholder, { color: colors.icon }]}>
-                Search categories, businesses...
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </LinearGradient>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color={colors.icon} />
+            <Text style={[styles.searchPlaceholder, { color: colors.icon }]}>
+              Search categories, businesses...
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </LinearGradient>
+
+      {/* Scrollable Content */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
         {/* Trending Section */}
         <View style={styles.section}>
@@ -136,7 +140,7 @@ export default function DiscoverScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -146,9 +150,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 24,
     paddingHorizontal: 24,
   },

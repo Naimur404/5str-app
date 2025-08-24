@@ -4,6 +4,7 @@ import { getUserFavorites, isAuthenticated, removeFromFavorites, type Favorite }
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -11,7 +12,6 @@ import {
     FlatList,
     Image,
     RefreshControl,
-    SafeAreaView,
     StyleSheet,
     Text,
     TextInput,
@@ -332,7 +332,8 @@ export default function FavouritesScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style="light" />
       {/* Header */}
       <LinearGradient
         colors={['#6366f1', '#8b5cf6']}
@@ -444,7 +445,7 @@ export default function FavouritesScreen() {
           )}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -453,7 +454,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 24,
     paddingHorizontal: 24,
   },

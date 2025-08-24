@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -18,7 +17,7 @@ export default function WelcomeScreen() {
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
         colors={colorScheme === 'dark' ? ['#151718', '#2a2d31'] : ['#ffffff', '#f8f9fa']}
         style={styles.gradient}
@@ -114,7 +113,7 @@ export default function WelcomeScreen() {
           </Text>
         </View>
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -125,6 +124,7 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingTop: 40,
   },
   header: {
     alignItems: 'center',
