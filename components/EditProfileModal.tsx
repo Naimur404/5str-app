@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Modal,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,6 +17,8 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { updateProfile, UpdateProfilePayload, User } from '@/services/api';
 import * as ImagePicker from 'expo-image-picker';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from './CustomAlert';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -29,6 +30,7 @@ interface EditProfileModalProps {
 export default function EditProfileModal({ visible, onClose, user, onUpdate }: EditProfileModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertConfig, showInfo, showError, showSuccess, hideAlert } = useCustomAlert();
   
   const [formData, setFormData] = useState({
     name: user.name || '',
@@ -51,7 +53,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
   };
 
   const pickImage = async () => {
-    Alert.alert(
+    showInfo(
       'Select Image',
       'Choose an option to select your profile image',
       [
@@ -70,7 +72,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       
       if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Permission to access camera is required!');
+        showError('Permission Required', 'Permission to access camera is required!');
         return;
       }
 
@@ -88,7 +90,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo');
+      showError('Error', 'Failed to take photo');
     } finally {
       setImageLoading(false);
     }
@@ -102,7 +104,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
       if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Permission to access camera roll is required!');
+        showError('Permission Required', 'Permission to access camera roll is required!');
         return;
       }
 
@@ -120,7 +122,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      showError('Error', 'Failed to pick image');
     } finally {
       setImageLoading(false);
     }
@@ -134,7 +136,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
         const maxSizeInBytes = 5 * 1024 * 1024; // 5MB limit
         
         if (imageSizeInBytes > maxSizeInBytes) {
-          Alert.alert(
+          showError(
             'Image Too Large', 
             'Please select an image smaller than 5MB or reduce the quality.'
           );
@@ -153,11 +155,11 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
         // Store the base64 string for backend submission
         handleInputChange('profile_image', base64Image);
       } else {
-        Alert.alert('Error', 'Failed to convert image to base64');
+        showError('Error', 'Failed to convert image to base64');
       }
     } catch (error) {
       console.error('Error processing image:', error);
-      Alert.alert('Error', 'Failed to process image');
+      showError('Error', 'Failed to process image');
     }
   };
 
@@ -167,17 +169,17 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
 
       // Validation
       if (!formData.name.trim()) {
-        Alert.alert('Error', 'Name is required');
+        showError('Error', 'Name is required');
         return;
       }
 
       if (!formData.phone.trim()) {
-        Alert.alert('Error', 'Phone number is required');
+        showError('Error', 'Phone number is required');
         return;
       }
 
       if (!formData.city.trim()) {
-        Alert.alert('Error', 'City is required');
+        showError('Error', 'City is required');
         return;
       }
 
@@ -200,15 +202,15 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       const response = await updateProfile(payload);
       
       if (response.success) {
-        Alert.alert('Success', 'Profile updated successfully');
+        showSuccess('Success', 'Profile updated successfully');
         onUpdate(response.data.user);
         onClose();
       } else {
-        Alert.alert('Error', response.message || 'Failed to update profile');
+        showError('Error', response.message || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      showError('Error', 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -346,6 +348,15 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </Modal>
   );
 }

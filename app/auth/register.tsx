@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -17,6 +16,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -35,6 +36,7 @@ export default function RegisterScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertConfig, showError, showSuccess, hideAlert } = useCustomAlert();
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -44,17 +46,17 @@ export default function RegisterScreen() {
     const { name, email, phone, password, password_confirmation } = formData;
     
     if (!name || !email || !phone || !password || !password_confirmation) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showError('Error', 'Please fill in all required fields');
       return;
     }
 
     if (password !== password_confirmation) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters long');
+      showError('Error', 'Password must be at least 6 characters long');
       return;
     }
 
@@ -78,13 +80,16 @@ export default function RegisterScreen() {
       const data = await register(requestData);
 
       if (data.success) {
-        Alert.alert('Success', 'Registration successful! Please login to continue.');
-        router.replace('/auth/login');
+        showSuccess('Success', 'Registration successful! Welcome to 5str! You can now login.');
+        // Add a small delay to show the success message before navigation
+        setTimeout(() => {
+          router.replace('/auth/login');
+        }, 2000);
       } else {
-        Alert.alert('Error', data.message || 'Registration failed');
+        showError('Error', data.message || 'Registration failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error. Please try again.');
+      showError('Error', 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -316,6 +321,15 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }

@@ -18,7 +18,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Image,
     RefreshControl,
     ScrollView,
@@ -29,6 +28,8 @@ import {
     View,
 } from 'react-native';
 import EditProfileModal from '@/components/EditProfileModal';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 // Guest user data
 const guestUser = {
@@ -81,6 +82,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertConfig, showConfirm, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     loadUserData();
@@ -132,23 +134,16 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    showConfirm(
       'Sign Out',
       'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            setIsAuthenticated(false);
-            setUser(null);
-            setReviews([]);
-            router.replace('/auth/login' as any);
-          },
-        },
-      ]
+      async () => {
+        await logout();
+        setIsAuthenticated(false);
+        setUser(null);
+        setReviews([]);
+        router.replace('/auth/login' as any);
+      }
     );
   };
 
@@ -488,6 +483,15 @@ export default function ProfileScreen() {
           }}
         />
       )}
+
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }

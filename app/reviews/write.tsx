@@ -8,7 +8,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Dimensions,
     ScrollView,
     StyleSheet,
@@ -17,6 +16,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 // Hide development overlays
 if (__DEV__) {
@@ -58,6 +59,7 @@ export default function WriteReviewScreen() {
 
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertConfig, showError, showSuccess, showInfo, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     checkAuthentication();
@@ -69,7 +71,7 @@ export default function WriteReviewScreen() {
       setUserAuthenticated(authenticated);
       
       if (!authenticated) {
-        Alert.alert(
+        showInfo(
           'Login Required',
           'You must be logged in to write a review',
           [
@@ -159,15 +161,15 @@ export default function WriteReviewScreen() {
 
   const validateForm = () => {
     if (rating === 0) {
-      Alert.alert('Error', 'Please provide an overall rating');
+      showError('Error', 'Please provide an overall rating');
       return false;
     }
     if (reviewText.length < 10) {
-      Alert.alert('Error', 'Review text must be at least 10 characters long');
+      showError('Error', 'Review text must be at least 10 characters long');
       return false;
     }
     if (reviewText.length > 2000) {
-      Alert.alert('Error', 'Review text must not exceed 2000 characters');
+      showError('Error', 'Review text must not exceed 2000 characters');
       return false;
     }
     return true;
@@ -175,7 +177,7 @@ export default function WriteReviewScreen() {
 
   const handleSubmitReview = async () => {
     if (!userAuthenticated) {
-      Alert.alert('Error', 'You must be logged in to submit a review');
+      showError('Error', 'You must be logged in to submit a review');
       return;
     }
 
@@ -209,17 +211,17 @@ export default function WriteReviewScreen() {
       const response = await submitReview(reviewData);
       
       if (response.success) {
-        Alert.alert(
+        showSuccess(
           'Success',
-          'Your review has been submitted successfully!',
+          'Your review has been submitted successfully! Thank you for sharing your experience.',
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
-        Alert.alert('Error', 'Failed to submit review. Please try again.');
+        showError('Error', 'Failed to submit review. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      Alert.alert('Error', 'Failed to submit review. Please try again.');
+      showError('Error', 'Failed to submit review. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -558,6 +560,15 @@ export default function WriteReviewScreen() {
 
         <View style={{ height: 30 }} />
       </ScrollView>
+      
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }

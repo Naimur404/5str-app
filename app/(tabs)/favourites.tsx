@@ -9,7 +9,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Image,
     RefreshControl,
@@ -19,6 +18,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 const filterOptions = ['All', 'Businesses', 'Offerings'];
 
@@ -37,6 +38,7 @@ export default function FavouritesScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertConfig, showError, showSuccess, showConfirm, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     checkAuthAndLoadFavorites();
@@ -113,7 +115,7 @@ export default function FavouritesScreen() {
       }
     } catch (error) {
       console.error('Error loading favorites:', error);
-      Alert.alert('Error', 'Failed to load favorites. Please try again.');
+      showError('Error', 'Failed to load favorites. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -176,7 +178,7 @@ export default function FavouritesScreen() {
 
   const removeFavorite = (favoriteId: number, name: string) => {
     if (!isUserAuthenticated) {
-      Alert.alert(
+      showError(
         'Login Required',
         'Please login first to manage your favorites',
         [
@@ -187,36 +189,29 @@ export default function FavouritesScreen() {
       return;
     }
 
-    Alert.alert(
+    showConfirm(
       'Remove Favourite',
       `Are you sure you want to remove "${name}" from your favourites?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const response = await removeFromFavorites(favoriteId);
-              if (response.success) {
-                setFavorites(prev => prev.filter(item => item.id !== favoriteId));
-                Alert.alert('Success', 'Removed from favourites');
-              } else {
-                throw new Error(response.message || 'Failed to remove from favorites');
-              }
-            } catch (error: any) {
-              console.error('Error removing favorite:', error);
-              
-              if (error.message && error.message.includes('401')) {
-                Alert.alert('Error', 'Please login again to manage favorites');
-                setIsUserAuthenticated(false);
-              } else {
-                Alert.alert('Error', 'Failed to remove from favourites. Please try again.');
-              }
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          const response = await removeFromFavorites(favoriteId);
+          if (response.success) {
+            setFavorites(prev => prev.filter(item => item.id !== favoriteId));
+            showSuccess('Success', 'Removed from favourites');
+          } else {
+            throw new Error(response.message || 'Failed to remove from favorites');
+          }
+        } catch (error: any) {
+          console.error('Error removing favorite:', error);
+          
+          if (error.message && error.message.includes('401')) {
+            showError('Error', 'Please login again to manage favorites');
+            setIsUserAuthenticated(false);
+          } else {
+            showError('Error', 'Failed to remove from favourites. Please try again.');
+          }
+        }
+      }
     );
   };
 
@@ -463,6 +458,15 @@ export default function FavouritesScreen() {
           )}
         </View>
       )}
+      
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }

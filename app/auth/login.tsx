@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -17,6 +16,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -26,10 +27,11 @@ export default function LoginScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertConfig, showError, showSuccess, hideAlert } = useCustomAlert();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Error', 'Please fill in all fields');
       return;
     }
 
@@ -38,13 +40,16 @@ export default function LoginScreen() {
       const data = await login(email, password);
 
       if (data.success) {
-        Alert.alert('Success', 'Login successful');
-        router.replace('/(tabs)');
+        showSuccess('Success', 'Login successful! Welcome back!');
+        // Add a small delay to show the success message before navigation
+        setTimeout(() => {
+          router.replace('/(tabs)');
+        }, 1500);
       } else {
-        Alert.alert('Error', data.message || 'Login failed');
+        showError('Error', data.message || 'Login failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error. Please try again.');
+      showError('Error', 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -180,6 +185,15 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }
