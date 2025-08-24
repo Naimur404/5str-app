@@ -19,6 +19,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { OfferDetailsSkeleton } from '@/components/SkeletonLoader';
 
 export default function OfferDetailsScreen() {
   const [offer, setOffer] = useState<OfferDetails | null>(null);
@@ -84,13 +85,7 @@ export default function OfferDetailsScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-        <StatusBar style="light" />
-        <ActivityIndicator size="large" color={colors.tint} />
-        <Text style={[styles.loadingText, { color: colors.text }]}>Loading offer details...</Text>
-      </View>
-    );
+    return <OfferDetailsSkeleton colors={colors} />;
   }
 
   if (error || !offer) {
@@ -101,10 +96,10 @@ export default function OfferDetailsScreen() {
         <Text style={[styles.errorTitle, { color: colors.text }]}>Unable to Load Offer</Text>
         <Text style={[styles.errorMessage, { color: colors.icon }]}>{error}</Text>
         <TouchableOpacity 
-          style={[styles.retryButton, { backgroundColor: colors.tint }]}
+          style={[styles.retryButton, { backgroundColor: colors.buttonPrimary }]}
           onPress={loadOfferDetails}
         >
-          <Text style={styles.retryButtonText}>Try Again</Text>
+          <Text style={[styles.retryButtonText, { color: colors.buttonText }]}>Try Again</Text>
         </TouchableOpacity>
       </View>
     );
@@ -179,7 +174,7 @@ export default function OfferDetailsScreen() {
             />
             <View style={styles.businessInfo}>
               <Text style={[styles.businessName, { color: colors.text }]}>{offer.business.business_name}</Text>
-              <Text style={[styles.viewBusiness, { color: colors.tint }]}>View Business</Text>
+              <Text style={[styles.viewBusiness, { color: colors.buttonPrimary }]}>View Business</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.icon} />
           </TouchableOpacity>
@@ -213,7 +208,7 @@ export default function OfferDetailsScreen() {
                 <Ionicons name="ticket-outline" size={20} color={colors.icon} />
                 <View style={styles.detailContent}>
                   <Text style={[styles.detailLabel, { color: colors.icon }]}>Offer Code</Text>
-                  <Text style={[styles.detailValue, styles.offerCode, { color: colors.tint }]}>{offer.offer_code}</Text>
+                  <Text style={[styles.detailValue, styles.offerCode, { color: colors.buttonPrimary }]}>{offer.offer_code}</Text>
                 </View>
               </View>
             )}
@@ -272,14 +267,14 @@ export default function OfferDetailsScreen() {
             style={[
               styles.actionButton, 
               { 
-                backgroundColor: offer.can_be_used ? colors.tint : colors.icon + '50',
+                backgroundColor: offer.can_be_used ? colors.buttonPrimary : colors.icon + '50',
                 opacity: offer.can_be_used ? 1 : 0.6
               }
             ]}
             onPress={handleBusinessPress}
             disabled={!offer.can_be_used}
           >
-            <Text style={styles.actionButtonText}>
+            <Text style={[styles.actionButtonText, { color: colors.buttonText }]}>
               {offer.can_be_used ? 'Visit Business' : 'Offer Not Available'}
             </Text>
           </TouchableOpacity>
@@ -495,7 +490,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   actionButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -521,7 +515,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   retryButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

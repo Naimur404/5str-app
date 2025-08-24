@@ -140,7 +140,10 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
   return (
     <View style={[
       flat ? styles.reviewCardFlat : styles.reviewCard, 
-      { backgroundColor: colors.card, borderColor: colors.border }
+      { 
+        backgroundColor: colorScheme === 'dark' ? '#1f2937' : colors.card, 
+        borderColor: colors.border
+      }
     ]}>
       <View style={styles.reviewHeader}>
         <View style={styles.reviewUser}>
@@ -261,13 +264,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.03,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 1,
   },
   reviewCardFlat: {
     padding: 16,
     marginVertical: 8,
+    marginHorizontal: 0,
     borderRadius: 8,
     borderWidth: 1,
   },

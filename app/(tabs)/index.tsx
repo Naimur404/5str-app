@@ -22,6 +22,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { HomePageSkeleton } from '@/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width - 48;
@@ -266,9 +267,46 @@ export default function HomeScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style="light" />
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading...</Text>
-        </View>
+        
+        {/* Fixed Header */}
+        <LinearGradient
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+          style={styles.header}
+        >
+          <View style={styles.headerTop}>
+            <View style={styles.welcomeSection}>
+              <Text style={styles.greeting}>Hello, Naimur</Text>
+              <TouchableOpacity style={styles.locationContainer}>
+                <Ionicons name="location-outline" size={16} color="white" />
+                <Text style={styles.location}>{userLocation}</Text>
+                <Ionicons name="airplane-outline" size={16} color="white" />
+                <Text style={styles.changeLocation}>Change</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.notificationButton}>
+              <Ionicons name="notifications-outline" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Search Bar */}
+          <TouchableOpacity 
+            style={styles.searchContainer}
+            onPress={() => router.push('/search' as any)}
+            activeOpacity={1}
+          >
+            <View style={styles.searchBar}>
+              <Ionicons name="search-outline" size={20} color={colors.icon} />
+              <Text style={[styles.searchPlaceholder, { color: colors.icon }]}>
+                Search for nearby restaurants...
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </LinearGradient>
+
+        {/* Skeleton Content */}
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <HomePageSkeleton colors={colors} />
+        </ScrollView>
       </View>
     );
   }

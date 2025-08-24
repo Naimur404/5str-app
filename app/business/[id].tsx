@@ -33,6 +33,7 @@ import {
     View
 } from 'react-native';
 import ReviewCard from '@/components/ReviewCard';
+import { BusinessDetailsSkeleton } from '@/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -750,14 +751,7 @@ export default function BusinessDetailsScreen() {
   );
 
   if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style="light" />
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading business details...</Text>
-        </View>
-      </View>
-    );
+    return <BusinessDetailsSkeleton colors={colors} />;
   }
 
   if (error || !business) {

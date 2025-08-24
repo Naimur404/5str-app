@@ -18,6 +18,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { CategoryBusinessSkeleton } from '@/components/SkeletonLoader';
 
 export default function CategoryBusinessesScreen() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -41,24 +42,6 @@ export default function CategoryBusinessesScreen() {
   
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-
-  // Business Card Skeleton Component
-  const BusinessSkeleton = ({ colors }: { colors: any }) => (
-    <View style={[styles.businessCard, { backgroundColor: colors.card }]}>
-      <View style={styles.businessContent}>
-        <View style={[styles.skeletonBox, styles.skeletonImage, { backgroundColor: colors.icon + '20' }]} />
-        <View style={styles.businessInfo}>
-          <View style={[styles.skeletonBox, styles.skeletonTitle, { backgroundColor: colors.icon + '20' }]} />
-          <View style={[styles.skeletonBox, styles.skeletonSubtitle, { backgroundColor: colors.icon + '20' }]} />
-          <View style={[styles.skeletonBox, styles.skeletonDescription, { backgroundColor: colors.icon + '20' }]} />
-          <View style={styles.businessMeta}>
-            <View style={[styles.skeletonBox, styles.skeletonRating, { backgroundColor: colors.icon + '20' }]} />
-            <View style={[styles.skeletonBox, styles.skeletonDistance, { backgroundColor: colors.icon + '20' }]} />
-          </View>
-        </View>
-      </View>
-    </View>
-  );
 
   useEffect(() => {
     if (categoryId) {
@@ -315,7 +298,7 @@ export default function CategoryBusinessesScreen() {
         {/* Skeleton Loading */}
         <View style={styles.content}>
           {[...Array(5)].map((_, index) => (
-            <BusinessSkeleton key={index} colors={colors} />
+            <CategoryBusinessSkeleton key={index} colors={colors} />
           ))}
         </View>
       </View>
@@ -551,38 +534,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
-  },
-  // Skeleton styles
-  skeletonBox: {
-    borderRadius: 4,
-  },
-  skeletonImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    marginRight: 16,
-  },
-  skeletonTitle: {
-    height: 16,
-    width: '70%',
-    marginBottom: 6,
-  },
-  skeletonSubtitle: {
-    height: 12,
-    width: '50%',
-    marginBottom: 8,
-  },
-  skeletonDescription: {
-    height: 14,
-    width: '90%',
-    marginBottom: 8,
-  },
-  skeletonRating: {
-    height: 14,
-    width: 60,
-  },
-  skeletonDistance: {
-    height: 14,
-    width: 40,
   },
 });
