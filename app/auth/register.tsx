@@ -122,7 +122,7 @@ export default function RegisterScreen() {
           {/* Logo/Brand */}
           <View style={styles.brandContainer}>
             <LinearGradient
-              colors={['#667eea', '#764ba2']}
+              colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.tint] : ['#667eea', '#764ba2']}
               style={styles.brandCircle}
             >
               <Text style={styles.brandText}>5str</Text>
@@ -133,7 +133,10 @@ export default function RegisterScreen() {
           <View style={styles.formContainer}>
             {/* Name Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="person-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -149,7 +152,10 @@ export default function RegisterScreen() {
 
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="mail-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -166,7 +172,10 @@ export default function RegisterScreen() {
 
             {/* Phone Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="call-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -182,7 +191,10 @@ export default function RegisterScreen() {
 
             {/* City Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="location-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -198,7 +210,10 @@ export default function RegisterScreen() {
             {/* Location Coordinates */}
             <View style={styles.locationRow}>
               <View style={[styles.locationInput, styles.inputContainer]}>
-                <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+                <View style={[styles.inputWrapper, { 
+                  borderColor: colors.icon + '40',
+                  backgroundColor: colors.card
+                }]}>
                   <Ionicons name="navigate-outline" size={20} color={colors.icon} />
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
@@ -211,7 +226,10 @@ export default function RegisterScreen() {
                 </View>
               </View>
               <View style={[styles.locationInput, styles.inputContainer]}>
-                <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+                <View style={[styles.inputWrapper, { 
+                  borderColor: colors.icon + '40',
+                  backgroundColor: colors.card
+                }]}>
                   <Ionicons name="navigate-outline" size={20} color={colors.icon} />
                   <TextInput
                     style={[styles.input, { color: colors.text }]}
@@ -227,7 +245,10 @@ export default function RegisterScreen() {
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="lock-closed-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -253,7 +274,10 @@ export default function RegisterScreen() {
 
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="lock-closed-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -298,7 +322,7 @@ export default function RegisterScreen() {
               disabled={loading}
             >
               <LinearGradient
-                colors={['#667eea', '#764ba2']}
+                colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.buttonPrimary] : ['#667eea', '#764ba2']}
                 style={styles.registerButtonGradient}
               >
                 {loading ? (

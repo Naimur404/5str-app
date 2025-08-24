@@ -76,7 +76,7 @@ export default function LoginScreen() {
           {/* Logo/Brand */}
           <View style={styles.brandContainer}>
             <LinearGradient
-              colors={['#667eea', '#764ba2']}
+              colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.tint] : ['#667eea', '#764ba2']}
               style={styles.brandCircle}
             >
               <Text style={styles.brandText}>5str</Text>
@@ -87,7 +87,10 @@ export default function LoginScreen() {
           <View style={styles.formContainer}>
             {/* Email Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="mail-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -104,7 +107,10 @@ export default function LoginScreen() {
 
             {/* Password Input */}
             <View style={styles.inputContainer}>
-              <View style={[styles.inputWrapper, { borderColor: colors.icon }]}>
+              <View style={[styles.inputWrapper, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="lock-closed-outline" size={20} color={colors.icon} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
@@ -142,7 +148,7 @@ export default function LoginScreen() {
               disabled={loading}
             >
               <LinearGradient
-                colors={['#667eea', '#764ba2']}
+                colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.buttonPrimary] : ['#667eea', '#764ba2']}
                 style={styles.loginButtonGradient}
               >
                 {loading ? (
@@ -155,20 +161,29 @@ export default function LoginScreen() {
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
-              <View style={[styles.divider, { backgroundColor: colors.icon }]} />
+              <View style={[styles.divider, { backgroundColor: colors.icon + '30' }]} />
               <Text style={[styles.dividerText, { color: colors.icon }]}>OR</Text>
-              <View style={[styles.divider, { backgroundColor: colors.icon }]} />
+              <View style={[styles.divider, { backgroundColor: colors.icon + '30' }]} />
             </View>
 
             {/* Social Login */}
             <View style={styles.socialContainer}>
-              <TouchableOpacity style={[styles.socialButton, { borderColor: colors.icon }]}>
+              <TouchableOpacity style={[styles.socialButton, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="logo-google" size={24} color="#EA4335" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.socialButton, { borderColor: colors.icon }]}>
+              <TouchableOpacity style={[styles.socialButton, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="logo-apple" size={24} color={colors.text} />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.socialButton, { borderColor: colors.icon }]}>
+              <TouchableOpacity style={[styles.socialButton, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}>
                 <Ionicons name="logo-facebook" size={24} color="#1877F2" />
               </TouchableOpacity>
             </View>
