@@ -547,6 +547,14 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'white',
   },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 16,
+    borderWidth: 3,
+    borderColor: 'white',
+  },
   userInfo: {
     flex: 1,
   },

@@ -39,6 +39,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
     profile_image: user.profile_image || '',
   });
   
+  const [selectedImageUri, setSelectedImageUri] = useState<string>(user.profile_image || '');
   const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
 
@@ -50,6 +51,50 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
   };
 
   const pickImage = async () => {
+    Alert.alert(
+      'Select Image',
+      'Choose an option to select your profile image',
+      [
+        { text: 'Camera', onPress: () => openCamera() },
+        { text: 'Photo Library', onPress: () => openImageLibrary() },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const openCamera = async () => {
+    try {
+      setImageLoading(true);
+      
+      // Request camera permission
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Permission to access camera is required!');
+        return;
+      }
+
+      // Launch camera
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        await processSelectedImage(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const openImageLibrary = async () => {
     try {
       setImageLoading(true);
       
@@ -66,19 +111,53 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
 
       if (!result.canceled && result.assets[0]) {
-        // In a real app, you would upload this image to your server
-        // For now, we'll just use the local URI
-        handleInputChange('profile_image', result.assets[0].uri);
+        await processSelectedImage(result.assets[0]);
       }
     } catch (error) {
       console.error('Error picking image:', error);
       Alert.alert('Error', 'Failed to pick image');
     } finally {
       setImageLoading(false);
+    }
+  };
+
+  const processSelectedImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    try {
+      if (asset.base64) {
+        // Check image size (base64 is roughly 4/3 the size of the original)
+        const imageSizeInBytes = (asset.base64.length * 3) / 4;
+        const maxSizeInBytes = 5 * 1024 * 1024; // 5MB limit
+        
+        if (imageSizeInBytes > maxSizeInBytes) {
+          Alert.alert(
+            'Image Too Large', 
+            'Please select an image smaller than 5MB or reduce the quality.'
+          );
+          return;
+        }
+        
+        // Create data URI with base64 string for backend
+        const mimeType = 'image/jpeg';
+        const base64Image = `data:${mimeType};base64,${asset.base64}`;
+        
+        console.log('Image converted to base64, size:', (base64Image.length / 1024 / 1024).toFixed(2), 'MB');
+        
+        // Store the local URI for display
+        setSelectedImageUri(asset.uri);
+        
+        // Store the base64 string for backend submission
+        handleInputChange('profile_image', base64Image);
+      } else {
+        Alert.alert('Error', 'Failed to convert image to base64');
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
+      Alert.alert('Error', 'Failed to process image');
     }
   };
 
@@ -108,8 +187,15 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
         city: formData.city.trim(),
         latitude: formData.latitude,
         longitude: formData.longitude,
-        profile_image: formData.profile_image,
+        profile_image: formData.profile_image, // This will be base64 string if image was selected
       };
+
+      console.log('Updating profile with payload:', {
+        ...payload,
+        profile_image: payload.profile_image ? 
+          `${payload.profile_image.substring(0, 50)}... (${(payload.profile_image.length / 1024).toFixed(1)}KB)` : 
+          'No image'
+      });
 
       const response = await updateProfile(payload);
       
@@ -122,7 +208,7 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -157,8 +243,8 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
           {/* Profile Image */}
           <View style={styles.imageSection}>
             <View style={styles.imageContainer}>
-              {formData.profile_image ? (
-                <Image source={{ uri: formData.profile_image }} style={styles.profileImage} />
+              {selectedImageUri ? (
+                <Image source={{ uri: selectedImageUri }} style={styles.profileImage} />
               ) : (
                 <View style={[styles.imagePlaceholder, { backgroundColor: colors.icon + '20' }]}>
                   <Ionicons name="person" size={40} color={colors.icon} />
