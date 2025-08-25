@@ -344,6 +344,199 @@ export const HomePageSkeleton = ({ colors }: SkeletonProps) => (
   </View>
 );
 
+// Favourites Page Skeleton
+export const FavouritesPageSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={styles.contentSkeleton}>
+    {/* Filter buttons skeleton */}
+    <View style={styles.filtersRowSkeleton}>
+      {[...Array(3)].map((_, index) => (
+        <SkeletonBox 
+          key={index}
+          width={80} 
+          height={32} 
+          borderRadius={16}
+          backgroundColor={colors.icon + '20'} 
+        />
+      ))}
+    </View>
+    
+    {/* Favourite items skeleton */}
+    {[...Array(5)].map((_, index) => (
+      <View key={index} style={[styles.favouriteCardSkeleton, { backgroundColor: colors.card }]}>
+        <SkeletonBox 
+          width={80} 
+          height={80} 
+          borderRadius={12}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={styles.favouriteContentSkeleton}>
+          <SkeletonBox 
+            width="70%" 
+            height={16} 
+            borderRadius={8}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width="50%" 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+          <View style={styles.favouriteMetaSkeleton}>
+            <SkeletonBox 
+              width={60} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={colors.icon + '15'} 
+            />
+            <SkeletonBox 
+              width={40} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={colors.icon + '15'} 
+            />
+          </View>
+          <SkeletonBox 
+            width="40%" 
+            height={12} 
+            borderRadius={6}
+            backgroundColor={colors.icon + '15'} 
+          />
+        </View>
+        <View style={styles.favouriteActionSkeleton}>
+          <SkeletonBox 
+            width={60} 
+            height={20} 
+            borderRadius={10}
+            backgroundColor={colors.icon + '20'} 
+          />
+        </View>
+      </View>
+    ))}
+  </View>
+);
+
+// Profile Page Skeleton
+export const ProfilePageSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={styles.contentSkeleton}>
+    {/* User profile section skeleton */}
+    <View style={[styles.profileSectionSkeleton, { backgroundColor: colors.card }]}>
+      <SkeletonBox 
+        width={100} 
+        height={100} 
+        borderRadius={50}
+        backgroundColor={colors.icon + '20'} 
+      />
+      <View style={styles.profileInfoSkeleton}>
+        <SkeletonBox 
+          width={150} 
+          height={20} 
+          borderRadius={10}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <SkeletonBox 
+          width={120} 
+          height={16} 
+          borderRadius={8}
+          backgroundColor={colors.icon + '15'} 
+        />
+        <SkeletonBox 
+          width={100} 
+          height={14} 
+          borderRadius={7}
+          backgroundColor={colors.icon + '15'} 
+        />
+      </View>
+    </View>
+    
+    {/* Stats row skeleton */}
+    <View style={[styles.statsRowSkeleton, { backgroundColor: colors.card }]}>
+      {[...Array(3)].map((_, index) => (
+        <View key={index} style={styles.statItemSkeleton}>
+          <SkeletonBox 
+            width={40} 
+            height={24} 
+            borderRadius={12}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width={60} 
+            height={12} 
+            borderRadius={6}
+            backgroundColor={colors.icon + '15'} 
+          />
+        </View>
+      ))}
+    </View>
+    
+    {/* Level section skeleton */}
+    <View style={[styles.levelSectionSkeleton, { backgroundColor: colors.card }]}>
+      <View style={styles.levelHeaderSkeleton}>
+        <SkeletonBox 
+          width={40} 
+          height={40} 
+          borderRadius={20}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={styles.levelInfoSkeleton}>
+          <SkeletonBox 
+            width={120} 
+            height={16} 
+            borderRadius={8}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width={100} 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+        </View>
+      </View>
+      <SkeletonBox 
+        width="100%" 
+        height={8} 
+        borderRadius={4}
+        backgroundColor={colors.icon + '15'} 
+      />
+    </View>
+    
+    {/* Settings items skeleton */}
+    {[...Array(6)].map((_, index) => (
+      <View key={index} style={[styles.settingItemSkeleton, { backgroundColor: colors.card }]}>
+        <View style={styles.settingLeftSkeleton}>
+          <SkeletonBox 
+            width={24} 
+            height={24} 
+            borderRadius={12}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <View style={styles.settingTextSkeleton}>
+            <SkeletonBox 
+              width={120} 
+              height={16} 
+              borderRadius={8}
+              backgroundColor={colors.icon + '20'} 
+            />
+            <SkeletonBox 
+              width={80} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={colors.icon + '15'} 
+            />
+          </View>
+        </View>
+        <SkeletonBox 
+          width={20} 
+          height={20} 
+          borderRadius={10}
+          backgroundColor={colors.icon + '15'} 
+        />
+      </View>
+    ))}
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -474,5 +667,84 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
+  },
+  // Favourites skeleton styles
+  filtersRowSkeleton: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  favouriteCardSkeleton: {
+    flexDirection: 'row',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 12,
+  },
+  favouriteContentSkeleton: {
+    flex: 1,
+    gap: 8,
+  },
+  favouriteMetaSkeleton: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  favouriteActionSkeleton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Profile skeleton styles
+  profileSectionSkeleton: {
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 16,
+  },
+  profileInfoSkeleton: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  statsRowSkeleton: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  statItemSkeleton: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  levelSectionSkeleton: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  levelHeaderSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  levelInfoSkeleton: {
+    flex: 1,
+    gap: 4,
+  },
+  settingItemSkeleton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  settingLeftSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingTextSkeleton: {
+    gap: 4,
   },
 });

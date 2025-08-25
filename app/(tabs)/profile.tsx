@@ -30,6 +30,7 @@ import {
 import EditProfileModal from '@/components/EditProfileModal';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
 
 // Guest user data
 const guestUser = {
@@ -321,9 +322,18 @@ export default function ProfileScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'light'} />
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading profile...</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+          <StatusBar style="light" />
+          {/* Fixed Header */}
+          <LinearGradient
+            colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+            style={styles.header}
+          >
+            <View style={styles.headerTop}>
+              <Text style={styles.headerTitle}>Profile</Text>
+            </View>
+          </LinearGradient>
+          <ProfilePageSkeleton colors={colors} />
         </View>
       ) : (
         <>

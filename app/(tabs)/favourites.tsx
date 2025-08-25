@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
 
 const filterOptions = ['All', 'Businesses', 'Offerings'];
 
@@ -406,10 +407,7 @@ export default function FavouritesScreen() {
           </TouchableOpacity>
         </View>
       ) : loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.buttonPrimary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading favorites...</Text>
-        </View>
+        <FavouritesPageSkeleton colors={colors} />
       ) : filteredFavorites.length > 0 ? (
         <FlatList
           data={filteredFavorites}
