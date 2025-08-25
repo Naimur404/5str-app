@@ -317,6 +317,22 @@ export default function HomeScreen() {
     router.push('/top-services');
   };
 
+  const handleViewAllPopularNearby = () => {
+    router.push('/popular-nearby');
+  };
+
+  const handleViewAllFeaturedBusinesses = () => {
+    router.push('/featured-businesses');
+  };
+
+  const handleViewAllSpecialOffers = () => {
+    router.push('/special-offers');
+  };
+
+  const handleViewAllDynamicSection = (sectionSlug: string) => {
+    router.push(`/dynamic-section/${sectionSlug}`);
+  };
+
   const renderServiceItem = ({ item }: { item: TopService }) => (
     <TouchableOpacity 
       style={styles.serviceItem}
@@ -597,7 +613,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Services Nearby</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleViewAllPopularNearby}>
                 <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -617,7 +633,7 @@ export default function HomeScreen() {
           <View key={section.section_slug} style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.section_name}</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => handleViewAllDynamicSection(section.section_slug)}>
                 <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -637,7 +653,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Businesses</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleViewAllFeaturedBusinesses}>
                 <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -657,7 +673,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Special Offers</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleViewAllSpecialOffers}>
                 <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
               </TouchableOpacity>
             </View>

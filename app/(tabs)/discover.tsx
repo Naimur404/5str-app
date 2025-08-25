@@ -1,10 +1,13 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { getCategories } from '@/services/api';
+import { Category } from '@/types/api';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FlatList,
     Image,
@@ -12,21 +15,13 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    ActivityIndicator,
+    RefreshControl,
+    Alert
 } from 'react-native';
 
-// Mock data for categories
-const categories = [
-  { id: 1, name: 'Restaurants', icon: 'restaurant', color: '#FF6B6B', count: 150 },
-  { id: 2, name: 'Shopping', icon: 'bag', color: '#4ECDC4', count: 89 },
-  { id: 3, name: 'Services', icon: 'construct', color: '#45B7D1', count: 234 },
-  { id: 4, name: 'Entertainment', icon: 'game-controller', color: '#F7DC6F', count: 67 },
-  { id: 5, name: 'Health & Wellness', icon: 'medical', color: '#BB8FCE', count: 45 },
-  { id: 6, name: 'Education', icon: 'school', color: '#85C1E9', count: 78 },
-  { id: 7, name: 'Automotive', icon: 'car', color: '#F8C471', count: 56 },
-  { id: 8, name: 'Real Estate', icon: 'home', color: '#82E0AA', count: 92 },
-];
-
+// Mock data for trending (keeping this for now)
 const trending = [
   { id: 1, title: 'Pizza Places', subtitle: 'Trending now', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop' },
   { id: 2, title: 'Coffee Shops', subtitle: 'Popular today', image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&h=200&fit=crop' },
@@ -35,17 +30,74 @@ const trending = [
 
 export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
 
-  const renderCategoryItem = ({ item }: { item: typeof categories[0] }) => (
-    <TouchableOpacity style={[styles.categoryCard, { backgroundColor: colors.card }]}>
-      <View style={[styles.categoryIcon, { backgroundColor: item.color + '20' }]}>
-        <Ionicons name={item.icon as any} size={32} color={item.color} />
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async (isRefresh: boolean = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+
+      const response = await getCategories(1, 50); // Get up to 50 categories
+
+      if (response.success) {
+        setCategories(response.data || []);
+      } else {
+        Alert.alert('Error', 'Failed to load categories. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      Alert.alert('Error', 'Unable to load categories. Please check your internet connection.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchCategories(true);
+  };
+
+  const handleCategoryPress = (category: Category) => {
+    router.push(`/category/${category.id}?name=${encodeURIComponent(category.name)}&color=${encodeURIComponent(category.color_code)}`);
+  };
+
+  const getServiceIcon = (slug: string): any => {
+    const iconMap: { [key: string]: any } = {
+      'restaurants': 'restaurant',
+      'shopping': 'bag',
+      'services': 'construct',
+      'entertainment': 'game-controller',
+      'health-wellness': 'medical',
+      'education': 'school',
+      'automotive': 'car',
+      'real-estate': 'home',
+      'beauty': 'cut',
+      'fitness': 'fitness',
+      'technology': 'laptop',
+      'travel': 'airplane',
+    };
+    return iconMap[slug] || 'business';
+  };
+
+  const renderCategoryItem = ({ item }: { item: Category }) => (
+    <TouchableOpacity 
+      style={[styles.categoryCard, { backgroundColor: colors.card }]}
+      onPress={() => handleCategoryPress(item)}
+    >
+      <View style={[styles.categoryIcon, { backgroundColor: item.color_code + '20' }]}>
+        <Ionicons name={getServiceIcon(item.slug)} size={32} color={item.color_code} />
       </View>
       <Text style={[styles.categoryName, { color: colors.text }]}>{item.name}</Text>
-      <Text style={[styles.categoryCount, { color: colors.icon }]}>{item.count} businesses</Text>
+      <Text style={[styles.categoryCount, { color: colors.icon }]}>{item.total_businesses} businesses</Text>
     </TouchableOpacity>
   );
 
@@ -90,7 +142,17 @@ export default function DiscoverScreen() {
       </LinearGradient>
 
       {/* Scrollable Content */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.tint}
+          />
+        }
+      >
 
         {/* Trending Section */}
         <View style={styles.section}>
@@ -108,14 +170,27 @@ export default function DiscoverScreen() {
         {/* Categories Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Browse Categories</Text>
-          <FlatList
-            data={categories}
-            renderItem={renderCategoryItem}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
-            scrollEnabled={false}
-            contentContainerStyle={styles.categoriesContainer}
-          />
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.tint} />
+              <Text style={[styles.loadingText, { color: colors.icon }]}>Loading categories...</Text>
+            </View>
+          ) : categories.length > 0 ? (
+            <FlatList
+              data={categories}
+              renderItem={renderCategoryItem}
+              keyExtractor={(item) => item.id.toString()}
+              numColumns={2}
+              scrollEnabled={false}
+              contentContainerStyle={styles.categoriesContainer}
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyText, { color: colors.icon }]}>
+                No categories available at the moment.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Quick Actions */}
@@ -289,6 +364,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginTop: 8,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+  },
+  emptyState: {
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
     textAlign: 'center',
   },
 });

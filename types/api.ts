@@ -143,3 +143,90 @@ export interface SearchResponse {
     };
   };
 }
+
+// Popular Nearby Response
+export interface PopularNearbyResponse {
+  success: boolean;
+  data: {
+    businesses: Business[];
+    location: UserLocation;
+    pagination?: {
+      current_page: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+// Dynamic Section Response
+export interface DynamicSectionResponse {
+  success: boolean;
+  data: {
+    section_name: string;
+    section_slug: string;
+    businesses: Business[];
+    location: UserLocation;
+    pagination?: {
+      current_page: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+// Featured Businesses Response
+export interface FeaturedBusinessesResponse {
+  success: boolean;
+  data: {
+    businesses: Business[];
+    location: UserLocation;
+    pagination?: {
+      current_page: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+// Special Offers Response
+export interface SpecialOffersResponse {
+  success: boolean;
+  data: {
+    offers: SpecialOffer[];
+    location: UserLocation;
+    pagination?: {
+      current_page: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+// Category interface (alias for TopService for clarity)
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+  level: number;
+  icon_image: string;
+  banner_image: string | null;
+  description: string | null;
+  color_code: string;
+  sort_order: number;
+  is_featured: boolean;
+  is_popular: boolean;
+  is_active: boolean;
+  total_businesses: number;
+}
+
+// Categories Response
+export interface CategoriesResponse {
+  success: boolean;
+  data: Category[];
+  pagination?: {
+    current_page: number;
+    total_pages: number;
+    has_more: boolean;
+  };
+}

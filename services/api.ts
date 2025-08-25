@@ -1,6 +1,6 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TopService } from '../types/api';
+import { TopService, CategoriesResponse } from '../types/api';
 
 /**
  * API Service with Smart Authentication
@@ -858,6 +858,64 @@ export const getTopServices = async (
 ): Promise<TopServicesResponse> => {
   const url = `${API_CONFIG.ENDPOINTS.TOP_SERVICES}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}`;
   // Send token if available for analytics and user-specific data
+  return makeApiCall(url, {}, false);
+};
+
+// Get Popular Nearby Businesses
+export const getPopularNearby = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1
+): Promise<any> => {
+  const url = `${API_CONFIG.ENDPOINTS.POPULAR_NEARBY}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false);
+};
+
+// Get Dynamic Section Data
+export const getDynamicSection = async (
+  sectionSlug: string,
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1
+): Promise<any> => {
+  const url = `${API_CONFIG.ENDPOINTS.DYNAMIC_SECTIONS}/${sectionSlug}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false);
+};
+
+// Get Featured Businesses
+export const getFeaturedBusinesses = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1
+): Promise<any> => {
+  const url = `${API_CONFIG.ENDPOINTS.FEATURED_BUSINESSES}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false);
+};
+
+// Get Special Offers
+export const getSpecialOffers = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1
+): Promise<any> => {
+  const url = `${API_CONFIG.ENDPOINTS.SPECIAL_OFFERS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false);
+};
+
+// Get Categories for discovery page
+export const getCategories = async (
+  page: number = 1,
+  limit: number = 50
+): Promise<CategoriesResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.CATEGORIES}?page=${page}&limit=${limit}`;
   return makeApiCall(url, {}, false);
 };
 
