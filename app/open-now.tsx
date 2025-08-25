@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Image,
   TextInput,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -19,7 +18,8 @@ import { getOpenNow, getCategories } from '@/services/api';
 import { Business, Category } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { BusinessLogo } from '@/components/SmartImage';
+import { BusinessListSkeleton } from '@/components/SkeletonLoader';
 import * as Location from 'expo-location';
 
 interface BusinessCardProps {
@@ -28,21 +28,37 @@ interface BusinessCardProps {
   colors: any;
 }
 
-const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }) => (
-  <TouchableOpacity 
-    style={[styles.businessCard, { backgroundColor: colors.card }]}
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <View style={styles.businessRow}>
-      <View style={styles.businessImageContainer}>
-        <Image 
-          source={{ 
-            uri: getImageUrl(business.logo_image) || getFallbackImageUrl('business') 
-          }} 
-          style={styles.businessImage} 
-        />
-      </View>
+const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }) => {
+  // Helper function to get business logo URL from the API response structure
+  const getBusinessLogoUrl = (business: Business): string | undefined => {
+    // Handle the new API structure with images.logo
+    if (business.images && typeof business.images === 'object' && 'logo' in business.images) {
+      return business.images.logo;
+    }
+    
+    // Handle the legacy logo_image structure
+    const logoImage = business.logo_image;
+    if (!logoImage) return undefined;
+    if (typeof logoImage === 'string') return logoImage;
+    if (typeof logoImage === 'object' && logoImage.image_url) return logoImage.image_url;
+    
+    return undefined;
+  };
+
+  return (
+    <TouchableOpacity 
+      style={[styles.businessCard, { backgroundColor: colors.card }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.businessRow}>
+        <View style={styles.businessImageContainer}>
+          <BusinessLogo 
+            source={getBusinessLogoUrl(business)}
+            businessName={business.business_name}
+            style={styles.businessImage}
+          />
+        </View>
 
       <View style={styles.businessContent}>
         <View style={styles.businessMainInfo}>
@@ -80,6 +96,15 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
             </Text>
           </View>
         )}
+
+        {business.opening_status && (
+          <View style={styles.openingStatusContainer}>
+            <Ionicons name="time-outline" size={12} color="#10B981" />
+            <Text style={[styles.openingStatusText, { color: '#10B981' }]} numberOfLines={1}>
+              {business.opening_status.status}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.businessActions}>
@@ -104,6 +129,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
     </View>
   </TouchableOpacity>
 );
+};
 
 export default function OpenNowScreen() {
   const { colorScheme } = useTheme();
@@ -356,12 +382,7 @@ export default function OpenNowScreen() {
 
       {/* Businesses List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.buttonPrimary} />
-          <Text style={[styles.loadingText, { color: colors.icon }]}>
-            Finding businesses open now...
-          </Text>
-        </View>
+        <BusinessListSkeleton colors={colors} />
       ) : filteredBusinesses.length > 0 ? (
         <FlatList
           data={filteredBusinesses}
@@ -610,6 +631,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     flex: 1,
     opacity: 0.6,
+  },
+  openingStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  openingStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
+    flex: 1,
   },
   businessActions: {
     justifyContent: 'space-between',

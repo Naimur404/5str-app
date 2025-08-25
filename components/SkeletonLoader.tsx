@@ -883,3 +883,207 @@ const discoverySkeletonStyles = StyleSheet.create({
     elevation: 2,
   },
 });
+
+// Business List Page Skeleton (for Open Now, Top Rated, Popular Nearby)
+export const BusinessListSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    {/* Category filters skeleton */}
+    <View style={businessListStyles.categoryFiltersContainer}>
+      <View style={businessListStyles.categoryFiltersList}>
+        {[...Array(4)].map((_, index) => (
+          <SkeletonBox 
+            key={index}
+            width={80 + (index * 20)} 
+            height={32} 
+            borderRadius={16}
+            backgroundColor={colors.icon + '20'} 
+          />
+        ))}
+      </View>
+    </View>
+
+    {/* Location info skeleton */}
+    <View style={[businessListStyles.locationInfo, { backgroundColor: colors.background }]}>
+      <SkeletonBox 
+        width={16} 
+        height={16} 
+        borderRadius={8}
+        backgroundColor={colors.buttonPrimary + '40'} 
+      />
+      <SkeletonBox 
+        width={250} 
+        height={14} 
+        borderRadius={7}
+        backgroundColor={colors.icon + '20'} 
+      />
+    </View>
+
+    {/* Business cards skeleton */}
+    <View style={businessListStyles.businessList}>
+      {[...Array(6)].map((_, index) => (
+        <View key={index} style={[businessListStyles.businessCard, { backgroundColor: colors.card }]}>
+          <View style={businessListStyles.businessRow}>
+            {/* Business image skeleton */}
+            <SkeletonBox 
+              width={80} 
+              height={80} 
+              borderRadius={12}
+              backgroundColor={colors.icon + '20'} 
+            />
+            
+            {/* Business content skeleton */}
+            <View style={businessListStyles.businessContent}>
+              <View style={businessListStyles.businessMainInfo}>
+                <SkeletonBox 
+                  width="85%" 
+                  height={16} 
+                  borderRadius={8}
+                  backgroundColor={colors.icon + '20'} 
+                />
+                <SkeletonBox 
+                  width="60%" 
+                  height={13} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+              
+              <View style={businessListStyles.businessMetrics}>
+                <View style={businessListStyles.ratingRow}>
+                  <SkeletonBox 
+                    width={12} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor="#FFD700" 
+                  />
+                  <SkeletonBox 
+                    width={30} 
+                    height={13} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '20'} 
+                  />
+                  <SkeletonBox 
+                    width={40} 
+                    height={11} 
+                    borderRadius={5}
+                    backgroundColor={colors.icon + '15'} 
+                  />
+                </View>
+                <SkeletonBox 
+                  width={50} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.buttonPrimary + '40'} 
+                />
+              </View>
+              
+              <View style={businessListStyles.locationContainer}>
+                <SkeletonBox 
+                  width={12} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '30'} 
+                />
+                <SkeletonBox 
+                  width="70%" 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+            </View>
+            
+            {/* Business actions skeleton */}
+            <View style={businessListStyles.businessActions}>
+              <SkeletonBox 
+                width={65} 
+                height={20} 
+                borderRadius={10}
+                backgroundColor={colors.icon + '20'} 
+              />
+              <SkeletonBox 
+                width={36} 
+                height={24} 
+                borderRadius={12}
+                backgroundColor={colors.buttonPrimary + '30'} 
+              />
+              <SkeletonBox 
+                width={20} 
+                height={20} 
+                borderRadius={10}
+                backgroundColor={colors.icon + '30'} 
+              />
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+);
+
+// Additional styles for Business List skeleton
+const businessListStyles = StyleSheet.create({
+  categoryFiltersContainer: {
+    paddingVertical: 12,
+  },
+  categoryFiltersList: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    gap: 6,
+  },
+  businessList: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  businessCard: {
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  businessRow: {
+    flexDirection: 'row',
+    padding: 12,
+    gap: 12,
+  },
+  businessContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  businessMainInfo: {
+    gap: 2,
+  },
+  businessMetrics: {
+    gap: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  businessActions: {
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    minHeight: 80,
+    paddingVertical: 4,
+    gap: 4,
+  },
+});

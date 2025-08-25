@@ -47,7 +47,16 @@ export interface Business {
   distance_km?: string;
   category_name: string;
   subcategory_name: string;
-  logo_image: string | { image_url: string } | null; // Support both string and object formats
+  logo_image?: string | { image_url: string } | null; // Legacy field
+  images?: {
+    logo?: string;
+    cover?: string;
+  }; // New API structure
+  opening_status?: {
+    is_open: boolean;
+    status: string;
+    next_change: string;
+  }; // For open-now API
   description?: string;
   area?: string;
   city?: string;
