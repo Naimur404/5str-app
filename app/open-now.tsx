@@ -138,6 +138,7 @@ export default function OpenNowScreen() {
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -216,6 +217,13 @@ export default function OpenNowScreen() {
   useEffect(() => {
     fetchCategories();
     fetchOpenNow();
+    
+    // Update time every minute
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    return () => clearInterval(timeInterval);
   }, []);
 
   useEffect(() => {
@@ -272,11 +280,18 @@ export default function OpenNowScreen() {
   );
 
   const getCurrentTimeString = () => {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { 
+    return currentTime.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
       minute: '2-digit',
       hour12: true 
+    });
+  };
+
+  const getCurrentDateString = () => {
+    return currentTime.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      month: 'short', 
+      day: 'numeric'
     });
   };
 
@@ -297,12 +312,20 @@ export default function OpenNowScreen() {
             <Ionicons name="time" size={32} color="#10B981" style={styles.headerIcon} />
             <View style={styles.headerTextContainer}>
               <Text style={styles.headerTitle}>Open Now</Text>
-              <Text style={styles.headerSubtitle}>
-                {location 
-                  ? `${businesses.length} businesses open at ${getCurrentTimeString()}`
-                  : 'Discover businesses open right now'
-                }
-              </Text>
+              <View style={styles.subtitleRow}>
+                <Text style={styles.headerSubtitle}>
+                  {location 
+                    ? `${businesses.length} businesses open at ${getCurrentTimeString()}`
+                    : 'Businesses open right now'
+                  }
+                </Text>
+                <View style={styles.currentTimeContainer}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.currentTimeText}>
+                    {getCurrentDateString()} • {getCurrentTimeString()}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -481,6 +504,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'white',
     opacity: 0.9,
+    flex: 1,
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  currentTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 10,
+    flexShrink: 0,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+    marginRight: 6,
+  },
+  currentTimeText: {
+    fontSize: 11,
+    color: 'white',
+    fontWeight: '500',
   },
   searchContainer: {
     marginBottom: 8,
