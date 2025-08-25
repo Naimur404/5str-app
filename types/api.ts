@@ -230,3 +230,67 @@ export interface CategoriesResponse {
     has_more: boolean;
   };
 }
+
+// Trending Business interface
+export interface TrendingBusiness {
+  id: number;
+  business_name: string;
+  slug: string;
+  landmark: string;
+  overall_rating: string;
+  price_range: number;
+  category_name: string;
+  subcategory_name: string;
+  images: {
+    logo: string;
+    cover: string | null;
+    gallery: string[];
+  };
+  trend_score: string;
+  trend_rank: number;
+}
+
+// Trending Offering interface
+export interface TrendingOffering {
+  id: number;
+  name: string;
+  offering_type: string;
+  price: string;
+  description: string;
+  image_url: string;
+  trend_score: string;
+  trend_rank: number;
+  business: {
+    id: number;
+    business_name: string;
+    slug: string;
+    area: string;
+    category_name: string | null;
+    images: {
+      logo: string;
+      cover: string | null;
+    };
+  };
+}
+
+// Today's Trending Response
+export interface TodayTrendingResponse {
+  success: boolean;
+  data: {
+    trending_businesses: TrendingBusiness[];
+    trending_offerings: TrendingOffering[];
+    summary: {
+      date: string;
+      area: string;
+      total_trending_items: number;
+      businesses_count: number;
+      offerings_count: number;
+      location_provided: boolean;
+    };
+    location: {
+      latitude: number | null;
+      longitude: number | null;
+      determined_area: string;
+    };
+  };
+}

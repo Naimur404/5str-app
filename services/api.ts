@@ -1,6 +1,6 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TopService, CategoriesResponse } from '../types/api';
+import { TopService, CategoriesResponse, TodayTrendingResponse } from '../types/api';
 
 /**
  * API Service with Smart Authentication
@@ -916,6 +916,20 @@ export const getCategories = async (
   limit: number = 50
 ): Promise<CategoriesResponse> => {
   const url = `${API_CONFIG.ENDPOINTS.CATEGORIES}?page=${page}&limit=${limit}`;
+  return makeApiCall(url, {}, false);
+};
+
+// Get Today's Trending data
+export const getTodayTrending = async (
+  latitude?: number,
+  longitude?: number
+): Promise<TodayTrendingResponse> => {
+  let url = API_CONFIG.ENDPOINTS.TODAY_TRENDING;
+  
+  if (latitude !== undefined && longitude !== undefined) {
+    url += `?latitude=${latitude}&longitude=${longitude}`;
+  }
+  
   return makeApiCall(url, {}, false);
 };
 

@@ -1,8 +1,9 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getCategories } from '@/services/api';
-import { Category } from '@/types/api';
+import { getCategories, getTodayTrending } from '@/services/api';
+import { Category, TrendingBusiness, TrendingOffering } from '@/types/api';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { DiscoveryPageSkeleton } from '@/components/SkeletonLoader';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -20,17 +21,14 @@ import {
     RefreshControl,
     Alert
 } from 'react-native';
-
-// Mock data for trending (keeping this for now)
-const trending = [
-  { id: 1, title: 'Pizza Places', subtitle: 'Trending now', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop' },
-  { id: 2, title: 'Coffee Shops', subtitle: 'Popular today', image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&h=200&fit=crop' },
-  { id: 3, title: 'Beauty Salons', subtitle: 'Most searched', image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop' },
-];
+import * as Location from 'expo-location';
 
 export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
+  const [trendingBusinesses, setTrendingBusinesses] = useState<TrendingBusiness[]>([]);
+  const [trendingOfferings, setTrendingOfferings] = useState<TrendingOffering[]>([]);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -38,24 +36,55 @@ export default function DiscoverScreen() {
   const colors = Colors[colorScheme];
 
   useEffect(() => {
-    fetchCategories();
+    initializeData();
   }, []);
 
-  const fetchCategories = async (isRefresh: boolean = false) => {
+  const initializeData = async () => {
+    await requestLocationPermission();
+    fetchAllData();
+  };
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        
+        setLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+      }
+    } catch (error) {
+      console.warn('Location permission denied or error:', error);
+      // Continue without location
+    }
+  };
+
+  const fetchAllData = async (isRefresh: boolean = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const response = await getCategories(1, 50); // Get up to 50 categories
+      // Fetch both categories and trending data
+      const [categoriesResponse, trendingResponse] = await Promise.all([
+        getCategories(1, 50),
+        getTodayTrending(location?.latitude, location?.longitude)
+      ]);
 
-      if (response.success) {
-        setCategories(response.data || []);
-      } else {
-        Alert.alert('Error', 'Failed to load categories. Please try again.');
+      if (categoriesResponse.success) {
+        setCategories(categoriesResponse.data || []);
+      }
+
+      if (trendingResponse.success) {
+        setTrendingBusinesses(trendingResponse.data.trending_businesses || []);
+        setTrendingOfferings(trendingResponse.data.trending_offerings || []);
       }
     } catch (error) {
-      console.error('Error fetching categories:', error);
-      Alert.alert('Error', 'Unable to load categories. Please check your internet connection.');
+      console.error('Error fetching data:', error);
+      Alert.alert('Error', 'Unable to load data. Please check your internet connection.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -63,7 +92,7 @@ export default function DiscoverScreen() {
   };
 
   const handleRefresh = () => {
-    fetchCategories(true);
+    fetchAllData(true);
   };
 
   const handleCategoryPress = (category: Category) => {
@@ -101,15 +130,62 @@ export default function DiscoverScreen() {
     </TouchableOpacity>
   );
 
-  const renderTrendingItem = ({ item }: { item: typeof trending[0] }) => (
-    <TouchableOpacity style={styles.trendingCard}>
-      <Image source={{ uri: item.image }} style={styles.trendingImage} />
+  const renderTrendingBusinessItem = ({ item }: { item: TrendingBusiness }) => (
+    <TouchableOpacity 
+      style={styles.trendingCard}
+      onPress={() => router.push(`/business/${item.id}`)}
+    >
+      <Image 
+        source={{ 
+          uri: getImageUrl(item.images.logo) || getFallbackImageUrl('business')
+        }} 
+        style={styles.trendingImage} 
+      />
+      <View style={styles.trendingBadge}>
+        <Ionicons name="trending-up" size={12} color="white" />
+        <Text style={styles.trendingRank}>#{item.trend_rank}</Text>
+      </View>
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
         style={styles.trendingOverlay}
       >
-        <Text style={styles.trendingTitle}>{item.title}</Text>
-        <Text style={styles.trendingSubtitle}>{item.subtitle}</Text>
+        <Text style={styles.trendingTitle} numberOfLines={1}>{item.business_name}</Text>
+        <Text style={styles.trendingSubtitle} numberOfLines={1}>{item.category_name}</Text>
+        <View style={styles.trendingMetrics}>
+          <View style={styles.ratingBadge}>
+            <Ionicons name="star" size={10} color="#FFD700" />
+            <Text style={styles.ratingText}>{parseFloat(item.overall_rating).toFixed(1)}</Text>
+          </View>
+          <Text style={styles.priceRangeText}>{'$'.repeat(item.price_range)}</Text>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  const renderTrendingOfferingItem = ({ item }: { item: TrendingOffering }) => (
+    <TouchableOpacity 
+      style={styles.trendingCard}
+      onPress={() => router.push(`/offering/${item.business.id}/${item.id}`)}
+    >
+      <Image 
+        source={{ 
+          uri: getImageUrl(item.image_url) || getFallbackImageUrl('offering')
+        }} 
+        style={styles.trendingImage} 
+      />
+      <View style={styles.trendingBadge}>
+        <Ionicons name="flame" size={12} color="white" />
+        <Text style={styles.trendingRank}>#{item.trend_rank}</Text>
+      </View>
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        style={styles.trendingOverlay}
+      >
+        <Text style={styles.trendingTitle} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.trendingSubtitle} numberOfLines={1}>{item.business.business_name}</Text>
+        <View style={styles.trendingMetrics}>
+          <Text style={styles.priceText}>৳{item.price}</Text>
+        </View>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -141,31 +217,58 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
       </LinearGradient>
 
-      {/* Scrollable Content */}
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.tint}
-          />
-        }
-      >
+      {/* Show skeleton loader while loading */}
+      {loading ? (
+        <DiscoveryPageSkeleton colors={colors} />
+      ) : (
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.tint}
+            />
+          }
+        >
 
         {/* Trending Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Now</Text>
-          <FlatList
-            data={trending}
-            renderItem={renderTrendingItem}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.trendingContainer}
-          />
-        </View>
+        {(trendingBusinesses.length > 0 || trendingOfferings.length > 0) && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Today</Text>
+            
+            {/* Trending Businesses */}
+            {trendingBusinesses.length > 0 && (
+              <View style={styles.subsection}>
+                <Text style={[styles.subsectionTitle, { color: colors.icon }]}>Trending Businesses</Text>
+                <FlatList
+                  data={trendingBusinesses}
+                  renderItem={renderTrendingBusinessItem}
+                  keyExtractor={(item) => `business-${item.id}`}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.trendingContainer}
+                />
+              </View>
+            )}
+
+            {/* Trending Offerings */}
+            {trendingOfferings.length > 0 && (
+              <View style={styles.subsection}>
+                <Text style={[styles.subsectionTitle, { color: colors.icon }]}>Trending Offers</Text>
+                <FlatList
+                  data={trendingOfferings}
+                  renderItem={renderTrendingOfferingItem}
+                  keyExtractor={(item) => `offering-${item.id}`}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.trendingContainer}
+                />
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Categories Section */}
         <View style={styles.section}>
@@ -215,7 +318,8 @@ export default function DiscoverScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -272,15 +376,26 @@ const styles = StyleSheet.create({
   section: {
     marginVertical: 20,
   },
+  subsection: {
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     paddingHorizontal: 24,
     marginBottom: 16,
   },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    paddingHorizontal: 24,
+    marginBottom: 12,
+    opacity: 0.8,
+  },
   trendingContainer: {
     paddingHorizontal: 24,
     gap: 16,
+    marginBottom: 8,
   },
   trendingCard: {
     width: 200,
@@ -291,6 +406,24 @@ const styles = StyleSheet.create({
   trendingImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
+  },
+  trendingBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  trendingRank: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#333',
   },
   trendingOverlay: {
     position: 'absolute',
@@ -304,15 +437,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 2,
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   trendingSubtitle: {
     color: 'white',
     fontSize: 12,
     opacity: 0.9,
+    marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  trendingMetrics: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    gap: 2,
+  },
+  ratingText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  priceRangeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  priceText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(46, 204, 113, 0.8)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   categoriesContainer: {
     paddingHorizontal: 24,
     gap: 16,
+    marginBottom: 32,
   },
   categoryCard: {
     flex: 1,

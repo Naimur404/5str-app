@@ -21,6 +21,7 @@ import {
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
+import SmartImage, { BusinessLogo, OfferingImage } from '@/components/SmartImage';
 
 const filterOptions = ['All', 'Businesses', 'Offerings'];
 
@@ -247,12 +248,22 @@ export default function FavouritesScreen() {
       >
         <View style={styles.favoriteRow}>
           <View style={styles.favoriteImageContainer}>
-            <Image 
-              source={{ 
-                uri: getImageUrl(image) || getFallbackImageUrl(isBusinessFavorite ? 'business' : 'offering') 
-              }} 
-              style={styles.favoriteImage} 
-            />
+            {isBusinessFavorite ? (
+              <BusinessLogo
+                source={image}
+                businessName={name}
+                width={80}
+                height={80}
+                borderRadius={12}
+              />
+            ) : (
+              <OfferingImage
+                source={image}
+                width={80}
+                height={80}
+                borderRadius={12}
+              />
+            )}
             <TouchableOpacity
               style={styles.heartButton}
               onPress={() => removeFavorite(item.id, name || '')}
@@ -378,7 +389,7 @@ export default function FavouritesScreen() {
       </LinearGradient>
 
       {/* Filter Options */}
-      <View style={styles.filtersContainer}>
+      <View style={[styles.filtersContainer, { borderBottomColor: colors.card }]}>
         <FlatList
           data={filterOptions}
           renderItem={renderFilterItem}
@@ -528,7 +539,6 @@ const styles = StyleSheet.create({
   filtersContainer: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   filters: {
     paddingHorizontal: 20,

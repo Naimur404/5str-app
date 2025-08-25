@@ -748,3 +748,138 @@ const styles = StyleSheet.create({
     gap: 4,
   },
 });
+
+// Discovery Page Skeleton
+export const DiscoveryPageSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    {/* Trending Section Skeleton */}
+    <View style={discoverySkeletonStyles.sectionSkeleton}>
+      <SkeletonBox 
+        width={120} 
+        height={20} 
+        backgroundColor={colors.icon + '20'} 
+      />
+      <View style={[discoverySkeletonStyles.horizontalScrollSkeleton, { marginTop: 16 }]}>
+        {[...Array(3)].map((_, index) => (
+          <View key={index} style={discoverySkeletonStyles.trendingCardSkeleton}>
+            <SkeletonBox 
+              width={200} 
+              height={120} 
+              borderRadius={12}
+              backgroundColor={colors.icon + '20'} 
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+
+    {/* Categories Section Skeleton */}
+    <View style={discoverySkeletonStyles.sectionSkeleton}>
+      <SkeletonBox 
+        width={150} 
+        height={20} 
+        backgroundColor={colors.icon + '20'} 
+      />
+      <View style={[discoverySkeletonStyles.categoriesGridSkeleton, { marginTop: 16 }]}>
+        {[...Array(6)].map((_, index) => (
+          <View key={index} style={discoverySkeletonStyles.categoryCardSkeleton}>
+            <SkeletonBox 
+              width={64} 
+              height={64} 
+              borderRadius={32}
+              backgroundColor={colors.icon + '20'} 
+            />
+            <SkeletonBox 
+              width="80%" 
+              height={16} 
+              backgroundColor={colors.icon + '20'} 
+            />
+            <SkeletonBox 
+              width="60%" 
+              height={12} 
+              backgroundColor={colors.icon + '20'} 
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+
+    {/* Quick Actions Skeleton */}
+    <View style={discoverySkeletonStyles.sectionSkeleton}>
+      <SkeletonBox 
+        width={100} 
+        height={20} 
+        backgroundColor={colors.icon + '20'} 
+      />
+      <View style={[discoverySkeletonStyles.quickActionsSkeleton, { marginTop: 16 }]}>
+        {[...Array(4)].map((_, index) => (
+          <View key={index} style={discoverySkeletonStyles.actionButtonSkeleton}>
+            <SkeletonBox 
+              width={24} 
+              height={24} 
+              backgroundColor={colors.icon + '20'} 
+            />
+            <SkeletonBox 
+              width="60%" 
+              height={12} 
+              backgroundColor={colors.icon + '20'} 
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  </View>
+);
+
+// Additional styles for Discovery page skeleton
+const discoverySkeletonStyles = StyleSheet.create({
+  sectionSkeleton: {
+    paddingHorizontal: 24,
+    marginVertical: 20,
+  },
+  horizontalScrollSkeleton: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  trendingCardSkeleton: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  categoriesGridSkeleton: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'space-between',
+  },
+  categoryCardSkeleton: {
+    width: (width - 72) / 2,
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickActionsSkeleton: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButtonSkeleton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+});

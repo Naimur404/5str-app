@@ -12,6 +12,7 @@ export const API_CONFIG = {
     SPECIAL_OFFERS: '/api/v1/home/special-offers',
     SEARCH: '/api/v1/search',
     CATEGORIES: '/api/v1/categories',
+    TODAY_TRENDING: '/api/v1/today-trending',
     USER_PROFILE: '/api/v1/auth/user',
     UPDATE_PROFILE: '/api/v1/auth/profile',
     USER_REVIEWS: '/api/v1/user/reviews',

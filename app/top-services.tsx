@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Image,
   TextInput,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -20,6 +19,7 @@ import { TopService } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import * as Location from 'expo-location';
+import { CategoryIcon } from '@/components/SmartImage';
 
 interface ServiceCardProps {
   service: TopService;
@@ -35,17 +35,16 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onPress, colors }) =
   >
     <View style={styles.serviceRow}>
       <View style={styles.serviceImageContainer}>
-        <View style={[styles.iconContainer, { backgroundColor: service.color_code }]}>
-          {service.icon_image ? (
-            <Image 
-              source={{ uri: service.icon_image }} 
-              style={styles.serviceIcon}
-              resizeMode="contain"
-            />
-          ) : (
-            <Ionicons name="storefront-outline" size={32} color="#FFFFFF" />
-          )}
-        </View>
+        <CategoryIcon
+          source={service.icon_image}
+          colorCode={service.color_code}
+          width={80}
+          height={80}
+          borderRadius={12}
+          fallbackIcon="storefront-outline"
+          showLoadingIndicator={true}
+          loadingColor={colors.buttonPrimary}
+        />
       </View>
 
       <View style={styles.serviceContent}>
@@ -230,7 +229,7 @@ export default function TopServicesScreen() {
 
       {/* Location Info */}
       {location && (
-        <View style={[styles.locationInfo, { backgroundColor: colors.background }]}>
+        <View style={[styles.locationInfo, { backgroundColor: colors.background, borderBottomColor: colors.card }]}>
           <View style={styles.locationRow}>
             <Ionicons 
               name="location-outline" 
@@ -368,7 +367,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   locationRow: {
     flexDirection: 'row',
@@ -416,17 +414,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  serviceIcon: {
-    width: 32,
-    height: 32,
   },
   serviceContent: {
     flex: 1,
