@@ -85,7 +85,11 @@ export default function OfferDetailsScreen() {
   };
 
   if (loading) {
-    return <OfferDetailsSkeleton colors={colors} />;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <OfferDetailsSkeleton colors={colors} />
+      </View>
+    );
   }
 
   if (error || !offer) {

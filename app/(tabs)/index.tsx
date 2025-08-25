@@ -29,6 +29,24 @@ const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width - 48;
 const SERVICE_ITEM_WIDTH = (width - 72) / 4;
 
+// Function to get dynamic greeting based on time
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    return 'Good Morning';
+  } else if (hour < 17) {
+    return 'Good Afternoon';
+  } else {
+    return 'Good Evening';
+  }
+};
+
+// Function to get first name from full name
+const getFirstName = (fullName: string) => {
+  if (!fullName) return '';
+  return fullName.split(' ')[0];
+};
+
 export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -353,7 +371,7 @@ export default function HomeScreen() {
           <View style={styles.headerTop}>
             <View style={styles.welcomeSection}>
               <Text style={styles.greeting}>
-                Hello, {user?.name || (isUserAuthenticated ? 'User' : 'Guest')}
+                {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
               </Text>
               <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
                 <Ionicons 
@@ -411,7 +429,7 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <View style={styles.welcomeSection}>
             <Text style={styles.greeting}>
-              Hello, {user?.name || (isUserAuthenticated ? 'User' : 'Guest')}
+              {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
             </Text>
             <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
               <Ionicons 
@@ -650,8 +668,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     color: 'white',
     marginBottom: 3,
   },

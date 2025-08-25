@@ -17,6 +17,8 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: colors.tabIconSelected,
         tabBarInactiveTintColor: colors.tabIconDefault,
+        sceneStyle: { backgroundColor: colors.background },
+        headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.tabBackground,
           borderTopColor: colors.tabBorder,
@@ -61,6 +63,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
+          sceneStyle: { backgroundColor: colors.background },
           tabBarIcon: ({ color, focused }) => (
             <View style={{ 
               alignItems: 'center', 
@@ -89,6 +92,7 @@ export default function TabLayout() {
         name="discover"
         options={{
           title: 'Discover',
+          sceneStyle: { backgroundColor: colors.background },
           tabBarIcon: ({ color, focused }) => (
             <View style={{ 
               alignItems: 'center', 
@@ -117,6 +121,7 @@ export default function TabLayout() {
         name="favourites"
         options={{
           title: 'Favourites',
+          sceneStyle: { backgroundColor: colors.background },
           tabBarIcon: ({ color, focused }) => (
             <View style={{ 
               alignItems: 'center', 
@@ -145,6 +150,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          sceneStyle: { backgroundColor: colors.background },
           tabBarIcon: ({ color, focused }) => (
             <View style={{ 
               alignItems: 'center', 

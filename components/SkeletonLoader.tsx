@@ -29,7 +29,7 @@ const SkeletonBox = ({ width, height, borderRadius = 8, backgroundColor }: {
 
 // Business Details Skeleton
 export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
-  <View style={[styles.container, { backgroundColor: colors.background }]}>
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
     {/* Hero Section Skeleton */}
     <SkeletonBox 
       width="100%" 
@@ -109,7 +109,7 @@ export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
 
 // Offer Details Skeleton
 export const OfferDetailsSkeleton = ({ colors }: SkeletonProps) => (
-  <View style={[styles.container, { backgroundColor: colors.background }]}>
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
     {/* Hero Section Skeleton */}
     <SkeletonBox 
       width="100%" 
@@ -346,6 +346,9 @@ export const HomePageSkeleton = ({ colors }: SkeletonProps) => (
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  skeletonContainer: {
     flex: 1,
   },
   skeletonBox: {

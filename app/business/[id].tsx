@@ -786,7 +786,11 @@ export default function BusinessDetailsScreen() {
   );
 
   if (loading) {
-    return <BusinessDetailsSkeleton colors={colors} />;
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <BusinessDetailsSkeleton colors={colors} />
+      </View>
+    );
   }
 
   if (error || !business) {
