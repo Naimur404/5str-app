@@ -40,6 +40,24 @@ export default function LoginScreen() {
       const data = await login(email, password);
 
       if (data.success) {
+        // Check user role - only allow users with role "user" to access the app
+        if (data.data?.user?.role === 'super-admin') {
+          showError(
+            'Access Denied', 
+            'Super admin accounts cannot access this application. Please use the admin portal instead.'
+          );
+          return;
+        }
+
+        // Only allow users with role "user"
+        if (data.data?.user?.role !== 'user') {
+          showError(
+            'Access Denied', 
+            'Only user accounts can access this application. Please contact support if you believe this is an error.'
+          );
+          return;
+        }
+
         showSuccess('Success', 'Login successful! Welcome back!');
         // Add a small delay to show the success message before navigation
         setTimeout(() => {
