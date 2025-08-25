@@ -154,21 +154,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 24,
+    paddingTop: 50,
+    paddingBottom: 16,
     paddingHorizontal: 24,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: 'white',
     opacity: 0.9,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   searchContainer: {
     marginBottom: 10,

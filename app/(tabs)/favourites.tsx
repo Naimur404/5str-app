@@ -477,11 +477,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 16,
     paddingHorizontal: 20,
   },
   headerContent: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   headerTitleContainer: {
     flexDirection: 'row',
@@ -492,13 +492,13 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 2,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: 'white',
     opacity: 0.9,
   },

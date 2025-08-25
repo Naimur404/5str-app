@@ -13,8 +13,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { updateProfile, UpdateProfilePayload, User } from '@/services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
@@ -28,8 +29,8 @@ interface EditProfileModalProps {
 }
 
 export default function EditProfileModal({ visible, onClose, user, onUpdate }: EditProfileModalProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const { alertConfig, showInfo, showError, showSuccess, hideAlert } = useCustomAlert();
   
   const [formData, setFormData] = useState({
@@ -218,131 +219,168 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <KeyboardAvoidingView 
         style={[styles.container, { backgroundColor: colors.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.icon + '20' }]}>
+        <View style={[styles.header, { 
+          borderBottomColor: colors.border,
+          backgroundColor: colors.background
+        }]}>
           <TouchableOpacity onPress={onClose} style={styles.headerButton}>
             <Ionicons name="close" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Profile</Text>
           <TouchableOpacity 
             onPress={handleSave} 
-            style={[styles.headerButton, { opacity: loading ? 0.5 : 1 }]}
+            style={[
+              styles.saveButton, 
+              { 
+                backgroundColor: colors.tint,
+                opacity: loading ? 0.7 : 1 
+              }
+            ]}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator size="small" color={colors.tint} />
+              <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text style={[styles.saveText, { color: colors.tint }]}>Save</Text>
+              <Text style={styles.saveButtonText}>Save</Text>
             )}
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={[styles.content, { backgroundColor: colors.background }]} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
           {/* Profile Image */}
           <View style={styles.imageSection}>
             <View style={styles.imageContainer}>
               {selectedImageUri ? (
-                <Image source={{ uri: selectedImageUri }} style={styles.profileImage} />
+                <Image source={{ uri: selectedImageUri }} style={[
+                  styles.profileImage,
+                  { borderColor: colorScheme === 'dark' ? colors.border : 'white' }
+                ]} />
               ) : (
-                <View style={[styles.imagePlaceholder, { backgroundColor: colors.icon + '20' }]}>
+                <View style={[
+                  styles.imagePlaceholder, 
+                  { 
+                    backgroundColor: colors.card,
+                    borderColor: colors.border
+                  }
+                ]}>
                   <Ionicons name="person" size={40} color={colors.icon} />
                 </View>
               )}
               
               <TouchableOpacity 
-                style={[styles.imagePickerButton, { backgroundColor: colors.tint }]}
+                style={[
+                  styles.imagePickerButton, 
+                  { 
+                    backgroundColor: colors.tint,
+                    borderColor: colorScheme === 'dark' ? colors.border : 'white'
+                  }
+                ]}
                 onPress={pickImage}
                 disabled={imageLoading}
               >
                 {imageLoading ? (
                   <ActivityIndicator size="small" color="white" />
                 ) : (
-                  <Ionicons name="camera" size={20} color="white" />
+                  <Ionicons name="camera" size={18} color="white" />
                 )}
               </TouchableOpacity>
             </View>
-            <Text style={[styles.imageText, { color: colors.icon }]}>Tap to change photo</Text>
+            <Text style={[styles.imageText, { color: colors.icon }]}>Tap to change profile photo</Text>
           </View>
 
           {/* Form Fields */}
           <View style={styles.formSection}>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Full Name</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: colors.background,
-                  borderColor: colors.icon + '30',
-                  color: colors.text
-                }]}
-                value={formData.name}
-                onChangeText={(text) => handleInputChange('name', text)}
-                placeholder="Enter your full name"
-                placeholderTextColor={colors.icon}
-              />
+              <Text style={[styles.label, { color: colors.text }]}>
+                <Ionicons name="person-outline" size={16} color={colors.icon} /> Full Name
+              </Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="person" size={20} color={colors.icon} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  value={formData.name}
+                  onChangeText={(text) => handleInputChange('name', text)}
+                  placeholder="Enter your full name"
+                  placeholderTextColor={colors.icon}
+                  keyboardAppearance={colorScheme}
+                />
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: colors.background,
-                  borderColor: colors.icon + '30',
-                  color: colors.text
-                }]}
-                value={formData.phone}
-                onChangeText={(text) => handleInputChange('phone', text)}
-                placeholder="Enter your phone number"
-                placeholderTextColor={colors.icon}
-                keyboardType="phone-pad"
-              />
+              <Text style={[styles.label, { color: colors.text }]}>
+                <Ionicons name="call-outline" size={16} color={colors.icon} /> Phone Number
+              </Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="call" size={20} color={colors.icon} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  value={formData.phone}
+                  onChangeText={(text) => handleInputChange('phone', text)}
+                  placeholder="Enter your phone number"
+                  placeholderTextColor={colors.icon}
+                  keyboardType="phone-pad"
+                  keyboardAppearance={colorScheme}
+                />
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>City</Text>
-              <TextInput
-                style={[styles.input, { 
-                  backgroundColor: colors.background,
-                  borderColor: colors.icon + '30',
-                  color: colors.text
-                }]}
-                value={formData.city}
-                onChangeText={(text) => handleInputChange('city', text)}
-                placeholder="Enter your city"
-                placeholderTextColor={colors.icon}
-              />
+              <Text style={[styles.label, { color: colors.text }]}>
+                <Ionicons name="location-outline" size={16} color={colors.icon} /> City
+              </Text>
+              <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Ionicons name="location" size={20} color={colors.icon} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  value={formData.city}
+                  onChangeText={(text) => handleInputChange('city', text)}
+                  placeholder="Enter your city"
+                  placeholderTextColor={colors.icon}
+                  keyboardAppearance={colorScheme}
+                />
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.text }]}>Coordinates (Optional)</Text>
+              <Text style={[styles.label, { color: colors.text }]}>
+                <Ionicons name="map-outline" size={16} color={colors.icon} /> Coordinates (Optional)
+              </Text>
               <View style={styles.coordinatesContainer}>
-                <TextInput
-                  style={[styles.coordinateInput, { 
-                    backgroundColor: colors.background,
-                    borderColor: colors.icon + '30',
-                    color: colors.text
-                  }]}
-                  value={formData.latitude.toString()}
-                  onChangeText={(text) => handleInputChange('latitude', parseFloat(text) || 0)}
-                  placeholder="Latitude"
-                  placeholderTextColor={colors.icon}
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={[styles.coordinateInput, { 
-                    backgroundColor: colors.background,
-                    borderColor: colors.icon + '30',
-                    color: colors.text
-                  }]}
-                  value={formData.longitude.toString()}
-                  onChangeText={(text) => handleInputChange('longitude', parseFloat(text) || 0)}
-                  placeholder="Longitude"
-                  placeholderTextColor={colors.icon}
-                  keyboardType="numeric"
-                />
+                <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}>
+                  <Ionicons name="navigate" size={18} color={colors.icon} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.coordinateInput, { color: colors.text }]}
+                    value={formData.latitude.toString()}
+                    onChangeText={(text) => handleInputChange('latitude', parseFloat(text) || 0)}
+                    placeholder="Latitude"
+                    placeholderTextColor={colors.icon}
+                    keyboardType="numeric"
+                    keyboardAppearance={colorScheme}
+                  />
+                </View>
+                <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}>
+                  <Ionicons name="compass" size={18} color={colors.icon} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.coordinateInput, { color: colors.text }]}
+                    value={formData.longitude.toString()}
+                    onChangeText={(text) => handleInputChange('longitude', parseFloat(text) || 0)}
+                    placeholder="Longitude"
+                    placeholderTextColor={colors.icon}
+                    keyboardType="numeric"
+                    keyboardAppearance={colorScheme}
+                  />
+                </View>
               </View>
             </View>
           </View>
@@ -369,9 +407,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 20,
     paddingTop: 60,
     borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerButton: {
     width: 50,
@@ -381,61 +424,106 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  saveButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   saveText: {
     fontSize: 16,
     fontWeight: '600',
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
+    paddingBottom: 40,
   },
   imageSection: {
     alignItems: 'center',
     marginBottom: 32,
+    paddingVertical: 20,
   },
   imageContainer: {
     position: 'relative',
-    marginBottom: 8,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 4,
   },
   imagePlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
   },
   imagePickerButton: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    bottom: 2,
+    right: 2,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   imageText: {
     fontSize: 14,
+    fontStyle: 'italic',
   },
   formSection: {
-    gap: 20,
+    gap: 24,
   },
   inputGroup: {
-    gap: 8,
+    gap: 12,
   },
   label: {
     fontSize: 16,
     fontWeight: '500',
+    marginBottom: 4,
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: 12,
-    padding: 16,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 16,
     fontSize: 16,
   },
   coordinatesContainer: {
@@ -444,9 +532,7 @@ const styles = StyleSheet.create({
   },
   coordinateInput: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
+    paddingVertical: 16,
     fontSize: 16,
   },
 });

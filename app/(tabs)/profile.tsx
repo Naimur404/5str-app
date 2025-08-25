@@ -319,7 +319,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style="light" />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'light'} />
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
@@ -545,86 +545,86 @@ const styles = StyleSheet.create({
     paddingBottom: 100, // Add bottom padding to ensure content is not hidden behind tab bar
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 32,
-    paddingHorizontal: 24,
+    paddingTop: 45,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 8,
   },
   editButton: {
-    padding: 8,
-    borderRadius: 20,
+    padding: 6,
+    borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
-    borderWidth: 3,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
+    borderWidth: 2,
     borderColor: 'white',
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
-    borderWidth: 3,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
+    borderWidth: 2,
     borderColor: 'white',
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   userEmail: {
-    fontSize: 16,
+    fontSize: 13,
     color: 'white',
     opacity: 0.9,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   userStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   userLevel: {
-    fontSize: 14,
+    fontSize: 12,
     color: 'white',
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
     fontWeight: '500',
   },
   userJoinDate: {
-    fontSize: 12,
+    fontSize: 11,
     color: 'white',
     opacity: 0.8,
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    gap: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
   },
   statCard: {
     flex: 1,
@@ -648,33 +648,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   section: {
-    marginVertical: 12,
+    marginVertical: 8,
   },
   reviewsSection: {
-    marginVertical: 12,
-    marginBottom: 32, // More space at the bottom for better visibility
+    marginVertical: 8,
+    marginBottom: 24, // More space at the bottom for better visibility
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
   seeAllText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   levelCard: {
-    marginHorizontal: 24,
-    padding: 20,
-    borderRadius: 16,
+    marginHorizontal: 20,
+    padding: 16,
+    borderRadius: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -682,12 +682,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   levelHeader: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   levelName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   levelDescription: {
     fontSize: 14,
