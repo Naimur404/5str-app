@@ -142,8 +142,8 @@ export default function DiscoverScreen() {
         style={styles.trendingImage} 
       />
       <View style={styles.trendingBadge}>
-        <Ionicons name="trending-up" size={12} color="white" />
-        <Text style={styles.trendingRank}>#{item.trend_rank}</Text>
+        <Ionicons name="trending-up" size={12} color={colors.buttonPrimary} />
+        <Text style={[styles.trendingRank, { color: colors.text }]}>#{item.trend_rank}</Text>
       </View>
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.8)']}
@@ -174,8 +174,8 @@ export default function DiscoverScreen() {
         style={styles.trendingImage} 
       />
       <View style={styles.trendingBadge}>
-        <Ionicons name="flame" size={12} color="white" />
-        <Text style={styles.trendingRank}>#{item.trend_rank}</Text>
+        <Ionicons name="flame" size={12} color="#FF6B35" />
+        <Text style={[styles.trendingRank, { color: colors.text }]}>#{item.trend_rank}</Text>
       </View>
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.8)']}
@@ -412,18 +412,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   trendingRank: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#333',
   },
   trendingOverlay: {
     position: 'absolute',

@@ -101,7 +101,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
 
 export default function DynamicSectionScreen() {
   const { colorScheme } = useTheme();
-  const colors = Colors[colorScheme];
+  const colors = Colors[colorScheme || 'light'];
   const { section } = useLocalSearchParams();
   const sectionSlug = Array.isArray(section) ? section[0] : section || 'trending';
   
@@ -121,6 +121,8 @@ export default function DynamicSectionScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const getSectionIcon = (slug: string) => {
+    if (!slug) return 'grid';
+    
     switch (slug.toLowerCase()) {
       case 'trending':
         return 'trending-up';
@@ -203,8 +205,12 @@ export default function DynamicSectionScreen() {
 
     if (searchQuery) {
       filtered = filtered.filter((business: Business) => {
-        return business.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               business.category_name.toLowerCase().includes(searchQuery.toLowerCase());
+        const businessName = business.business_name || '';
+        const categoryName = business.category_name || '';
+        const searchLower = searchQuery.toLowerCase();
+        
+        return businessName.toLowerCase().includes(searchLower) ||
+               categoryName.toLowerCase().includes(searchLower);
       });
     }
 

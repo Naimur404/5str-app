@@ -101,7 +101,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
 
 export default function PopularNearbyScreen() {
   const { colorScheme } = useTheme();
-  const colors = Colors[colorScheme];
+  const colors = Colors[colorScheme || 'light'];
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [location, setLocation] = useState<{
@@ -144,6 +144,9 @@ export default function PopularNearbyScreen() {
       if (response.success) {
         const newBusinesses = response.data.businesses || [];
         
+        console.log('Setting businesses:', newBusinesses.length, 'businesses');
+        console.log('First business:', newBusinesses[0]?.business_name);
+        
         if (page === 1 || isRefresh) {
           setBusinesses(newBusinesses);
           setCurrentPage(1);
@@ -178,13 +181,18 @@ export default function PopularNearbyScreen() {
   const filterBusinesses = () => {
     let filtered = businesses;
 
+    console.log('Filtering businesses. Total:', businesses.length, 'Search query:', searchQuery);
+
     if (searchQuery) {
       filtered = filtered.filter((business: Business) => {
-        return business.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               business.category_name.toLowerCase().includes(searchQuery.toLowerCase());
+        const businessName = business.business_name || '';
+        const categoryName = business.category_name || '';
+        return businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               categoryName.toLowerCase().includes(searchQuery.toLowerCase());
       });
     }
 
+    console.log('After filtering:', filtered.length, 'businesses');
     setFilteredBusinesses(filtered);
   };
 
