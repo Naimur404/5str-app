@@ -2,7 +2,9 @@ import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { fetchWithJsonValidation } from '@/services/api';
+import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User } from '@/services/api';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +13,6 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
     Dimensions,
     FlatList,
     Image,
@@ -36,12 +37,16 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState('Chittagong');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [user, setUser] = useState<User | null>(null);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
 
   // Get banners from API response, fallback to empty array
   const banners = homeData?.banners || [];
@@ -54,6 +59,7 @@ export default function HomeScreen() {
   }, [banners, currentBannerIndex]);
 
   useEffect(() => {
+    checkAuthAndLoadUser();
     requestLocationPermission();
   }, []);
 
@@ -62,6 +68,22 @@ export default function HomeScreen() {
       fetchHomeData();
     }
   }, [location]);
+
+  const checkAuthAndLoadUser = async () => {
+    try {
+      const authenticated = await isAuthenticated();
+      setIsUserAuthenticated(authenticated);
+      
+      if (authenticated) {
+        const userResponse = await getUserProfile();
+        if (userResponse.success && userResponse.data.user) {
+          setUser(userResponse.data.user);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking auth or loading user:', error);
+    }
+  };
 
   // Auto-scroll banners every 4 seconds
   useEffect(() => {
@@ -92,17 +114,21 @@ export default function HomeScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
-          'Location Permission Required',
-          'Please enable location services to discover nearby businesses.',
-          [
-            { text: 'Skip', onPress: () => setDefaultLocation() },
-            { text: 'Retry', onPress: () => requestLocationPermission() }
+        setLocationPermissionDenied(true);
+        showAlert({
+          type: 'warning',
+          title: 'Location Permission Required',
+          message: 'Please enable location services to discover nearby businesses and get personalized recommendations.',
+          buttons: [
+            { text: 'Skip', style: 'cancel', onPress: () => setDefaultLocation() },
+            { text: 'Try Again', onPress: () => requestLocationPermission() },
+            { text: 'Settings', onPress: () => openLocationSettings() }
           ]
-        );
+        });
         return;
       }
 
+      setLocationPermissionDenied(false);
       const currentLocation = await Location.getCurrentPositionAsync({});
       setLocation({
         latitude: currentLocation.coords.latitude,
@@ -121,14 +147,52 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error getting location:', error);
-      setDefaultLocation();
+      showAlert({
+        type: 'error',
+        title: 'Location Error',
+        message: 'Unable to get your current location. Using default location.',
+        buttons: [
+          { text: 'OK', onPress: () => setDefaultLocation() },
+          { text: 'Try Again', onPress: () => requestLocationPermission() }
+        ]
+      });
     }
+  };
+
+  const openLocationSettings = () => {
+    // You could use expo-linking to open device settings
+    // For now, we'll just retry location permission
+    requestLocationPermission();
   };
 
   const setDefaultLocation = () => {
     // Default location (Chittagong)
     setLocation({ latitude: 22.3569, longitude: 91.7832 });
     setUserLocation('Chittagong');
+  };
+
+  const handleChangeLocation = () => {
+    if (locationPermissionDenied) {
+      showAlert({
+        type: 'info',
+        title: 'Change Location',
+        message: 'To change your location, please enable location services and try again.',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Enable Location', onPress: () => requestLocationPermission() }
+        ]
+      });
+    } else {
+      showAlert({
+        type: 'info',
+        title: 'Update Location',
+        message: 'This will refresh your current location and update nearby businesses.',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Update', onPress: () => requestLocationPermission() }
+        ]
+      });
+    }
   };
 
   const fetchHomeData = async () => {
@@ -141,12 +205,25 @@ export default function HomeScreen() {
       if (data.success) {
         setHomeData(data.data);
       } else {
-        Alert.alert('Error', 'Failed to load home data');
+        showAlert({
+          type: 'error',
+          title: 'Loading Error',
+          message: 'Failed to load home data. Please try again.',
+          buttons: [{ text: 'OK' }]
+        });
       }
     } catch (error) {
       console.error('Error fetching home data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Network error. Please check your connection.';
-      Alert.alert('Error', errorMessage);
+      showAlert({
+        type: 'error',
+        title: 'Network Error',
+        message: errorMessage,
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Try Again', onPress: () => fetchHomeData() }
+        ]
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -275,11 +352,22 @@ export default function HomeScreen() {
         >
           <View style={styles.headerTop}>
             <View style={styles.welcomeSection}>
-              <Text style={styles.greeting}>Hello, Naimur</Text>
-              <TouchableOpacity style={styles.locationContainer}>
-                <Ionicons name="location-outline" size={16} color="white" />
-                <Text style={styles.location}>{userLocation}</Text>
-                <Ionicons name="airplane-outline" size={16} color="white" />
+              <Text style={styles.greeting}>
+                Hello, {user?.name || (isUserAuthenticated ? 'User' : 'Guest')}
+              </Text>
+              <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
+                <Ionicons 
+                  name={locationPermissionDenied ? "location-outline" : "location"} 
+                  size={16} 
+                  color={locationPermissionDenied ? "#FFB800" : "white"} 
+                />
+                <Text style={[styles.location, { color: locationPermissionDenied ? "#FFB800" : "white" }]}>
+                  {locationPermissionDenied ? "Enable Location" : userLocation}
+                </Text>
+                {locationPermissionDenied && (
+                  <Ionicons name="warning" size={12} color="#FFB800" />
+                )}
+                <Ionicons name="chevron-down" size={14} color="white" />
                 <Text style={styles.changeLocation}>Change</Text>
               </TouchableOpacity>
             </View>
@@ -322,11 +410,22 @@ export default function HomeScreen() {
       >
         <View style={styles.headerTop}>
           <View style={styles.welcomeSection}>
-            <Text style={styles.greeting}>Hello, Naimur</Text>
-            <TouchableOpacity style={styles.locationContainer}>
-              <Ionicons name="location-outline" size={16} color="white" />
-              <Text style={styles.location}>{userLocation}</Text>
-              <Ionicons name="airplane-outline" size={16} color="white" />
+            <Text style={styles.greeting}>
+              Hello, {user?.name || (isUserAuthenticated ? 'User' : 'Guest')}
+            </Text>
+            <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
+              <Ionicons 
+                name={locationPermissionDenied ? "location-outline" : "location"} 
+                size={16} 
+                color={locationPermissionDenied ? "#FFB800" : "white"} 
+              />
+              <Text style={[styles.location, { color: locationPermissionDenied ? "#FFB800" : "white" }]}>
+                {locationPermissionDenied ? "Enable Location" : userLocation}
+              </Text>
+              {locationPermissionDenied && (
+                <Ionicons name="warning" size={12} color="#FFB800" />
+              )}
+              <Ionicons name="chevron-down" size={14} color="white" />
               <Text style={styles.changeLocation}>Change</Text>
             </TouchableOpacity>
           </View>
@@ -504,6 +603,15 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }
