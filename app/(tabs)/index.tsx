@@ -581,6 +581,7 @@ export default function HomeScreen() {
                   key={index}
                   style={[
                     styles.paginationDot,
+                    { backgroundColor: index === currentBannerIndex ? colors.buttonPrimary : colors.icon + '30' },
                     index === currentBannerIndex && styles.paginationDotActive
                   ]}
                 />
@@ -1009,10 +1010,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   paginationDotActive: {
-    backgroundColor: 'white',
     width: 24,
     borderRadius: 4,
   },
