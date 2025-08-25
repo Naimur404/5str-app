@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface AlertButton {
   text: string;
@@ -33,6 +35,9 @@ export default function CustomAlert({
   buttons = [{ text: 'OK', style: 'default' }],
   onClose,
 }: CustomAlertProps) {
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
+  
   const scaleValue = React.useRef(new Animated.Value(0)).current;
   const opacityValue = React.useRef(new Animated.Value(0)).current;
 
@@ -68,15 +73,32 @@ export default function CustomAlert({
   }, [visible]);
 
   const getIconAndColor = () => {
+    const isDark = colorScheme === 'dark';
     switch (type) {
       case 'success':
-        return { icon: 'checkmark-circle', color: '#10b981', bgColor: '#ecfdf5' };
+        return { 
+          icon: 'checkmark-circle', 
+          color: '#10b981', 
+          bgColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#ecfdf5' 
+        };
       case 'error':
-        return { icon: 'close-circle', color: '#ef4444', bgColor: '#fef2f2' };
+        return { 
+          icon: 'close-circle', 
+          color: '#ef4444', 
+          bgColor: isDark ? 'rgba(239, 68, 68, 0.2)' : '#fef2f2' 
+        };
       case 'warning':
-        return { icon: 'warning', color: '#f59e0b', bgColor: '#fffbeb' };
+        return { 
+          icon: 'warning', 
+          color: '#f59e0b', 
+          bgColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#fffbeb' 
+        };
       default:
-        return { icon: 'information-circle', color: '#3b82f6', bgColor: '#eff6ff' };
+        return { 
+          icon: 'information-circle', 
+          color: '#3b82f6', 
+          bgColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff' 
+        };
     }
   };
 
@@ -92,13 +114,17 @@ export default function CustomAlert({
   };
 
   const getButtonStyle = (buttonStyle: string) => {
+    const isDark = colorScheme === 'dark';
     switch (buttonStyle) {
       case 'destructive':
         return { backgroundColor: '#ef4444', color: '#ffffff' };
       case 'cancel':
-        return { backgroundColor: '#f3f4f6', color: '#374151' };
+        return { 
+          backgroundColor: isDark ? colors.border : '#f3f4f6', 
+          color: isDark ? colors.text : '#374151' 
+        };
       default:
-        return { backgroundColor: '#3b82f6', color: '#ffffff' };
+        return { backgroundColor: colors.buttonPrimary, color: colors.buttonText };
     }
   };
 
@@ -109,12 +135,13 @@ export default function CustomAlert({
       animationType="none"
       statusBarTranslucent
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>
         <BlurView intensity={20} style={StyleSheet.absoluteFill} />
         <Animated.View
           style={[
             styles.alertContainer,
             {
+              backgroundColor: colors.card,
               transform: [{ scale: scaleValue }],
               opacity: opacityValue,
             },
@@ -125,8 +152,8 @@ export default function CustomAlert({
           </View>
           
           <View style={styles.contentContainer}>
-            <Text style={styles.title}>{title}</Text>
-            {message && <Text style={styles.message}>{message}</Text>}
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            {message && <Text style={[styles.message, { color: colors.icon }]}>{message}</Text>}
           </View>
 
           <View style={buttons.length > 2 ? styles.buttonContainerVertical : styles.buttonContainer}>
@@ -161,11 +188,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 20,
   },
   alertContainer: {
-    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 24,
     width: '100%',
@@ -195,14 +220,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1f2937',
     textAlign: 'center',
     marginBottom: 8,
     lineHeight: 24,
   },
   message: {
     fontSize: 16,
-    color: '#6b7280',
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 4,

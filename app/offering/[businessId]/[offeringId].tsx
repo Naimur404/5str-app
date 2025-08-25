@@ -1,5 +1,8 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getOfferingDetails,
     getOfferingReviews,
@@ -12,8 +15,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
+    Dimensions,
+    Image,
     ScrollView,
     StyleSheet,
     Text,
@@ -22,6 +25,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ReviewCard from '@/components/ReviewCard';
+import { OfferDetailsSkeleton } from '@/components/SkeletonLoader';
+
+const { width } = Dimensions.get('window');
 
 export default function OfferingDetailsScreen() {
   const [offering, setOffering] = useState<Offering | null>(null);
@@ -36,6 +42,7 @@ export default function OfferingDetailsScreen() {
   
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     if (businessId && offeringId) {
@@ -72,14 +79,15 @@ export default function OfferingDetailsScreen() {
     const authenticated = await isAuthenticated();
     
     if (!authenticated) {
-      Alert.alert(
-        'Sign Up to Write Reviews',
-        'Create an account to share your experience and help others discover great offerings',
-        [
+      showAlert({
+        type: 'info',
+        title: 'Sign Up to Write Reviews',
+        message: 'Create an account to share your experience and help others discover great offerings',
+        buttons: [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
-      );
+      });
       return;
     }
 
@@ -111,14 +119,7 @@ export default function OfferingDetailsScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style="light" />
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading offering details...</Text>
-        </View>
-      </View>
-    );
+    return <OfferDetailsSkeleton colors={colors} />;
   }
 
   if (error || !offering) {
@@ -146,46 +147,125 @@ export default function OfferingDetailsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="light" />
       
-      {/* Header */}
-      <LinearGradient colors={[colors.headerGradientStart, colors.headerGradientEnd]} style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+      {/* Hero Section with Image */}
+      <View style={styles.heroSection}>
+        <Image 
+          source={{ uri: getImageUrl(offering.image_url) || getFallbackImageUrl('offering') }} 
+          style={styles.heroImage} 
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          style={styles.heroOverlay}
         >
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{offering.name}</Text>
-      </LinearGradient>
-
-      <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
-        {/* Offering Details */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.offeringName, { color: colors.text }]}>{offering.name}</Text>
-          <Text style={[styles.offeringDescription, { color: colors.icon }]}>{offering.description}</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </TouchableOpacity>
           
-          <View style={styles.offeringMeta}>
-            <Text style={[styles.offeringPrice, { color: colors.tint }]}>{offering.price_range}</Text>
-            <View style={styles.offeringRating}>
-              <Ionicons name="star" size={16} color="#FFD700" />
-              <Text style={[styles.ratingText, { color: colors.text }]}>
-                {parseFloat(offering.average_rating).toFixed(1)}
-              </Text>
-              <Text style={[styles.reviewCount, { color: colors.icon }]}>
-                ({offering.total_reviews} reviews)
-              </Text>
+          <View style={styles.heroContent}>
+            <Text style={styles.offeringName}>{offering.name}</Text>
+            <Text style={styles.offeringType}>
+              {offering.offering_type === 'product' ? 'Product' : 'Service'}
+            </Text>
+            <View style={styles.heroMeta}>
+              <View style={styles.ratingBadge}>
+                <Ionicons name="star" size={16} color="#FFD700" />
+                <Text style={styles.ratingBadgeText}>{parseFloat(offering.average_rating).toFixed(1)}</Text>
+                <Text style={styles.ratingBadgeText}>({offering.total_reviews})</Text>
+              </View>
+              <Text style={styles.priceBadge}>{offering.price_range}</Text>
+              {offering.is_popular && (
+                <View style={styles.popularBadge}>
+                  <Ionicons name="trending-up" size={14} color="#FF6B6B" />
+                  <Text style={styles.popularText}>Popular</Text>
+                </View>
+              )}
             </View>
           </View>
+        </LinearGradient>
+      </View>
 
-          {offering.business && (
-            <View style={styles.businessInfo}>
-              <Text style={[styles.businessLabel, { color: colors.icon }]}>From</Text>
-              <Text style={[styles.businessName, { color: colors.text }]}>{offering.business.business_name}</Text>
+      <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+        {/* Offering Details Card */}
+        <View style={[styles.detailsCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Details</Text>
+          
+          <Text style={[styles.description, { color: colors.text }]}>{offering.description}</Text>
+          
+          {/* Pricing Section */}
+          <View style={styles.pricingSection}>
+            <View style={styles.priceRow}>
+              <Text style={[styles.priceLabel, { color: colors.icon }]}>Price Range</Text>
+              <Text style={[styles.priceValue, { color: colors.tint }]}>{offering.price_range}</Text>
             </View>
-          )}
+            {offering.price && (
+              <View style={styles.priceRow}>
+                <Text style={[styles.priceLabel, { color: colors.icon }]}>Starting Price</Text>
+                <Text style={[styles.priceValue, { color: colors.tint }]}>
+                  {offering.currency} {offering.price}
+                  {offering.price_max && ` - ${offering.currency} ${offering.price_max}`}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Features */}
+          <View style={styles.featuresSection}>
+            <Text style={[styles.featuresTitle, { color: colors.text }]}>Features</Text>
+            <View style={styles.featuresList}>
+              <View style={styles.featureItem}>
+                <Ionicons 
+                  name={offering.is_available ? "checkmark-circle" : "close-circle"} 
+                  size={16} 
+                  color={offering.is_available ? "#4CAF50" : "#FF6B6B"} 
+                />
+                <Text style={[styles.featureText, { color: colors.text }]}>
+                  {offering.is_available ? "Available" : "Currently Unavailable"}
+                </Text>
+              </View>
+              
+              {offering.is_featured && (
+                <View style={styles.featureItem}>
+                  <Ionicons name="star" size={16} color="#FFD700" />
+                  <Text style={[styles.featureText, { color: colors.text }]}>Featured Item</Text>
+                </View>
+              )}
+              
+              {offering.is_popular && (
+                <View style={styles.featureItem}>
+                  <Ionicons name="trending-up" size={16} color="#FF6B6B" />
+                  <Text style={[styles.featureText, { color: colors.text }]}>Popular Choice</Text>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
 
+        {/* Business Info Card */}
+        {offering.business && (
+          <View style={[styles.businessCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>From This Business</Text>
+            <TouchableOpacity 
+              style={styles.businessInfo}
+              onPress={() => router.push(`/business/${offering.business?.id}` as any)}
+            >
+              <View style={styles.businessDetails}>
+                <Text style={[styles.businessName, { color: colors.text }]}>
+                  {offering.business.business_name}
+                </Text>
+                <Text style={[styles.businessSubtext, { color: colors.icon }]}>
+                  View all offerings from this business
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Reviews Section */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.reviewsCard, { backgroundColor: colors.card }]}>
           <View style={styles.reviewsHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Reviews ({reviews.length})
@@ -194,6 +274,7 @@ export default function OfferingDetailsScreen() {
               style={[styles.writeReviewButton, { backgroundColor: colors.buttonPrimary }]}
               onPress={handleWriteReview}
             >
+              <Ionicons name="create-outline" size={16} color={colors.buttonText} />
               <Text style={[styles.writeReviewText, { color: colors.buttonText }]}>Write Review</Text>
             </TouchableOpacity>
           </View>
@@ -211,15 +292,34 @@ export default function OfferingDetailsScreen() {
             </View>
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="chatbubble-outline" size={48} color={colors.icon} />
+              <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
+                <Ionicons name="chatbubble-outline" size={48} color={colors.icon} />
+              </View>
               <Text style={[styles.emptyTitle, { color: colors.text }]}>No Reviews Yet</Text>
               <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
-                Be the first to review this item
+                Be the first to share your experience with this {offering.offering_type}
               </Text>
+              <TouchableOpacity 
+                style={[styles.writeFirstReviewButton, { backgroundColor: colors.buttonPrimary }]}
+                onPress={handleWriteReview}
+              >
+                <Text style={[styles.writeFirstReviewText, { color: colors.buttonText }]}>
+                  Write the First Review
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
       </ScrollView>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }
@@ -227,14 +327,6 @@ export default function OfferingDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
   },
   errorContainer: {
     flex: 1,
@@ -263,92 +355,191 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  heroSection: {
+    height: 300,
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingTop: 50,
-    paddingBottom: 16,
     paddingHorizontal: 20,
+    paddingBottom: 20,
+    justifyContent: 'space-between',
   },
   backButton: {
-    marginRight: 16,
+    alignSelf: 'flex-start',
     padding: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
-  headerTitle: {
-    fontSize: 18,
+  heroContent: {
+    alignSelf: 'stretch',
+  },
+  offeringName: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
-    flex: 1,
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  content: {
+  offeringType: {
+    fontSize: 16,
+    color: 'white',
+    opacity: 0.9,
+    marginBottom: 12,
+    textTransform: 'capitalize',
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  ratingBadgeText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  priceBadge: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    color: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  popularBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 107, 107, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  popularText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  contentContainer: {
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  section: {
+  detailsCard: {
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginBottom: 16,
-    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  offeringName: {
-    fontSize: 24,
+  businessCard: {
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  reviewsCard: {
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  offeringDescription: {
+  description: {
     fontSize: 16,
     lineHeight: 24,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  offeringMeta: {
+  pricingSection: {
+    marginBottom: 20,
+  },
+  priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  offeringPrice: {
-    fontSize: 20,
+  priceLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  priceValue: {
+    fontSize: 16,
     fontWeight: 'bold',
   },
-  offeringRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  featuresSection: {
+    marginTop: 8,
   },
-  ratingText: {
-    fontSize: 16,
+  featuresTitle: {
+    fontSize: 18,
     fontWeight: '600',
+    marginBottom: 12,
   },
-  reviewCount: {
-    fontSize: 14,
+  featuresList: {
+    gap: 8,
   },
-  businessInfo: {
+  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  businessLabel: {
+  featureText: {
     fontSize: 14,
+    flex: 1,
+  },
+  businessInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  businessDetails: {
+    flex: 1,
   },
   businessName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  businessSubtext: {
+    fontSize: 14,
   },
   reviewsHeader: {
     flexDirection: 'row',
@@ -357,80 +548,54 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   writeReviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 20,
+    gap: 6,
   },
   writeReviewText: {
     fontSize: 14,
     fontWeight: '600',
   },
-  reviewCard: {
-    marginBottom: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  reviewUser: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userInitial: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  reviewDate: {
-    fontSize: 12,
-  },
-  reviewRating: {
-    flexDirection: 'row',
-    gap: 2,
-  },
-  reviewText: {
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 12,
-  },
-  reviewFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  helpfulText: {
-    fontSize: 12,
-  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 40,
   },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   emptyTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 12,
-    marginBottom: 4,
+    marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
     textAlign: 'center',
     opacity: 0.7,
+    marginBottom: 24,
+  },
+  writeFirstReviewButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  writeFirstReviewText: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

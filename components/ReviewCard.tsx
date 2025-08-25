@@ -4,11 +4,12 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 import { Review, voteReview, removeVote, getAuthToken } from '@/services/api';
 import { useRouter } from 'expo-router';
 
@@ -22,6 +23,7 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   const [isVoting, setIsVoting] = useState(false);
   const [localReview, setLocalReview] = useState(review);
 
@@ -35,14 +37,15 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
       // Check if user is authenticated
       const token = await getAuthToken();
       if (!token) {
-        Alert.alert(
-          'Login Required',
-          'Please login to vote on reviews',
-          [
+        showAlert({
+          type: 'info',
+          title: 'Sign Up to Vote',
+          message: 'Create an account to vote on reviews and help others discover great places',
+          buttons: [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+            { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
           ]
-        );
+        });
         return;
       }
 
@@ -114,27 +117,38 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
       } else {
         // Revert optimistic update on error
         setLocalReview(review);
-        Alert.alert('Error', response.message || 'Failed to vote');
+        showAlert({
+          type: 'error',
+          title: 'Vote Failed',
+          message: response.message || 'Failed to vote',
+          buttons: [{ text: 'OK' }]
+        });
       }
     } catch (error) {
       console.error('Error voting:', error);
       // Revert optimistic update on error
       setLocalReview(review);
-      Alert.alert('Error', 'Failed to vote. Please try again.');
+      showAlert({
+        type: 'error',
+        title: 'Vote Failed',
+        message: 'Failed to vote. Please try again.',
+        buttons: [{ text: 'OK' }]
+      });
     } finally {
       setIsVoting(false);
     }
   };
 
   const handleLoginPrompt = () => {
-    Alert.alert(
-      'Login Required',
-      'Please login to vote on reviews',
-      [
+    showAlert({
+      type: 'info',
+      title: 'Sign Up to Vote',
+      message: 'Create an account to vote on reviews and help others discover great places',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Login', onPress: () => router.push('/auth/login' as any) }
+        { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
       ]
-    );
+    });
   };
 
   return (
@@ -252,6 +266,15 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
           </Text>
         )}
       </View>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }

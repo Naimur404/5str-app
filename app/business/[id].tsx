@@ -21,7 +21,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
     Dimensions,
     FlatList,
     Image,
@@ -34,6 +33,8 @@ import {
 } from 'react-native';
 import ReviewCard from '@/components/ReviewCard';
 import { BusinessDetailsSkeleton } from '@/components/SkeletonLoader';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
 
 const { width } = Dimensions.get('window');
 
@@ -59,6 +60,7 @@ export default function BusinessDetailsScreen() {
   
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { alertConfig, showAlert, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     if (businessId) {
@@ -144,14 +146,15 @@ export default function BusinessDetailsScreen() {
     console.log('toggleFavorite called. isUserAuthenticated:', isUserAuthenticated, 'isFavorite:', isFavorite, 'favoriteId:', favoriteId);
     
     if (!isUserAuthenticated) {
-      Alert.alert(
-        'Sign Up to Save Favorites',
-        'Create an account to save your favorite businesses and get personalized recommendations',
-        [
+      showAlert({
+        type: 'info',
+        title: 'Sign Up to Save Favorites',
+        message: 'Create an account to save your favorite businesses and get personalized recommendations',
+        buttons: [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
-      );
+      });
       return;
     }
 
@@ -220,13 +223,28 @@ export default function BusinessDetailsScreen() {
       if (error.message && error.message.includes('409')) {
         // 409 conflict - already in favorites
         setIsFavorite(true);
-        Alert.alert('Info', 'This business is already in your favorites');
+        showAlert({
+          type: 'info',
+          title: 'Already in Favorites',
+          message: 'This business is already in your favorites',
+          buttons: [{ text: 'OK' }]
+        });
       } else if (error.message && error.message.includes('401')) {
         // 401 unauthorized
-        Alert.alert('Error', 'Please login again to manage favorites');
+        showAlert({
+          type: 'error',
+          title: 'Authentication Required',
+          message: 'Please login again to manage favorites',
+          buttons: [{ text: 'OK' }]
+        });
         setIsUserAuthenticated(false);
       } else {
-        Alert.alert('Error', 'Failed to update favorites. Please try again.');
+        showAlert({
+          type: 'error',
+          title: 'Failed to Update',
+          message: 'Failed to update favorites. Please try again.',
+          buttons: [{ text: 'OK' }]
+        });
       }
     } finally {
       setFavoriteLoading(false);
@@ -235,14 +253,15 @@ export default function BusinessDetailsScreen() {
 
   const toggleOfferingFavorite = async (offeringId: number) => {
     if (!isUserAuthenticated) {
-      Alert.alert(
-        'Sign Up to Save Favorites',
-        'Create an account to save your favorite items and get personalized recommendations',
-        [
+      showAlert({
+        type: 'info',
+        title: 'Sign Up to Save Favorites',
+        message: 'Create an account to save your favorite items and get personalized recommendations',
+        buttons: [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
-      );
+      });
       return;
     }
 
@@ -309,13 +328,28 @@ export default function BusinessDetailsScreen() {
           ...prev,
           [offeringId]: { isFavorite: true, favoriteId: null }
         }));
-        Alert.alert('Info', 'This item is already in your favorites');
+        showAlert({
+          type: 'info',
+          title: 'Already in Favorites',
+          message: 'This item is already in your favorites',
+          buttons: [{ text: 'OK' }]
+        });
       } else if (error.message && error.message.includes('401')) {
         // 401 unauthorized
-        Alert.alert('Error', 'Please login again to manage favorites');
+        showAlert({
+          type: 'error',
+          title: 'Authentication Required',
+          message: 'Please login again to manage favorites',
+          buttons: [{ text: 'OK' }]
+        });
         setIsUserAuthenticated(false);
       } else {
-        Alert.alert('Error', 'Failed to update favorites. Please try again.');
+        showAlert({
+          type: 'error',
+          title: 'Failed to Update',
+          message: 'Failed to update favorites. Please try again.',
+          buttons: [{ text: 'OK' }]
+        });
       }
     }
   };
@@ -341,14 +375,15 @@ export default function BusinessDetailsScreen() {
 
   const handleWriteReview = async () => {
     if (!isUserAuthenticated) {
-      Alert.alert(
-        'Sign Up to Write Reviews',
-        'Create an account to share your experience and help others discover great places',
-        [
+      showAlert({
+        type: 'info',
+        title: 'Sign Up to Write Reviews',
+        message: 'Create an account to share your experience and help others discover great places',
+        buttons: [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
         ]
-      );
+      });
       return;
     }
 
@@ -893,6 +928,15 @@ export default function BusinessDetailsScreen() {
       <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
         {renderTabContent()}
       </ScrollView>
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }
