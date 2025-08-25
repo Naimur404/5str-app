@@ -27,8 +27,6 @@ export default function RegisterScreen() {
     password: '',
     password_confirmation: '',
     city: '',
-    current_latitude: '',
-    current_longitude: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -69,12 +67,6 @@ export default function RegisterScreen() {
         password,
         password_confirmation,
         ...(formData.city && { city: formData.city }),
-        ...(formData.current_latitude && { 
-          current_latitude: parseFloat(formData.current_latitude) 
-        }),
-        ...(formData.current_longitude && { 
-          current_longitude: parseFloat(formData.current_longitude) 
-        }),
       };
 
       const data = await register(requestData);
@@ -204,42 +196,6 @@ export default function RegisterScreen() {
                   onChangeText={(value) => updateField('city', value)}
                   autoCapitalize="words"
                 />
-              </View>
-            </View>
-
-            {/* Location Coordinates */}
-            <View style={styles.locationRow}>
-              <View style={[styles.locationInput, styles.inputContainer]}>
-                <View style={[styles.inputWrapper, { 
-                  borderColor: colors.icon + '40',
-                  backgroundColor: colors.card
-                }]}>
-                  <Ionicons name="navigate-outline" size={20} color={colors.icon} />
-                  <TextInput
-                    style={[styles.input, { color: colors.text }]}
-                    placeholder="Latitude"
-                    placeholderTextColor={colors.icon}
-                    value={formData.current_latitude}
-                    onChangeText={(value) => updateField('current_latitude', value)}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-              <View style={[styles.locationInput, styles.inputContainer]}>
-                <View style={[styles.inputWrapper, { 
-                  borderColor: colors.icon + '40',
-                  backgroundColor: colors.card
-                }]}>
-                  <Ionicons name="navigate-outline" size={20} color={colors.icon} />
-                  <TextInput
-                    style={[styles.input, { color: colors.text }]}
-                    placeholder="Longitude"
-                    placeholderTextColor={colors.icon}
-                    value={formData.current_longitude}
-                    onChangeText={(value) => updateField('current_longitude', value)}
-                    keyboardType="numeric"
-                  />
-                </View>
               </View>
             </View>
 
@@ -423,13 +379,6 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 4,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  locationInput: {
-    flex: 1,
   },
   termsContainer: {
     marginBottom: 30,

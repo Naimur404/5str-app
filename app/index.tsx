@@ -11,19 +11,18 @@ export default function Index() {
     const initializeApp = async () => {
       try {
         const isFirstLaunch = await AppState.isFirstLaunch();
-        const isOnboardingCompleted = await AppState.isOnboardingCompleted();
         
-        // If it's the first launch or onboarding isn't completed, show onboarding
-        if (isFirstLaunch || !isOnboardingCompleted) {
+        // If it's the first launch, show onboarding
+        if (isFirstLaunch) {
           router.replace('/onboarding');
         } else {
-          // Go directly to the main app (tabs)
+          // Go directly to the main app (tabs) for returning users
           router.replace('/(tabs)');
         }
       } catch (error) {
         console.error('Error initializing app:', error);
-        // Fallback to onboarding if there's an error
-        router.replace('/onboarding');
+        // Fallback to main app if there's an error (safer for returning users)
+        router.replace('/(tabs)');
       } finally {
         setIsLoading(false);
       }

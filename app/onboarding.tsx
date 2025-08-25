@@ -99,25 +99,20 @@ export default function OnboardingScreen() {
   };
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
-    <View style={[styles.slide, { width }]}>
-      <LinearGradient
-        colors={[item.color + '10', item.color + '05']}
-        style={styles.slideGradient}
-      >
-        <View style={styles.slideContent}>
-          <View style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}>
-            <Ionicons name={item.icon} size={60} color={item.color} />
-          </View>
-          
-          <Text style={[styles.slideTitle, { color: colors.text }]}>
-            {item.title}
-          </Text>
-          
-          <Text style={[styles.slideDescription, { color: colors.icon }]}>
-            {item.description}
-          </Text>
+    <View style={[styles.slide, { width, backgroundColor: colors.background }]}>
+      <View style={styles.slideContent}>
+        <View style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}>
+          <Ionicons name={item.icon} size={60} color={item.color} />
         </View>
-      </LinearGradient>
+        
+        <Text style={[styles.slideTitle, { color: colors.text }]}>
+          {item.title}
+        </Text>
+        
+        <Text style={[styles.slideDescription, { color: colors.icon }]}>
+          {item.description}
+        </Text>
+      </View>
     </View>
   );
 
@@ -242,12 +237,6 @@ const styles = StyleSheet.create({
   },
   slide: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  slideGradient: {
-    flex: 1,
-    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
