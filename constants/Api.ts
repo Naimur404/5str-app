@@ -5,6 +5,7 @@ export const API_CONFIG = {
     REGISTER: '/api/v1/register',
     LOGOUT: '/api/v1/auth/logout',
     HOME: '/api/v1/home',
+    TOP_SERVICES: '/api/v1/home/top-services',
     SEARCH: '/api/v1/search',
     USER_PROFILE: '/api/v1/auth/user',
     UPDATE_PROFILE: '/api/v1/auth/profile',

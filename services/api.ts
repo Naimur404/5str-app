@@ -1,5 +1,17 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { TopService } from '../types/api';
+
+/**
+ * API Service with Smart Authentication
+ * 
+ * Authentication Strategy:
+ * - ALL API calls will send the authentication token IF the user is logged in
+ * - This enables server-side user analytics and personalized responses for logged-in users
+ * - requireAuth parameter only controls whether the API call should FAIL if no token exists
+ * - Public endpoints (requireAuth=false) work for both logged-in and guest users
+ * - Protected endpoints (requireAuth=true) require authentication and will fail without token
+ */
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
@@ -458,6 +470,19 @@ export interface DeleteFavoriteResponse {
   message: string;
 }
 
+// Top Services Interfaces
+export interface TopServicesResponse {
+  success: boolean;
+  data: {
+    services: TopService[];
+    location: {
+      latitude: number;
+      longitude: number;
+      radius_km: number;
+    };
+  };
+}
+
 // Storage helpers
 export const getAuthToken = async (): Promise<string | null> => {
   try {
@@ -485,8 +510,9 @@ export const removeAuthToken = async (): Promise<void> => {
 };
 
 // API call helper with JSON validation
-const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireAuth: boolean = true): Promise<any> => {
-  const token = requireAuth ? await getAuthToken() : null;
+const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireAuth: boolean = false): Promise<any> => {
+  // Always check for token availability - if user is logged in, send token for analytics
+  const token = await getAuthToken();
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -495,8 +521,12 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     ...(options.headers as Record<string, string>),
   };
 
+  // If user is logged in (has token), always send it for user analytics
+  // If requireAuth is true and no token, throw error
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  } else if (requireAuth) {
+    throw new Error('Authentication required. Please login to continue.');
   }
 
   const url = getApiUrl(endpoint);
@@ -506,7 +536,8 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     headers: headers,
     body: options.body,
     hasToken: !!token,
-    requireAuth
+    requireAuth,
+    sendingTokenForAnalytics: !!token && !requireAuth
   });
 
   let response: Response;
@@ -687,6 +718,7 @@ export const getCategoryBusinesses = async (
     url += `&latitude=${latitude}&longitude=${longitude}`;
   }
   
+  // Don't require auth but send token if available for analytics
   return makeApiCall(url, {}, false);
 };
 
@@ -719,44 +751,39 @@ export const logout = async (): Promise<{success: boolean; message?: string}> =>
 
 // Business Details API Functions
 export const getBusinessDetails = async (businessId: number): Promise<BusinessDetailsResponse> => {
-  // Check if user is authenticated to send token conditionally
-  const isAuth = await isAuthenticated();
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_DETAILS}/${businessId}`, {}, isAuth);
+  // Send token if available for user-specific data and analytics
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_DETAILS}/${businessId}`, {}, false);
 };
 
 export const getBusinessOfferings = async (businessId: number): Promise<BusinessOfferingsResponse> => {
-  // Check if user is authenticated to send token conditionally
-  const isAuth = await isAuthenticated();
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_OFFERINGS}/${businessId}/offerings`, {}, isAuth);
+  // Send token if available for user-specific data and analytics
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_OFFERINGS}/${businessId}/offerings`, {}, false);
 };
 
 export const getBusinessReviews = async (businessId: number, page: number = 1): Promise<BusinessReviewsResponse> => {
-  // Check if user is authenticated to send token conditionally for vote status
-  const isAuth = await isAuthenticated();
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_REVIEWS}/${businessId}/reviews?page=${page}`, {}, isAuth);
+  // Send token if available for vote status and analytics
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_REVIEWS}/${businessId}/reviews?page=${page}`, {}, false);
 };
 
 export const getBusinessOffers = async (businessId: number): Promise<any> => {
+  // Send token if available for user-specific data and analytics
   return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_OFFERS}/${businessId}/offers`, {}, false);
 };
 
 export const getOfferingDetails = async (businessId: number, offeringId: number): Promise<OfferingDetailsResponse> => {
-  // Check if user is authenticated to send token conditionally
-  const isAuth = await isAuthenticated();
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_DETAILS}/${businessId}/offerings/${offeringId}`, {}, isAuth);
+  // Send token if available for user-specific data and analytics
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_DETAILS}/${businessId}/offerings/${offeringId}`, {}, false);
 };
 
 export const getOfferingReviews = async (businessId: number, offeringId: number, page: number = 1): Promise<OfferingReviewsResponse> => {
-  // Check if user is authenticated to send token conditionally for vote status
-  const isAuth = await isAuthenticated();
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_REVIEWS}/${businessId}/offerings/${offeringId}/reviews?page=${page}`, {}, isAuth);
+  // Send token if available for vote status and analytics
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_REVIEWS}/${businessId}/offerings/${offeringId}/reviews?page=${page}`, {}, false);
 };
 
 // Offer Details API Functions
 export const getOfferDetails = async (offerId: number): Promise<OfferDetailsResponse> => {
-  // Check if user is authenticated to send token conditionally for user-specific data
-  const isAuth = await isAuthenticated();
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFER_DETAILS}/${offerId}`, {}, isAuth);
+  // Send token if available for user-specific data and analytics
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFER_DETAILS}/${offerId}`, {}, false);
 };
 
 // Favorites API Functions
@@ -820,6 +847,18 @@ export const removeVote = async (reviewId: number): Promise<VoteResponse> => {
   return makeApiCall(`${API_CONFIG.ENDPOINTS.REVIEW_VOTE}/${reviewId}/vote`, {
     method: 'DELETE',
   }, true);
+};
+
+// Top Services API Functions
+export const getTopServices = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15
+): Promise<TopServicesResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.TOP_SERVICES}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}`;
+  // Send token if available for analytics and user-specific data
+  return makeApiCall(url, {}, false);
 };
 
 // Helper function to validate and parse JSON responses
@@ -891,11 +930,19 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}): Prom
 export const fetchWithJsonValidation = async (url: string, options: RequestInit = {}): Promise<any> => {
   let response: Response;
   
-  const defaultHeaders = {
+  // Always check for token and send if available for analytics
+  const token = await getAuthToken();
+  
+  const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'User-Agent': 'ReactNative/5StrApp',
   };
+
+  // Add authorization header if token is available
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   try {
     response = await fetch(url, {
@@ -914,7 +961,8 @@ export const fetchWithJsonValidation = async (url: string, options: RequestInit 
     url,
     status: response.status,
     ok: response.ok,
-    contentType: response.headers.get('content-type')
+    contentType: response.headers.get('content-type'),
+    hasToken: !!token
   });
 
   const responseData = await validateJsonResponse(response);

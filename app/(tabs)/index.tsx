@@ -147,33 +147,74 @@ export default function HomeScreen() {
       }
 
       setLocationPermissionDenied(false);
-      const currentLocation = await Location.getCurrentPositionAsync({});
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      
       setLocation({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
       });
 
-      // Get address from coordinates
-      const addresses = await Location.reverseGeocodeAsync({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
+      // Get address from coordinates with timeout and fallback
+      try {
+        // Create a promise that rejects after 5 seconds
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Reverse geocoding timeout')), 5000);
+        });
 
-      if (addresses.length > 0) {
-        const address = addresses[0];
-        setUserLocation(address.city || address.district || 'Current Location');
+        // Race between reverseGeocode and timeout
+        const addresses = await Promise.race([
+          Location.reverseGeocodeAsync({
+            latitude: currentLocation.coords.latitude,
+            longitude: currentLocation.coords.longitude,
+          }),
+          timeoutPromise
+        ]) as any[];
+
+        if (addresses && addresses.length > 0) {
+          const address = addresses[0];
+          setUserLocation(address.city || address.district || address.region || 'Current Location');
+        } else {
+          setUserLocation('Current Location');
+        }
+      } catch (geocodeError) {
+        console.warn('Reverse geocoding failed:', geocodeError);
+        // Fallback to coordinates or default
+        setUserLocation('Current Location');
       }
     } catch (error) {
       console.error('Error getting location:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Unable to get your current location. Using default location.';
+      let errorTitle = 'Location Error';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout')) {
+          errorTitle = 'Network Timeout';
+          errorMessage = 'Location service is taking too long to respond. Using default location.';
+        } else if (error.message.includes('Network')) {
+          errorTitle = 'Network Error';
+          errorMessage = 'Please check your internet connection and try again.';
+        } else if (error.message.includes('Location request failed')) {
+          errorTitle = 'GPS Error';
+          errorMessage = 'Unable to get GPS location. Please ensure location services are enabled.';
+        }
+      }
+      
       showAlert({
-        type: 'error',
-        title: 'Location Error',
-        message: 'Unable to get your current location. Using default location.',
+        type: 'warning',
+        title: errorTitle,
+        message: errorMessage,
         buttons: [
-          { text: 'OK', onPress: () => setDefaultLocation() },
+          { text: 'Use Default', onPress: () => setDefaultLocation() },
           { text: 'Try Again', onPress: () => requestLocationPermission() }
         ]
       });
+      
+      // Always set a fallback location
+      setDefaultLocation();
     }
   };
 
@@ -269,6 +310,11 @@ export default function HomeScreen() {
   const handleSearch = () => {
     if (!searchQuery.trim()) return;
     router.push(`/search?q=${encodeURIComponent(searchQuery)}` as any);
+  };
+
+  const handleViewAllTopServices = async () => {
+    // Navigate to the top services page
+    router.push('/top-services');
   };
 
   const renderServiceItem = ({ item }: { item: TopService }) => (
@@ -532,7 +578,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Services</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleViewAllTopServices}>
                 <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
               </TouchableOpacity>
             </View>

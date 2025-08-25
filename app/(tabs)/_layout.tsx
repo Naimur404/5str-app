@@ -50,7 +50,6 @@ export default function TabLayout() {
           marginTop: 2,
           letterSpacing: 0.5,
         },
-        headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarItemStyle: {
