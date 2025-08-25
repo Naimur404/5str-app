@@ -329,6 +329,14 @@ export default function HomeScreen() {
     router.push('/special-offers');
   };
 
+  const handleViewAllTopRated = () => {
+    router.push('/top-rated');
+  };
+
+  const handleViewAllOpenNow = () => {
+    router.push('/open-now');
+  };
+
   const handleViewAllDynamicSection = (sectionSlug: string) => {
     router.push(`/dynamic-section/${sectionSlug}`);
   };

@@ -15,8 +15,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { getPopularNearby } from '@/services/api';
-import { Business } from '@/types/api';
+import { getOpenNow, getCategories } from '@/services/api';
+import { Business, Category } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
@@ -83,6 +83,12 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
       </View>
 
       <View style={styles.businessActions}>
+        <View style={[styles.openNowBadge, { backgroundColor: '#10B981' + '20' }]}>
+          <View style={styles.openDot} />
+          <Text style={[styles.openNowText, { color: '#10B981' }]}>
+            Open Now
+          </Text>
+        </View>
         <View style={[styles.priceRangeBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
           <Text style={[styles.priceRangeText, { color: colors.buttonPrimary }]}>
             {'$'.repeat(business.price_range || 1)}
@@ -99,11 +105,13 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
   </TouchableOpacity>
 );
 
-export default function PopularNearbyScreen() {
+export default function OpenNowScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme || 'light'];
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -116,7 +124,7 @@ export default function PopularNearbyScreen() {
   const [hasMorePages, setHasMorePages] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchPopularNearby = async (page: number = 1, isRefresh: boolean = false) => {
+  const fetchOpenNow = async (page: number = 1, isRefresh: boolean = false) => {
     try {
       if (page === 1 && !isRefresh) setLoading(true);
       if (isRefresh) setRefreshing(true);
@@ -125,7 +133,7 @@ export default function PopularNearbyScreen() {
       // Get user's current location
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show nearby businesses.');
+        Alert.alert('Permission denied', 'Location permission is required to show businesses open now.');
         return;
       }
 
@@ -133,12 +141,13 @@ export default function PopularNearbyScreen() {
         accuracy: Location.Accuracy.High,
       });
 
-      const response = await getPopularNearby(
+      const response = await getOpenNow(
         userLocation.coords.latitude,
         userLocation.coords.longitude,
         20, // limit
         15, // radius
-        page
+        page,
+        selectedCategory || undefined
       );
 
       if (response.success) {
@@ -155,10 +164,10 @@ export default function PopularNearbyScreen() {
         setHasMorePages(response.data.pagination?.has_more || false);
         setLocation(response.data.location);
       } else {
-        Alert.alert('Error', 'Failed to load popular nearby businesses. Please try again.');
+        Alert.alert('Error', 'Failed to load businesses open now. Please try again.');
       }
     } catch (error) {
-      console.error('Error fetching popular nearby businesses:', error);
+      console.error('Error fetching businesses open now:', error);
       Alert.alert('Error', 'Unable to load businesses. Please check your internet connection.');
     } finally {
       setLoading(false);
@@ -167,9 +176,25 @@ export default function PopularNearbyScreen() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await getCategories(1, 50);
+      if (response.success) {
+        setCategories(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   useEffect(() => {
-    fetchPopularNearby();
+    fetchCategories();
+    fetchOpenNow();
   }, []);
+
+  useEffect(() => {
+    fetchOpenNow(1, true);
+  }, [selectedCategory]);
 
   useEffect(() => {
     filterBusinesses();
@@ -191,12 +216,12 @@ export default function PopularNearbyScreen() {
   };
 
   const handleRefresh = () => {
-    fetchPopularNearby(1, true);
+    fetchOpenNow(1, true);
   };
 
   const loadMore = () => {
     if (hasMorePages && !loadingMore) {
-      fetchPopularNearby(currentPage + 1);
+      fetchOpenNow(currentPage + 1);
     }
   };
 
@@ -208,6 +233,10 @@ export default function PopularNearbyScreen() {
     router.back();
   };
 
+  const handleCategoryPress = (categoryId: number | null) => {
+    setSelectedCategory(categoryId);
+  };
+
   const renderBusinessItem = ({ item }: { item: Business }) => (
     <BusinessCard
       business={item}
@@ -215,6 +244,15 @@ export default function PopularNearbyScreen() {
       colors={colors}
     />
   );
+
+  const getCurrentTimeString = () => {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -230,13 +268,13 @@ export default function PopularNearbyScreen() {
             <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-            <Ionicons name="trending-up" size={32} color="white" style={styles.headerIcon} />
+            <Ionicons name="time" size={32} color="#10B981" style={styles.headerIcon} />
             <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>Popular Nearby</Text>
+              <Text style={styles.headerTitle}>Open Now</Text>
               <Text style={styles.headerSubtitle}>
                 {location 
-                  ? `${businesses.length} businesses within ${location.radius_km}km`
-                  : 'Discover trending businesses near you'
+                  ? `${businesses.length} businesses open at ${getCurrentTimeString()}`
+                  : 'Discover businesses open right now'
                 }
               </Text>
             </View>
@@ -263,6 +301,43 @@ export default function PopularNearbyScreen() {
         </View>
       </LinearGradient>
 
+      {/* Category Filters */}
+      {categories.length > 0 && (
+        <View style={styles.categoryFiltersContainer}>
+          <FlatList
+            data={[{ id: null, name: 'All Categories' }, ...categories]}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.categoryFilter,
+                  { 
+                    backgroundColor: selectedCategory === item.id ? colors.buttonPrimary : colors.card,
+                    borderColor: selectedCategory === item.id ? colors.buttonPrimary : colors.border
+                  }
+                ]}
+                onPress={() => handleCategoryPress(item.id)}
+              >
+                <Text
+                  style={[
+                    styles.categoryFilterText,
+                    { 
+                      color: selectedCategory === item.id ? 'white' : colors.text 
+                    }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id?.toString() || 'all'}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryFiltersList}
+          />
+        </View>
+      )}
+
       {/* Location Info */}
       {location && (
         <View style={[styles.locationInfo, { backgroundColor: colors.background }]}>
@@ -273,7 +348,7 @@ export default function PopularNearbyScreen() {
               color={colors.buttonPrimary} 
             />
             <Text style={[styles.locationInfoText, { color: colors.icon }]}>
-              Your location • {location.radius_km}km radius
+              Your location • {location.radius_km}km radius • Open at {getCurrentTimeString()}
             </Text>
           </View>
         </View>
@@ -284,7 +359,7 @@ export default function PopularNearbyScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.buttonPrimary} />
           <Text style={[styles.loadingText, { color: colors.icon }]}>
-            Loading businesses...
+            Finding businesses open now...
           </Text>
         </View>
       ) : filteredBusinesses.length > 0 ? (
@@ -315,18 +390,18 @@ export default function PopularNearbyScreen() {
         <View style={styles.emptyState}>
           <View style={[styles.emptyIconContainer, { backgroundColor: colors.icon + '20' }]}>
             <Ionicons 
-              name={searchQuery ? "search-outline" : "business-outline"} 
+              name={searchQuery ? "search-outline" : "time-outline"} 
               size={48} 
               color={colors.icon} 
             />
           </View>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            {searchQuery ? 'No Results Found' : 'No Businesses Found'}
+            {searchQuery ? 'No Results Found' : 'No Businesses Open'}
           </Text>
           <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
             {searchQuery 
               ? 'Try adjusting your search terms'
-              : 'We couldn\'t find any popular businesses in your area.'
+              : 'No businesses are currently open in your area.'
             }
           </Text>
           {searchQuery && (
@@ -407,6 +482,24 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 0,
+  },
+  categoryFiltersContainer: {
+    paddingVertical: 12,
+  },
+  categoryFiltersList: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  categoryFilter: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  categoryFilterText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   locationInfo: {
     paddingHorizontal: 16,
@@ -523,6 +616,25 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     minHeight: 80,
     paddingVertical: 4,
+  },
+  openNowBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 4,
+    gap: 4,
+  },
+  openDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  openNowText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   priceRangeBadge: {
     paddingHorizontal: 12,

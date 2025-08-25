@@ -10,6 +10,8 @@ export const API_CONFIG = {
     DYNAMIC_SECTIONS: '/api/v1/home/dynamic-sections',
     FEATURED_BUSINESSES: '/api/v1/home/featured-businesses',
     SPECIAL_OFFERS: '/api/v1/home/special-offers',
+    TOP_RATED: '/api/v1/top-rated',
+    OPEN_NOW: '/api/v1/open-now',
     SEARCH: '/api/v1/search',
     CATEGORIES: '/api/v1/categories',
     TODAY_TRENDING: '/api/v1/today-trending',

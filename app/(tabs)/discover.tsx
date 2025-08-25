@@ -300,19 +300,31 @@ export default function DiscoverScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
           <View style={styles.quickActions}>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
+              onPress={() => router.push('/popular-nearby')}
+            >
               <Ionicons name="location-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Nearby</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
+              onPress={() => router.push('/top-rated')}
+            >
               <Ionicons name="star-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Top Rated</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
+              onPress={() => router.push('/open-now')}
+            >
               <Ionicons name="time-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Open Now</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]}>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.card }]}
+              onPress={() => router.push('/special-offers')}
+            >
               <Ionicons name="pricetag-outline" size={24} color={colors.tint} />
               <Text style={[styles.actionText, { color: colors.text }]}>Offers</Text>
             </TouchableOpacity>

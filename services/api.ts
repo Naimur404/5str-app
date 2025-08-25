@@ -910,6 +910,42 @@ export const getSpecialOffers = async (
   return makeApiCall(url, {}, false);
 };
 
+// Get Top Rated Businesses
+export const getTopRated = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1,
+  categoryId?: number
+): Promise<any> => {
+  let url = `${API_CONFIG.ENDPOINTS.TOP_RATED}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  
+  if (categoryId) {
+    url += `&category_id=${categoryId}`;
+  }
+  
+  return makeApiCall(url, {}, false);
+};
+
+// Get Open Now Businesses
+export const getOpenNow = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1,
+  categoryId?: number
+): Promise<any> => {
+  let url = `${API_CONFIG.ENDPOINTS.OPEN_NOW}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  
+  if (categoryId) {
+    url += `&category_id=${categoryId}`;
+  }
+  
+  return makeApiCall(url, {}, false);
+};
+
 // Get Categories for discovery page
 export const getCategories = async (
   page: number = 1,
