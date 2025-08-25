@@ -530,7 +530,12 @@ export default function HomeScreen() {
         {/* Top Services */}
         {homeData?.top_services && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Services</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Services</Text>
+              <TouchableOpacity>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.servicesGrid}>
               {homeData.top_services.slice(0, 4).map((item) => (
                 <View key={item.id}>
