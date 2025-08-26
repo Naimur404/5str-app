@@ -4,13 +4,17 @@ import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
+    addToFavorites,
     getOfferingDetails,
     getOfferingReviews,
+    getUserFavorites,
     isAuthenticated,
     Offering,
+    removeFromFavorites,
     Review
 } from '@/services/api';
 import { useLocation } from '@/contexts/LocationContext';
+import { useToastGlobal } from '@/contexts/ToastContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -35,6 +39,10 @@ export default function OfferingDetailsScreen() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<number | null>(null);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -44,13 +52,30 @@ export default function OfferingDetailsScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+  const { showSuccess } = useToastGlobal();
   const { getCoordinatesForAPI } = useLocation();
 
   useEffect(() => {
     if (businessId && offeringId) {
-      loadOfferingData();
+      checkAuthenticationAndLoadData();
     }
   }, [businessId, offeringId]);
+
+  const checkAuthenticationAndLoadData = async () => {
+    try {
+      const authenticated = await isAuthenticated();
+      setIsUserAuthenticated(authenticated);
+      console.log('User authenticated:', authenticated);
+      
+      // Load offering data (which now includes favorite status)
+      loadOfferingData();
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsUserAuthenticated(false);
+      // Still load offering data even if auth check fails
+      loadOfferingData();
+    }
+  };
 
   const loadOfferingData = async () => {
     try {
@@ -64,6 +89,9 @@ export default function OfferingDetailsScreen() {
       const offeringResponse = await getOfferingDetails(businessId, offeringId, coordinates.latitude, coordinates.longitude);
       if (offeringResponse.success) {
         setOffering(offeringResponse.data);
+        // Set favorite status from API response
+        setIsFavorite(offeringResponse.data.is_favorite || false);
+        console.log('Offering favorite status from API:', offeringResponse.data.is_favorite);
       }
 
       // Load offering reviews
@@ -77,6 +105,113 @@ export default function OfferingDetailsScreen() {
       setError('Failed to load offering information');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    console.log('toggleFavorite called. isUserAuthenticated:', isUserAuthenticated, 'isFavorite:', isFavorite, 'favoriteId:', favoriteId);
+    
+    if (!isUserAuthenticated) {
+      showAlert({
+        type: 'info',
+        title: 'Sign Up to Save Favorites',
+        message: 'Create an account to save your favorite offerings and get personalized recommendations',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
+        ]
+      });
+      return;
+    }
+
+    if (favoriteLoading) {
+      console.log('Already loading, skipping...');
+      return;
+    }
+    
+    setFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        // If we have favoriteId, use it; otherwise get it from getUserFavorites
+        let favoriteIdToRemove = favoriteId;
+        
+        if (!favoriteIdToRemove) {
+          console.log('Getting favorite ID for removal...');
+          const favoritesResponse = await getUserFavorites(1);
+          if (favoritesResponse.success) {
+            const offeringFavorite = favoritesResponse.data.favorites.find(
+              fav => fav.type === 'offering' && fav.offering?.id === offeringId
+            );
+            favoriteIdToRemove = offeringFavorite?.id || null;
+          }
+        }
+        
+        if (favoriteIdToRemove) {
+          console.log('Removing from favorites. favoriteId:', favoriteIdToRemove);
+          // Remove from favorites
+          const response = await removeFromFavorites(favoriteIdToRemove);
+          console.log('Remove favorite response:', response);
+          
+          if (response.success) {
+            setIsFavorite(false);
+            setFavoriteId(null);
+            showSuccess('Removed from favorites');
+            console.log('Successfully removed from favorites');
+          } else {
+            throw new Error(response.message || 'Failed to remove from favorites');
+          }
+        }
+      } else {
+        console.log('Adding to favorites. offeringId:', offeringId);
+        // Add to favorites
+        const response = await addToFavorites('offering', offeringId);
+        console.log('Add favorite response:', response);
+        
+        if (response.success) {
+          setIsFavorite(true);
+          setFavoriteId(response.data.favorite_id);
+          showSuccess('Added to favorites');
+          console.log('Successfully added to favorites. favoriteId:', response.data.favorite_id);
+        } else {
+          console.log('Add favorite failed. Checking for conflict...');
+          // Handle 409 conflict error (already in favorites)
+          if (response.message && response.message.includes('already')) {
+            // If it's already in favorites, just update the UI state
+            setIsFavorite(true);
+            showSuccess('Already in favorites');
+            console.log('Item already in favorites, updated UI state');
+          } else {
+            throw new Error(response.message || 'Failed to add to favorites');
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Error toggling favorite:', error);
+      
+      // Handle specific error cases
+      if (error.message && error.message.includes('409')) {
+        // 409 conflict - already in favorites
+        setIsFavorite(true);
+        showSuccess('Already in favorites');
+      } else if (error.message && error.message.includes('401')) {
+        // 401 unauthorized
+        showAlert({
+          type: 'error',
+          title: 'Authentication Required',
+          message: 'Please login again to manage favorites',
+          buttons: [{ text: 'OK' }]
+        });
+        setIsUserAuthenticated(false);
+      } else {
+        showAlert({
+          type: 'error',
+          title: 'Failed to Update',
+          message: 'Failed to update favorites. Please try again.',
+          buttons: [{ text: 'OK' }]
+        });
+      }
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -173,6 +308,18 @@ export default function OfferingDetailsScreen() {
             <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
           
+          <TouchableOpacity 
+            style={styles.favoriteButton}
+            onPress={toggleFavorite}
+            disabled={favoriteLoading}
+          >
+            <Ionicons 
+              name={isFavorite ? "heart" : "heart-outline"} 
+              size={24} 
+              color={isFavorite ? "#FF6B6B" : "white"} 
+            />
+          </TouchableOpacity>
+          
           <View style={styles.heroContent}>
             <Text style={styles.offeringName}>{offering.name}</Text>
             <Text style={styles.offeringType}>
@@ -194,6 +341,45 @@ export default function OfferingDetailsScreen() {
             </View>
           </View>
         </LinearGradient>
+      </View>
+
+      {/* Quick Actions Bar */}
+      <View style={[styles.quickActions, { backgroundColor: colors.card }]}>
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={toggleFavorite}
+          disabled={favoriteLoading}
+        >
+          <View style={[styles.actionIcon, { backgroundColor: isFavorite ? '#FF6B6B' : colors.buttonPrimary }]}>
+            <Ionicons 
+              name={isFavorite ? "heart" : "heart-outline"} 
+              size={20} 
+              color="white" 
+            />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>
+            {isFavorite ? 'Favorited' : 'Favorite'}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.actionButton} onPress={handleWriteReview}>
+          <View style={[styles.actionIcon, { backgroundColor: colors.buttonPrimary }]}>
+            <Ionicons name="star" size={20} color="white" />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Review</Text>
+        </TouchableOpacity>
+        
+        {offering?.business && (
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push(`/business/${offering.business?.id}` as any)}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
+              <Ionicons name="business" size={20} color="white" />
+            </View>
+            <Text style={[styles.actionLabel, { color: colors.text }]}>Business</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
@@ -389,6 +575,17 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   heroContent: {
     alignSelf: 'stretch',
@@ -604,6 +801,41 @@ const styles = StyleSheet.create({
   },
   writeFirstReviewText: {
     fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: 'white',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionButton: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 8,
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionLabel: {
+    fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
   },

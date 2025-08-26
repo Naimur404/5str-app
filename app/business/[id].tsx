@@ -35,6 +35,7 @@ import ReviewCard from '@/components/ReviewCard';
 import { BusinessDetailsSkeleton } from '@/components/SkeletonLoader';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import { useToastGlobal } from '@/contexts/ToastContext';
 import * as Location from 'expo-location';
 import { useLocation } from '@/contexts/LocationContext';
 
@@ -63,6 +64,7 @@ export default function BusinessDetailsScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+  const { showSuccess } = useToastGlobal();
   const { getCoordinatesForAPI } = useLocation();
 
   useEffect(() => {
@@ -195,6 +197,7 @@ export default function BusinessDetailsScreen() {
           if (response.success) {
             setIsFavorite(false);
             setFavoriteId(null);
+            showSuccess('Removed from favorites');
             console.log('Successfully removed from favorites');
           } else {
             throw new Error(response.message || 'Failed to remove from favorites');
@@ -209,6 +212,7 @@ export default function BusinessDetailsScreen() {
         if (response.success) {
           setIsFavorite(true);
           setFavoriteId(response.data.favorite_id);
+          showSuccess('Added to favorites');
           console.log('Successfully added to favorites. favoriteId:', response.data.favorite_id);
         } else {
           console.log('Add favorite failed. Checking for conflict...');
@@ -216,6 +220,7 @@ export default function BusinessDetailsScreen() {
           if (response.message && response.message.includes('already')) {
             // If it's already in favorites, just update the UI state
             setIsFavorite(true);
+            showSuccess('Already in favorites');
             console.log('Item already in favorites, updated UI state');
           } else {
             throw new Error(response.message || 'Failed to add to favorites');
@@ -229,12 +234,7 @@ export default function BusinessDetailsScreen() {
       if (error.message && error.message.includes('409')) {
         // 409 conflict - already in favorites
         setIsFavorite(true);
-        showAlert({
-          type: 'info',
-          title: 'Already in Favorites',
-          message: 'This business is already in your favorites',
-          buttons: [{ text: 'OK' }]
-        });
+        showSuccess('Already in favorites');
       } else if (error.message && error.message.includes('401')) {
         // 401 unauthorized
         showAlert({
@@ -297,6 +297,7 @@ export default function BusinessDetailsScreen() {
               ...prev,
               [offeringId]: { isFavorite: false, favoriteId: null }
             }));
+            showSuccess('Removed from favorites');
             console.log('Successfully removed offering from favorites');
           } else {
             throw new Error(response.message || 'Failed to remove from favorites');
@@ -310,6 +311,7 @@ export default function BusinessDetailsScreen() {
             ...prev,
             [offeringId]: { isFavorite: true, favoriteId: response.data.favorite_id }
           }));
+          showSuccess('Added to favorites');
           console.log('Successfully added offering to favorites');
         } else {
           // Handle 409 conflict error (already in favorites)
@@ -318,6 +320,7 @@ export default function BusinessDetailsScreen() {
               ...prev,
               [offeringId]: { isFavorite: true, favoriteId: null }
             }));
+            showSuccess('Already in favorites');
             console.log('Offering already in favorites');
           } else {
             throw new Error(response.message || 'Failed to add to favorites');
@@ -334,12 +337,7 @@ export default function BusinessDetailsScreen() {
           ...prev,
           [offeringId]: { isFavorite: true, favoriteId: null }
         }));
-        showAlert({
-          type: 'info',
-          title: 'Already in Favorites',
-          message: 'This item is already in your favorites',
-          buttons: [{ text: 'OK' }]
-        });
+        showSuccess('Already in favorites');
       } else if (error.message && error.message.includes('401')) {
         // 401 unauthorized
         showAlert({

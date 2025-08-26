@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import { useToastGlobal } from '@/contexts/ToastContext';
 import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
 import SmartImage, { BusinessLogo, OfferingImage } from '@/components/SmartImage';
 
@@ -41,6 +42,7 @@ export default function FavouritesScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showError, showSuccess, showConfirm, hideAlert } = useCustomAlert();
+  const { showSuccess: showToast } = useToastGlobal();
 
   useEffect(() => {
     checkAuthAndLoadFavorites();
@@ -199,7 +201,7 @@ export default function FavouritesScreen() {
           const response = await removeFromFavorites(favoriteId);
           if (response.success) {
             setFavorites(prev => prev.filter(item => item.id !== favoriteId));
-            showSuccess('Success', 'Removed from favourites');
+            showToast('Removed from favourites');
           } else {
             throw new Error(response.message || 'Failed to remove from favorites');
           }

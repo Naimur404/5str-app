@@ -1,6 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getUserReviews, Review } from '@/services/api';
+import { getUserReviews, Review, isAuthenticated } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -55,13 +55,31 @@ export default function ReviewsScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
 
   useEffect(() => {
-    loadReviews();
+    checkAuthAndLoadReviews();
   }, []);
+
+  const checkAuthAndLoadReviews = async () => {
+    try {
+      const authenticated = await isAuthenticated();
+      setIsUserAuthenticated(authenticated);
+      
+      if (authenticated) {
+        await loadReviews();
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      setIsUserAuthenticated(false);
+      setLoading(false);
+    }
+  };
 
   const loadReviews = async (page: number = 1, isRefresh: boolean = false) => {
     try {
@@ -95,12 +113,14 @@ export default function ReviewsScreen() {
   };
 
   const onRefresh = async () => {
+    if (!isUserAuthenticated) return;
+    
     setRefreshing(true);
     await loadReviews(1, true);
   };
 
   const loadMore = async () => {
-    if (!loadingMore && hasMore) {
+    if (!loadingMore && hasMore && isUserAuthenticated) {
       await loadReviews(currentPage + 1);
     }
   };
@@ -240,6 +260,22 @@ export default function ReviewsScreen() {
     </View>
   );
 
+  const renderAuthRequiredState = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="person-outline" size={64} color={colors.icon} />
+      <Text style={[styles.emptyTitle, { color: colors.text }]}>Login Required</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+        Please login to view your reviews and share your experiences
+      </Text>
+      <TouchableOpacity 
+        style={[styles.exploreButton, { backgroundColor: colors.tint }]}
+        onPress={() => router.push('/auth/login')}
+      >
+        <Text style={styles.exploreButtonText}>Login</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -269,13 +305,17 @@ export default function ReviewsScreen() {
           style={styles.header}
         >
           <Text style={styles.headerTitle}>My Reviews</Text>
-          <Text style={styles.headerSubtitle}>
-            {reviews.length} review{reviews.length !== 1 ? 's' : ''}
-          </Text>
+          {isUserAuthenticated && (
+            <Text style={styles.headerSubtitle}>
+              {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+            </Text>
+          )}
         </LinearGradient>
 
-      {/* Reviews List */}
-      {reviews.length > 0 ? (
+      {/* Content based on authentication state */}
+      {isUserAuthenticated === false ? (
+        renderAuthRequiredState()
+      ) : reviews.length > 0 ? (
         <FlatList
           data={reviews}
           renderItem={renderReviewItem}
@@ -294,9 +334,9 @@ export default function ReviewsScreen() {
           ListFooterComponent={renderFooter}
           showsVerticalScrollIndicator={false}
         />
-      ) : (
+      ) : isUserAuthenticated === true ? (
         renderEmptyState()
-      )}
+      ) : null}
     </View>
   );
 }

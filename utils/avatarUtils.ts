@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 
+// Type for Ionicons component name prop
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
 // Array of human-related icons from Ionicons
-const humanIcons = [
+const humanIcons: IoniconsName[] = [
   'person',
   'person-circle',
   'happy',
@@ -17,7 +20,7 @@ const humanIcons = [
   'happy-outline',
   'man-outline',
   'woman-outline',
-] as const;
+];
 
 // Array of nice colors for the icons
 const iconColors = [
@@ -38,7 +41,7 @@ const iconColors = [
   '#89f7fe', // Light blue
 ];
 
-export const getRandomHumanIcon = (seed?: string): { name: keyof typeof Ionicons.glyphMap; color: string } => {
+export const getRandomHumanIcon = (seed?: string): { name: IoniconsName; color: string } => {
   // Use a seed (like user ID or email) to ensure consistent randomness for the same user
   let seedNumber = 0;
   if (seed) {
