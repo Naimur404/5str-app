@@ -12,6 +12,7 @@ import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { Review, voteReview, removeVote, getAuthToken } from '@/services/api';
 import { useRouter } from 'expo-router';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 interface ReviewCardProps {
   review: Review;
@@ -161,11 +162,12 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
     ]}>
       <View style={styles.reviewHeader}>
         <View style={styles.reviewUser}>
-          <View style={[styles.userAvatar, { backgroundColor: colors.buttonPrimary }]}>
-            <Text style={styles.userInitial}>
-              {localReview.user.name.charAt(0).toUpperCase()}
-            </Text>
-          </View>
+          <ProfileAvatar
+            profileImage={localReview.user.profile_image}
+            userName={localReview.user.name}
+            size={40}
+            seed={localReview.user.id.toString() || localReview.user.name}
+          />
           <View style={styles.reviewUserInfo}>
             <Text style={[styles.userName, { color: colors.text }]}>{localReview.user.name}</Text>
             <Text style={[styles.reviewDate, { color: colors.icon }]}>
@@ -309,21 +311,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  userInitial: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   reviewUserInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   userName: {
     fontSize: 14,

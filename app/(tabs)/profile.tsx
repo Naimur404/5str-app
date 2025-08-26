@@ -1,6 +1,5 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import {
     getAuthToken,
     getUserProfile,
@@ -18,7 +17,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Image,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -31,6 +29,7 @@ import EditProfileModal from '@/components/EditProfileModal';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
+import ProfileAvatar from '@/components/ProfileAvatar';
 
 // Guest user data
 const guestUser = {
@@ -354,12 +353,12 @@ export default function ProfileScreen() {
               )}
             </View>
             <View style={styles.profileSection}>
-              <Image 
-                source={{ 
-                  uri: getImageUrl(currentUser.profile_image) || getFallbackImageUrl('user')
-                }}
+              <ProfileAvatar
+                profileImage={currentUser.profile_image}
+                userName={currentUser.name}
+                size={60}
+                seed={currentUser.email || currentUser.name}
                 style={styles.profileImage}
-                defaultSource={{ uri: getFallbackImageUrl('user') }}
               />
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{currentUser.name}</Text>
