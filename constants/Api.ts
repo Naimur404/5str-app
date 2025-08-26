@@ -29,6 +29,7 @@ export const API_CONFIG = {
     OFFERING_DETAILS: '/api/v1/businesses',
     OFFERING_REVIEWS: '/api/v1/businesses',
     OFFER_DETAILS: '/api/v1/offers',
+    NOTIFICATIONS: '/api/v1/notifications',
   }
 };
 

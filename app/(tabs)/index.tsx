@@ -1,6 +1,7 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User } from '@/services/api';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
@@ -63,6 +64,7 @@ export default function HomeScreen() {
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
   const { colorScheme } = useTheme();
+  const { unreadCount } = useNotifications();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
 
@@ -254,6 +256,22 @@ export default function HomeScreen() {
         ]
       });
     }
+  };
+
+  const handleNotificationPress = () => {
+    if (!isUserAuthenticated) {
+      showAlert({
+        type: 'warning',
+        title: 'Login Required',
+        message: 'Please login to view your notifications.',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login', onPress: () => router.push('/auth/login') }
+        ]
+      });
+      return;
+    }
+    router.push('/notifications');
   };
 
   const fetchHomeData = async () => {
@@ -531,8 +549,15 @@ export default function HomeScreen() {
                 <Text style={styles.changeLocation}>Change</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.notificationButton}>
+            <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
               <Ionicons name="notifications-outline" size={24} color="white" />
+              {isUserAuthenticated && unreadCount > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 99 ? '99+' : unreadCount.toString()}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -589,8 +614,15 @@ export default function HomeScreen() {
               <Text style={styles.changeLocation}>Change</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.notificationButton}>
+          <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
             <Ionicons name="notifications-outline" size={24} color="white" />
+            {isUserAuthenticated && unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount.toString()}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -840,6 +872,26 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     padding: 8,
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  notificationBadgeText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   searchContainer: {
     marginBottom: 8,

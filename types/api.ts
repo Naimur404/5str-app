@@ -360,3 +360,53 @@ export interface TodayTrendingResponse {
     };
   };
 }
+
+// Notification types
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  icon: string;
+  color: string;
+  is_read: boolean;
+  read_at: string | null;
+  time_ago: string;
+}
+
+export interface NotificationStats {
+  total_count: number;
+  unread_count: number;
+  read_count: number;
+}
+
+export interface NotificationFilters {
+  current_filter: string;
+  search: string | null;
+  sort_by: string;
+  sort_order: string;
+}
+
+export interface NotificationPagination {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  has_more: boolean;
+  from: number;
+  to: number;
+}
+
+export interface NotificationsResponse {
+  success: boolean;
+  data: {
+    notifications: Notification[];
+    pagination: NotificationPagination;
+    stats: NotificationStats;
+    filters: NotificationFilters;
+  };
+}
+
+export interface NotificationActionResponse {
+  success: boolean;
+  message?: string;
+}

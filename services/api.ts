@@ -1,6 +1,6 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TopService, CategoriesResponse, TodayTrendingResponse } from '../types/api';
+import { TopService, CategoriesResponse, TodayTrendingResponse, NotificationsResponse, NotificationActionResponse } from '../types/api';
 
 /**
  * API Service with Smart Authentication
@@ -1133,4 +1133,37 @@ export const fetchWithJsonValidation = async (url: string, options: RequestInit 
 export const isAuthenticated = async (): Promise<boolean> => {
   const token = await getAuthToken();
   return !!token;
+};
+
+// Notification API Functions
+export const getUnreadNotifications = async (): Promise<NotificationsResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}?filter=unread`, {}, true);
+};
+
+export const getAllNotifications = async (page: number = 1): Promise<NotificationsResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}?page=${page}`, {}, true);
+};
+
+export const markNotificationAsRead = async (notificationId: string): Promise<NotificationActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}/${notificationId}/read`, {
+    method: 'PATCH',
+  }, true);
+};
+
+export const markAllNotificationsAsRead = async (): Promise<NotificationActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}/mark-all-read`, {
+    method: 'PATCH',
+  }, true);
+};
+
+export const deleteNotification = async (notificationId: string): Promise<NotificationActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}/${notificationId}`, {
+    method: 'DELETE',
+  }, true);
+};
+
+export const deleteAllNotifications = async (): Promise<NotificationActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}`, {
+    method: 'DELETE',
+  }, true);
 };
