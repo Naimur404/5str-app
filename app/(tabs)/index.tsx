@@ -6,6 +6,7 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User } from '@/services/api';
+import cacheService from '@/services/cacheService';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
@@ -13,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import {
     Dimensions,
     FlatList,
@@ -26,6 +27,10 @@ import {
     View
 } from 'react-native';
 import { HomePageSkeleton } from '@/components/SkeletonLoader';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useToastGlobal } from '@/contexts/ToastContext';
+import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width - 48;
@@ -54,19 +59,70 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [userLocation, setUserLocation] = useState('Chittagong');
+  const [userLocation, setUserLocation] = useState('Chittagong, Bangladesh');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  const [loginMessageShown, setLoginMessageShown] = useState(false);
+  const [showLoginMessage, setShowLoginMessage] = useState(false);
 
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
+  const searchParams = useLocalSearchParams();
   const { colorScheme } = useTheme();
   const { unreadCount } = useNotifications();
-  const { getCoordinatesForAPI } = useLocation();
+  const { getCoordinatesForAPI, requestLocationUpdate, location, isUpdating } = useLocation();
+  const { showSuccess, showToast } = useToastGlobal();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+
+  // Check login success immediately when component initializes (before any renders)
+  useLayoutEffect(() => {
+    const checkLoginImmediately = async () => {
+      try {
+        // Check URL parameter first (most immediate)
+        if (searchParams.loginSuccess === 'true' && !loginMessageShown) {
+          console.log('URL parameter login success - showing message immediately');
+          setLoginMessageShown(true);
+          setShowLoginMessage(true);
+          showSuccess('Welcome back! Login successful');
+          console.log('Message shown from URL parameter');
+          
+          // Clear the URL parameter
+          router.replace('/(tabs)');
+          
+          // Clear AsyncStorage flags
+          await AsyncStorage.removeItem('loginSuccess');
+          await AsyncStorage.removeItem('loginSuccessTime');
+          
+          setTimeout(() => {
+            setShowLoginMessage(false);
+          }, 3000);
+          return;
+        }
+        
+        // Fallback to AsyncStorage check
+        const loginSuccess = await AsyncStorage.getItem('loginSuccess');
+        if (loginSuccess === 'true' && !loginMessageShown) {
+          console.log('AsyncStorage login success check - showing message');
+          await AsyncStorage.removeItem('loginSuccess');
+          await AsyncStorage.removeItem('loginSuccessTime');
+          setLoginMessageShown(true);
+          setShowLoginMessage(true);
+          showSuccess('Welcome back! Login successful');
+          console.log('Message shown during skeleton loading');
+          
+          setTimeout(() => {
+            setShowLoginMessage(false);
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Error in immediate login check:', error);
+      }
+    };
+    checkLoginImmediately();
+  }, [showSuccess, searchParams.loginSuccess]);
 
   // Get banners from API response, fallback to empty array
   const banners = homeData?.banners || [];
@@ -78,10 +134,103 @@ export default function HomeScreen() {
     }
   }, [banners, currentBannerIndex]);
 
+  // Update location display when location context changes
   useEffect(() => {
-    checkAuthAndLoadUser();
-    fetchHomeData(); // Fetch home data directly using LocationContext
+    if (location?.address) {
+      setUserLocation(location.address);
+    } else if (location) {
+      // Fallback based on source if no address
+      if (location.source === 'gps') {
+        setUserLocation('Current Location');
+      } else if (location.source === 'cache') {
+        setUserLocation('Cached Location');
+      } else {
+        setUserLocation('Chittagong, Bangladesh');
+      }
+    }
+  }, [location]);
+
+  // Run main initialization after login check
+  useEffect(() => {
+    const initializeApp = async () => {
+      // First, try to preload cached data for instant display
+      const cachedData = await cacheService.preloadCachedData();
+      
+      if (cachedData.homeData) {
+        console.log('Displaying cached home data immediately');
+        setHomeData(cachedData.homeData);
+        setLoading(false);
+      }
+      
+      if (cachedData.userProfile) {
+        console.log('Displaying cached user profile immediately');
+        setUser(cachedData.userProfile);
+        setIsUserAuthenticated(true);
+      }
+
+      // Then fetch fresh data in parallel
+      await Promise.all([
+        checkAuthAndLoadUser(),
+        fetchHomeData(),
+        clearOldLoginFlags()
+      ]);
+    };
+    
+    initializeApp();
   }, []);
+
+  // Clean up any stale login success flags when app loads (except fresh ones)
+  const clearOldLoginFlags = async () => {
+    try {
+      // Only clear if the flag has been there for more than 10 seconds (stale)
+      const loginFlagTime = await AsyncStorage.getItem('loginSuccessTime');
+      const currentTime = Date.now();
+      
+      if (loginFlagTime) {
+        const flagAge = currentTime - parseInt(loginFlagTime);
+        if (flagAge > 10000) { // 10 seconds
+          await AsyncStorage.removeItem('loginSuccess');
+          await AsyncStorage.removeItem('loginSuccessTime');
+        }
+      }
+    } catch (error) {
+      console.error('Error clearing old login flags:', error);
+    }
+  };
+
+  // Check for login success message when screen becomes focused (for navigation back scenarios)
+  useFocusEffect(
+    useCallback(() => {
+      // Only check again if we haven't shown the message yet
+      if (!loginMessageShown) {
+        checkLoginSuccess();
+      }
+    }, [loginMessageShown])
+  );
+
+  const checkLoginSuccess = async () => {
+    try {
+      console.log('checkLoginSuccess called, loginMessageShown:', loginMessageShown);
+      // Prevent showing multiple messages
+      if (loginMessageShown) return;
+      
+      const loginSuccess = await AsyncStorage.getItem('loginSuccess');
+      console.log('loginSuccess flag:', loginSuccess);
+      if (loginSuccess === 'true') {
+        console.log('Login success detected, showing message immediately');
+        // Clear the flag and timestamp immediately
+        await AsyncStorage.removeItem('loginSuccess');
+        await AsyncStorage.removeItem('loginSuccessTime');
+        // Mark message as shown
+        setLoginMessageShown(true);
+        // Show message immediately during skeleton loading - no delay
+        showSuccess('Welcome back! Login successful');
+        console.log('Success message triggered');
+      }
+    } catch (error) {
+      console.error('Error checking login success:', error);
+    }
+  };
 
   const checkAuthAndLoadUser = async () => {
     try {
@@ -89,9 +238,21 @@ export default function HomeScreen() {
       setIsUserAuthenticated(authenticated);
       
       if (authenticated) {
+        // Try to get cached user profile first
+        const cachedUser = await cacheService.getUserProfile();
+        if (cachedUser) {
+          console.log('Using cached user profile');
+          setUser(cachedUser);
+          return;
+        }
+
+        console.log('Fetching fresh user profile');
         const userResponse = await getUserProfile();
         if (userResponse.success && userResponse.data.user) {
           setUser(userResponse.data.user);
+          // Cache the user profile
+          await cacheService.setUserProfile(userResponse.data.user);
+          console.log('User profile cached until logout/update');
         }
       }
     } catch (error) {
@@ -128,15 +289,56 @@ export default function HomeScreen() {
 
   // Location is now handled by LocationContext - instant, no permission delays!
 
-  const handleChangeLocation = () => {
-    showAlert({
-      type: 'info',
-      title: 'Location Updated',
-      message: 'Your location is automatically managed by the app. It updates every 10 minutes in the background.',
-      buttons: [
-        { text: 'OK' }
-      ]
-    });
+  const handleChangeLocation = async () => {
+    try {
+      showAlert({
+        type: 'info',
+        title: 'Update Location',
+        message: 'Do you want to update your current location? This will require location permission.',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Update Location', 
+            onPress: async () => {
+              try {
+                const result = await requestLocationUpdate();
+                
+                if (result.success) {
+                  showSuccess(result.message);
+                  // Clear home data cache since location changed
+                  await cacheService.clearHomeData();
+                  // Refresh home data with new location
+                  await fetchHomeData();
+                } else {
+                  // Use setTimeout to avoid alert conflict
+                  setTimeout(() => {
+                    showAlert({
+                      type: 'warning',
+                      title: 'Location Update Failed',
+                      message: result.message,
+                      buttons: [{ text: 'OK' }]
+                    });
+                  }, 100);
+                }
+              } catch (error) {
+                console.error('Error updating location:', error);
+                // Use setTimeout to avoid alert conflict
+                setTimeout(() => {
+                  showAlert({
+                    type: 'error',
+                    title: 'Update Failed',
+                    message: 'Failed to update location. Please try again.',
+                    buttons: [{ text: 'OK' }]
+                  });
+                }, 100);
+              }
+            }
+          }
+        ]
+      });
+    } catch (error) {
+      console.error('Error showing location update dialog:', error);
+    }
   };
 
   const handleNotificationPress = () => {
@@ -159,11 +361,26 @@ export default function HomeScreen() {
     try {
       // Get coordinates from LocationContext (instant, no permission delays!)
       const coordinates = getCoordinatesForAPI();
+      
+      // Try to get cached data first
+      const cachedData = await cacheService.getHomeData(coordinates);
+      if (cachedData) {
+        console.log('Using cached home data');
+        setHomeData(cachedData);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      console.log('Fetching fresh home data');
       const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=15`;
       const data: HomeResponse = await fetchWithJsonValidation(url);
 
       if (data.success) {
         setHomeData(data.data);
+        // Cache the new data
+        await cacheService.setHomeData(data.data, coordinates);
+        console.log('Home data cached for 5 minutes');
       } else {
         showAlert({
           type: 'error',
@@ -421,7 +638,7 @@ export default function HomeScreen() {
                   color="white" 
                 />
                 <Text style={[styles.location, { color: "white" }]}>
-                  {userLocation}
+                  {isUpdating ? 'Updating...' : userLocation}
                 </Text>
                 <Ionicons name="chevron-down" size={14} color="white" />
                 <Text style={styles.changeLocation}>Change</Text>
@@ -481,7 +698,7 @@ export default function HomeScreen() {
                 color="white" 
               />
               <Text style={[styles.location, { color: "white" }]}>
-                {userLocation}
+                {isUpdating ? 'Updating...' : userLocation}
               </Text>
               <Ionicons name="chevron-down" size={14} color="white" />
               <Text style={styles.changeLocation}>Change</Text>

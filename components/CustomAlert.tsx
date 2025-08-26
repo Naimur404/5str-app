@@ -3,12 +3,11 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   Modal,
   StyleSheet,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -38,37 +37,11 @@ export default function CustomAlert({
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   
-  const scaleValue = React.useRef(new Animated.Value(0)).current;
-  const opacityValue = React.useRef(new Animated.Value(0)).current;
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   React.useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.spring(scaleValue, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }),
-        Animated.timing(opacityValue, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(scaleValue, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityValue, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      setIsProcessing(false); // Reset processing state when alert shows
     }
   }, [visible]);
 
@@ -102,15 +75,49 @@ export default function CustomAlert({
     }
   };
 
-  const { icon, color, bgColor } = getIconAndColor();
-
-  const handleButtonPress = (button: AlertButton) => {
-    if (button.onPress) {
-      button.onPress();
-    }
+  const handleOverlayPress = () => {
+    // Prevent multiple rapid presses on overlay
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    
+    // Close immediately for better responsiveness
     if (onClose) {
       onClose();
     }
+    
+    // Reset processing state after brief delay
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 100); // Reduced from 150ms
+  };
+
+  const { icon, color, bgColor } = getIconAndColor();
+
+  const handleButtonPress = (button: AlertButton) => {
+    // Prevent multiple rapid presses - buttons are always ready now
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    
+    // Execute button action immediately without delay
+    if (button.onPress) {
+      try {
+        button.onPress();
+      } catch (error) {
+        console.error('Error in button press handler:', error);
+      }
+    }
+    
+    // Close the alert immediately for better responsiveness
+    if (onClose) {
+      onClose();
+    }
+    
+    // Reset processing state after a brief delay
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 100);
   };
 
   const getButtonStyle = (buttonStyle: string) => {
@@ -132,69 +139,74 @@ export default function CustomAlert({
     <Modal
       visible={visible}
       transparent
-      animationType="none"
-      statusBarTranslucent
-      onRequestClose={onClose}
+      animationType="fade"
+      statusBarTranslucent={false}
+      onRequestClose={handleOverlayPress}
     >
-      <TouchableOpacity 
-        style={[styles.overlay, { backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}
-        activeOpacity={1}
-        onPress={onClose}
-      >
-        <BlurView intensity={20} style={StyleSheet.absoluteFill} pointerEvents="none" />
-        <TouchableOpacity 
-          activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
+      <View style={styles.containerWrapper}>
+        <View
+          style={[
+            styles.alertContainer,
+            {
+              backgroundColor: colors.card,
+              borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            },
+          ]}
         >
-          <Animated.View
-            style={[
-              styles.alertContainer,
-              {
-                backgroundColor: colors.card,
-                transform: [{ scale: scaleValue }],
-                opacity: opacityValue,
-              },
-            ]}
-          >
-            <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
-              <Ionicons name={icon as any} size={32} color={color} />
-            </View>
-            
-            <View style={styles.contentContainer}>
-              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-              {message && <Text style={[styles.message, { color: colors.icon }]}>{message}</Text>}
-            </View>
+          <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
+            <Ionicons name={icon as any} size={32} color={color} />
+          </View>
+          
+          <View style={styles.contentContainer}>
+            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+            {message && <Text style={[styles.message, { color: colors.icon }]}>{message}</Text>}
+          </View>
 
-            <View style={buttons.length > 2 ? styles.buttonContainerVertical : styles.buttonContainer}>
-              {buttons.map((button, index) => {
-                const buttonStyle = getButtonStyle(button.style || 'default');
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      buttons.length > 2 ? styles.buttonVertical : styles.button,
-                      { backgroundColor: buttonStyle.backgroundColor },
-                      buttons.length === 1 && styles.singleButton,
-                    ]}
-                    onPress={() => handleButtonPress(button)}
-                    activeOpacity={0.8}
-                    delayPressIn={0}
-                  >
-                    <Text style={[styles.buttonText, { color: buttonStyle.color }]}>
-                      {button.text}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
-      </TouchableOpacity>
+          <View style={buttons.length > 2 ? styles.buttonContainerVertical : styles.buttonContainer}>
+            {buttons.map((button, index) => {
+              const buttonStyle = getButtonStyle(button.style || 'default');
+              return (
+                <Pressable
+                  key={index}
+                  style={({ pressed }) => [
+                    buttons.length > 2 ? styles.buttonVertical : styles.button,
+                    { backgroundColor: buttonStyle.backgroundColor },
+                    buttons.length === 1 && styles.singleButton,
+                    isProcessing && styles.buttonDisabled,
+                    pressed && !isProcessing && styles.buttonPressed,
+                  ]}
+                  onPress={() => handleButtonPress(button)}
+                  disabled={isProcessing}
+                  android_ripple={{
+                    color: 'rgba(255, 255, 255, 0.1)',
+                    borderless: false,
+                  }}
+                >
+                  <Text style={[
+                    styles.buttonText, 
+                    { color: buttonStyle.color },
+                    isProcessing && styles.buttonTextDisabled
+                  ]}>
+                    {button.text}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  containerWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    // No background color - completely transparent
+  },
   overlay: {
     flex: 1,
     justifyContent: 'center',
@@ -207,11 +219,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
     minWidth: 280,
+    // Enhanced styling for visibility without overlay
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 15,
+    borderWidth: 1,
   },
   iconContainer: {
     width: 64,
@@ -277,5 +291,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonTextDisabled: {
+    opacity: 0.7,
   },
 });

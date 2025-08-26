@@ -10,6 +10,7 @@ import {
     updateProfile,
     UpdateProfilePayload
 } from '@/services/api';
+import cacheService from '@/services/cacheService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -94,6 +95,18 @@ export default function ProfileScreen() {
       
       if (token) {
         setIsAuthenticated(true);
+        
+        // Try to get cached user profile first
+        const cachedUser = await cacheService.getUserProfile();
+        if (cachedUser) {
+          console.log('Using cached user profile in profile page');
+          // Ensure user_level exists
+          if (!cachedUser.user_level) {
+            cachedUser.user_level = guestUser.user_level;
+          }
+          setUser(cachedUser);
+        }
+
         const [userResponse, reviewsResponse] = await Promise.all([
           getUserProfile(),
           getUserReviews()
@@ -106,6 +119,9 @@ export default function ProfileScreen() {
             userData.user_level = guestUser.user_level;
           }
           setUser(userData);
+          // Update cache with fresh data
+          await cacheService.setUserProfile(userData);
+          console.log('User profile updated in cache');
         }
         
         if (reviewsResponse.success) {
@@ -138,6 +154,11 @@ export default function ProfileScreen() {
       'Are you sure you want to sign out?',
       async () => {
         await logout();
+        // Clear all cached data on logout
+        await cacheService.clearUserProfile();
+        await cacheService.clearHomeData();
+        console.log('Cache cleared on logout');
+        
         setIsAuthenticated(false);
         setUser(null);
         setReviews([]);

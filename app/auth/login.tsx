@@ -19,6 +19,7 @@ import {
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -60,12 +61,12 @@ export default function LoginScreen() {
           return;
         }
 
-        // Navigate immediately to home page
-        router.replace('/(tabs)');
-        // Show success toast after a brief delay to ensure navigation is complete
-        setTimeout(() => {
-          showSuccess('Welcome back! Login successful');
-        }, 100);
+        // Set login success flag with timestamp and navigate immediately
+        await AsyncStorage.setItem('loginSuccess', 'true');
+        await AsyncStorage.setItem('loginSuccessTime', Date.now().toString());
+        
+        // Navigate to home with a special parameter to trigger immediate success message
+        router.replace('/(tabs)?loginSuccess=true' as any);
       } else {
         showError('Error', data.message || 'Login failed');
       }

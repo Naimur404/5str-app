@@ -6,6 +6,11 @@ interface LocationContextType {
   isLoading: boolean;
   isUpdating: boolean;
   refreshLocation: () => Promise<void>;
+  requestLocationUpdate: () => Promise<{
+    success: boolean;
+    location?: UserLocation;
+    message: string;
+  }>;
   getCoordinatesForAPI: () => { latitude: number; longitude: number };
   locationAge: number;
 }
@@ -82,6 +87,31 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
+  const requestLocationUpdate = async () => {
+    try {
+      setIsUpdating(true);
+      console.log('LocationProvider: User requested location update');
+      
+      const result = await locationService.requestLocationUpdate();
+      
+      if (result.success && result.location) {
+        setLocation(result.location);
+        setLocationAge(locationService.getLocationAge());
+        console.log('LocationProvider: Location updated successfully');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('LocationProvider: Error requesting location update:', error);
+      return {
+        success: false,
+        message: 'Failed to update location. Please try again.'
+      };
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const getCoordinatesForAPI = () => {
     return locationService.getCoordinatesForAPI();
   };
@@ -91,6 +121,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     isLoading,
     isUpdating,
     refreshLocation,
+    requestLocationUpdate,
     getCoordinatesForAPI,
     locationAge,
   };

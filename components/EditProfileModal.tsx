@@ -17,6 +17,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { updateProfile, UpdateProfilePayload, User } from '@/services/api';
+import cacheService from '@/services/cacheService';
 import * as ImagePicker from 'expo-image-picker';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from './CustomAlert';
@@ -203,6 +204,10 @@ export default function EditProfileModal({ visible, onClose, user, onUpdate }: E
       const response = await updateProfile(payload);
       
       if (response.success) {
+        // Clear and update cache with new user data
+        await cacheService.setUserProfile(response.data.user);
+        console.log('User profile cache updated after profile update');
+        
         showSuccess('Success', 'Profile updated successfully');
         onUpdate(response.data.user);
         onClose();

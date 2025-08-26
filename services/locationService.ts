@@ -8,6 +8,7 @@ export interface UserLocation {
   timestamp: number;
   accuracy?: number;
   source: 'gps' | 'cache' | 'default';
+  address?: string; // Add address field for location name
 }
 
 class LocationService {
@@ -28,6 +29,7 @@ class LocationService {
     longitude: 91.7832,
     timestamp: Date.now(),
     source: 'default',
+    address: 'Chittagong, Bangladesh',
   };
 
   private constructor() {
@@ -130,8 +132,90 @@ class LocationService {
   }
 
   /**
-   * Get location with fallback to default
+   * Request location update with user permission explicitly
+   * This method is for manual location updates triggered by user actions
    */
+  public async requestLocationUpdate(): Promise<{
+    success: boolean;
+    location?: UserLocation;
+    message: string;
+  }> {
+    try {
+      console.log('LocationService: User requested location update');
+      
+      // Check if location permission is already granted
+      const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
+      
+      if (currentStatus === 'granted') {
+        // Permission already granted, get fresh location
+        console.log('LocationService: Permission already granted, getting fresh location');
+        // Reset update flag to allow immediate update
+        this.isUpdatingLocation = false;
+        const location = await this.getCurrentLocationWithFallback();
+        return {
+          success: true,
+          location,
+          message: 'Location updated successfully'
+        };
+      }
+      
+      // Request permission from user
+      console.log('LocationService: Requesting location permission from user');
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        console.log('LocationService: User denied location permission');
+        return {
+          success: false,
+          message: 'Location permission denied. Please enable location access in settings to get accurate location.'
+        };
+      }
+      
+      // Permission granted, get fresh location
+      console.log('LocationService: Permission granted, getting fresh location');
+      // Reset update flag to allow immediate update
+      this.isUpdatingLocation = false;
+      const location = await this.getCurrentLocationWithFallback();
+      
+      return {
+        success: true,
+        location,
+        message: 'Location updated successfully'
+      };
+      
+    } catch (error) {
+      console.error('LocationService: Error requesting location update:', error);
+      return {
+        success: false,
+        message: 'Failed to update location. Please try again.'
+      };
+    }
+  }
+
+  /**
+   * Get location name using reverse geocoding
+   */
+  private async getLocationName(latitude: number, longitude: number): Promise<string> {
+    try {
+      const [geocoded] = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (geocoded) {
+        const parts = [];
+        if (geocoded.district) parts.push(geocoded.district);
+        if (geocoded.subregion && parts.length < 2) parts.push(geocoded.subregion);
+        // Take only first two parts maximum, with district being the most detailed level
+        
+        return parts.length > 0 ? parts.join(', ') : 'Current Location';
+      }
+    } catch (error) {
+      console.log('Reverse geocoding failed:', error);
+    }
+    
+    return 'Current Location';
+  }
   private async getCurrentLocationWithFallback(): Promise<UserLocation> {
     if (this.isUpdatingLocation) {
       console.log('LocationService: Already updating, returning current or default');
@@ -162,16 +246,26 @@ class LocationService {
         accuracy: Location.Accuracy.Balanced,
       });
 
+      // Get location name using reverse geocoding
+      const address = await this.getLocationName(
+        locationResult.coords.latitude,
+        locationResult.coords.longitude
+      );
+
       const newLocation: UserLocation = {
         latitude: locationResult.coords.latitude,
         longitude: locationResult.coords.longitude,
         timestamp: Date.now(),
         accuracy: locationResult.coords.accuracy ?? undefined,
-        source: 'gps' as const // GPS location source
-      };      console.log('LocationService: Got fresh location:', {
+        source: 'gps' as const, // GPS location source
+        address: address
+      };
+      
+      console.log('LocationService: Got fresh location:', {
         lat: newLocation.latitude,
         lng: newLocation.longitude,
-        accuracy: newLocation.accuracy
+        accuracy: newLocation.accuracy,
+        address: newLocation.address
       });
 
       // Save to cache and update current location
@@ -206,11 +300,23 @@ class LocationService {
           location.source = 'cache' as const;
         }
         
+        // Add address if missing (for backward compatibility)
+        if (!location.address && location.latitude && location.longitude) {
+          try {
+            location.address = await this.getLocationName(location.latitude, location.longitude);
+            // Save updated location with address
+            await this.saveLocationToCache(location);
+          } catch (error) {
+            console.warn('LocationService: Failed to add address to cached location:', error);
+          }
+        }
+        
         console.log('LocationService: Loaded cached location:', {
           lat: location.latitude,
           lng: location.longitude,
           age: Math.round((Date.now() - location.timestamp) / 1000 / 60) + ' minutes',
-          source: location.source
+          source: location.source,
+          address: location.address
         });
         return location;
       }
