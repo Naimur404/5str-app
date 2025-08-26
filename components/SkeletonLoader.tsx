@@ -72,45 +72,127 @@ const SkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundCol
 // Business Details Skeleton
 export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
   <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
-    {/* Hero Section Skeleton */}
-    <SkeletonBox 
-      width="100%" 
-      height={320} 
-      borderRadius={0}
-      backgroundColor={colors.icon + '20'} 
-    />
-    
-    {/* Quick Actions Skeleton */}
-    <View style={[styles.quickActions, { backgroundColor: colors.card }]}>
-      {[...Array(4)].map((_, index) => (
-        <View key={index} style={styles.actionButton}>
+    {/* Hero Section Skeleton with Gradient Overlay */}
+    <View style={styles.heroSkeleton}>
+      <SkeletonBox 
+        width="100%" 
+        height={320} 
+        borderRadius={0}
+        backgroundColor={colors.icon + '20'} 
+      />
+      {/* Favorite button skeleton */}
+      <View style={styles.favoriteButtonSkeleton}>
+        <SkeletonBox 
+          width={40} 
+          height={40} 
+          borderRadius={20}
+          backgroundColor={colors.icon + '30'} 
+        />
+      </View>
+      {/* Hero content overlay skeleton */}
+      <View style={styles.heroContentSkeleton}>
+        <SkeletonBox 
+          width="80%" 
+          height={24} 
+          borderRadius={12}
+          backgroundColor="rgba(255,255,255,0.3)" 
+        />
+        <SkeletonBox 
+          width="60%" 
+          height={16} 
+          borderRadius={8}
+          backgroundColor="rgba(255,255,255,0.2)" 
+        />
+        <View style={styles.heroMetaSkeleton}>
+          <View style={styles.ratingBadgeSkeleton}>
+            <SkeletonBox 
+              width={12} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor="#FFD700" 
+            />
+            <SkeletonBox 
+              width={30} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+            <SkeletonBox 
+              width={40} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+          </View>
           <SkeletonBox 
-            width={40} 
-            height={40} 
-            borderRadius={20}
+            width={50} 
+            height={14} 
+            borderRadius={7}
+            backgroundColor="rgba(255,255,255,0.2)" 
+          />
+          <View style={styles.verifiedBadgeSkeleton}>
+            <SkeletonBox 
+              width={12} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor="#4CAF50" 
+            />
+            <SkeletonBox 
+              width={50} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+          </View>
+        </View>
+      </View>
+    </View>
+    
+    {/* Quick Actions Skeleton - Compact Design */}
+    <View style={[styles.quickActionsSkeleton, { backgroundColor: colors.card }]}>
+      {[...Array(4)].map((_, index) => (
+        <View key={index} style={styles.actionButtonSkeleton}>
+          <SkeletonBox 
+            width={36} 
+            height={36} 
+            borderRadius={18}
             backgroundColor={colors.icon + '20'} 
           />
           <SkeletonBox 
-            width={50} 
-            height={12} 
-            borderRadius={6}
-            backgroundColor={colors.icon + '20'} 
+            width={45} 
+            height={10} 
+            borderRadius={5}
+            backgroundColor={colors.icon + '15'} 
           />
         </View>
       ))}
     </View>
     
-    {/* Tab Bar Skeleton */}
-    <View style={[styles.tabBar, { backgroundColor: colors.card }]}>
-      {[...Array(3)].map((_, index) => (
-        <SkeletonBox 
-          key={index}
-          width={80} 
-          height={16} 
-          borderRadius={8}
-          backgroundColor={colors.icon + '20'} 
-        />
-      ))}
+    {/* Modern Tab Bar Skeleton */}
+    <View style={[styles.modernTabContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.modernTabBar, { backgroundColor: colors.card }]}>
+        {[...Array(3)].map((_, index) => (
+          <View key={index} style={styles.modernTabItemSkeleton}>
+            <View style={[styles.tabIconSkeleton, { backgroundColor: index === 1 ? colors.tint + '20' : colors.icon + '15' }]}>
+              <SkeletonBox 
+                width={18} 
+                height={18} 
+                borderRadius={9}
+                backgroundColor={index === 1 ? colors.tint : colors.icon + '40'} 
+              />
+            </View>
+            <SkeletonBox 
+              width={index === 0 ? 65 : index === 1 ? 75 : 55} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={index === 1 ? colors.tint + '40' : colors.icon + '20'} 
+            />
+            {index === 1 && (
+              <View style={[styles.activeTabIndicatorSkeleton, { backgroundColor: colors.tint }]} />
+            )}
+          </View>
+        ))}
+      </View>
     </View>
     
     {/* Content Skeleton */}
@@ -131,13 +213,13 @@ export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
               backgroundColor={colors.icon + '15'} 
             />
             <SkeletonBox 
-              width="80%" 
+              width="85%" 
               height={14} 
               borderRadius={7}
               backgroundColor={colors.icon + '15'} 
             />
             <SkeletonBox 
-              width="60%" 
+              width="70%" 
               height={14} 
               borderRadius={7}
               backgroundColor={colors.icon + '15'} 
@@ -788,6 +870,99 @@ const styles = StyleSheet.create({
   },
   settingTextSkeleton: {
     gap: 4,
+  },
+  // Business Details Skeleton - New Modern Styles
+  heroSkeleton: {
+    position: 'relative',
+    height: 320,
+  },
+  favoriteButtonSkeleton: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
+    zIndex: 1,
+  },
+  heroContentSkeleton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+    gap: 8,
+  },
+  heroMetaSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ratingBadgeSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  verifiedBadgeSkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  quickActionsSkeleton: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionButtonSkeleton: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  modernTabContainer: {
+    backgroundColor: 'transparent',
+  },
+  modernTabBar: {
+    flexDirection: 'row',
+    margin: 16,
+    borderRadius: 12,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modernTabItemSkeleton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    position: 'relative',
+    gap: 8,
+  },
+  tabIconSkeleton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeTabIndicatorSkeleton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 1,
   },
 });
 

@@ -450,7 +450,7 @@ export default function BusinessDetailsScreen() {
   };
 
   const renderOverviewTab = () => (
-    <View style={styles.tabContent}>
+    <View style={styles.tabInnerContent}>
       {/* Business Info Card */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <View style={styles.businessInfoHeader}>
@@ -708,7 +708,7 @@ export default function BusinessDetailsScreen() {
   };
 
   const renderMenuTab = () => (
-    <View style={styles.tabContent}>
+    <View style={styles.tabInnerContent}>
       {offerings.length > 0 ? (
         <View>
           <Text style={[styles.menuHeader, { color: colors.text }]}>
@@ -754,7 +754,7 @@ export default function BusinessDetailsScreen() {
   };
 
   const renderRatingsTab = () => (
-    <View style={styles.tabContent}>
+    <View style={styles.tabInnerContent}>
       {reviews.length > 0 ? (
         <View>
           <Text style={[styles.reviewsHeader, { color: colors.text }]}>
@@ -878,14 +878,14 @@ export default function BusinessDetailsScreen() {
       <View style={[styles.quickActions, { backgroundColor: colors.card }]}>
         <TouchableOpacity style={styles.actionButton} onPress={handleCall}>
           <View style={[styles.actionIcon, { backgroundColor: '#4CAF50' }]}>
-            <Ionicons name="call" size={20} color="white" />
+            <Ionicons name="call" size={16} color="white" />
           </View>
           <Text style={[styles.actionLabel, { color: colors.text }]}>Call</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.actionButton} onPress={handleDirections}>
           <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
-            <Ionicons name="navigate" size={20} color="white" />
+            <Ionicons name="navigate" size={16} color="white" />
           </View>
           <Text style={[styles.actionLabel, { color: colors.text }]}>Directions</Text>
         </TouchableOpacity>
@@ -893,7 +893,7 @@ export default function BusinessDetailsScreen() {
         {business?.website_url && (
           <TouchableOpacity style={styles.actionButton} onPress={handleWebsite}>
             <View style={[styles.actionIcon, { backgroundColor: '#FF9800' }]}>
-              <Ionicons name="globe" size={20} color="white" />
+              <Ionicons name="globe" size={16} color="white" />
             </View>
             <Text style={[styles.actionLabel, { color: colors.text }]}>Website</Text>
           </TouchableOpacity>
@@ -901,39 +901,77 @@ export default function BusinessDetailsScreen() {
         
         <TouchableOpacity style={styles.actionButton} onPress={handleWriteReview}>
           <View style={[styles.actionIcon, { backgroundColor: colors.buttonPrimary }]}>
-            <Ionicons name="star" size={20} color="white" />
+            <Ionicons name="star" size={16} color="white" />
           </View>
           <Text style={[styles.actionLabel, { color: colors.text }]}>Review</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tab Navigation */}
-      <View style={[styles.tabBar, { backgroundColor: colors.card }]}>
-        {[
-          { key: 'overview', label: 'OVERVIEW' },
-          { key: 'menu', label: getOfferingsTabName() },
-          { key: 'ratings', label: 'RATINGS' }
-        ].map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[
-              styles.tabItem,
-              activeTab === tab.key && { borderBottomColor: colors.tint }
-            ]}
-            onPress={() => setActiveTab(tab.key as TabType)}
-          >
-            <Text style={[
-              styles.tabLabel,
-              { color: activeTab === tab.key ? colors.tint : colors.icon }
-            ]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      {/* Modern Tab Navigation */}
+      <View style={[styles.tabContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.tabBar, { backgroundColor: colors.card }]}>
+          {[
+            { 
+              key: 'overview', 
+              label: 'Overview', 
+              icon: 'information-circle-outline',
+              activeIcon: 'information-circle'
+            },
+            { 
+              key: 'menu', 
+              label: getOfferingsTabName(), 
+              icon: 'restaurant-outline',
+              activeIcon: 'restaurant'
+            },
+            { 
+              key: 'ratings', 
+              label: 'Ratings', 
+              icon: 'star-outline',
+              activeIcon: 'star'
+            }
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                styles.tabItem,
+                activeTab === tab.key && [styles.activeTabItem, { backgroundColor: colors.tint + '10' }]
+              ]}
+              onPress={() => setActiveTab(tab.key as TabType)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.tabContent}>
+                <View style={[
+                  styles.tabIconContainer,
+                  { backgroundColor: activeTab === tab.key ? colors.tint : colors.background },
+                  activeTab === tab.key && { backgroundColor: colors.tint }
+                ]}>
+                  <Ionicons 
+                    name={activeTab === tab.key ? tab.activeIcon as any : tab.icon as any} 
+                    size={18} 
+                    color={activeTab === tab.key ? 'white' : colors.icon} 
+                  />
+                </View>
+                <Text style={[
+                  styles.tabLabel,
+                  { color: activeTab === tab.key ? colors.tint : colors.icon }
+                ]}>
+                  {tab.label}
+                </Text>
+              </View>
+              {activeTab === tab.key && (
+                <View style={[styles.activeTabIndicator, { backgroundColor: colors.tint }]} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Tab Content */}
-      <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={[styles.contentContainer, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
         {renderTabContent()}
       </ScrollView>
 
@@ -1081,36 +1119,83 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  tabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+  tabContainer: {
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    overflow: 'hidden',
   },
   tabItem: {
     flex: 1,
-    paddingVertical: 16,
+    marginHorizontal: 4,
+    borderRadius: 12,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  activeTabItem: {
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabContent: {
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+  },
+  tabIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: '25%',
+    right: '25%',
+    height: 3,
+    borderRadius: 2,
   },
   contentContainer: {
     flex: 1,
   },
-  tabContent: {
+  tabInnerContent: {
     padding: 16,
+    backgroundColor: 'transparent',
   },
   section: {
     borderRadius: 12,
@@ -1429,10 +1514,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: 'white',
-    paddingVertical: 20,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -1445,18 +1528,18 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: 'center',
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   actionLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
   },
