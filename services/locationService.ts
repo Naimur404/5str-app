@@ -1,11 +1,13 @@
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState as RNAppState, AppStateStatus } from 'react-native';
 
 export interface UserLocation {
   latitude: number;
   longitude: number;
   timestamp: number;
   accuracy?: number;
+  source: 'gps' | 'cache' | 'default';
 }
 
 class LocationService {
@@ -14,17 +16,24 @@ class LocationService {
   private isUpdatingLocation = false;
   private locationUpdateTimer: any = null;
   private backgroundUpdateTimer: any = null;
+  private appStateSubscription: any = null;
   
   // Cache duration: 10 minutes (in milliseconds)
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  private readonly UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
   private readonly STORAGE_KEY = 'cached_user_location';
+  private readonly LAST_UPDATE_KEY = 'last_location_update';
   private readonly DEFAULT_LOCATION: UserLocation = {
     latitude: 22.3569,
     longitude: 91.7832,
     timestamp: Date.now(),
+    source: 'default',
   };
 
-  private constructor() {}
+  private constructor() {
+    // Listen for app state changes to trigger updates when app becomes active
+    this.appStateSubscription = RNAppState.addEventListener('change', this.handleAppStateChange);
+  }
 
   public static getInstance(): LocationService {
     if (!LocationService.instance) {
@@ -32,6 +41,51 @@ class LocationService {
     }
     return LocationService.instance;
   }
+
+  /**
+   * Handle app state changes to update location when app becomes active
+   */
+  private handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    if (nextAppState === 'active') {
+      console.log('LocationService: App became active, checking location freshness');
+      
+      // Check if we need to update location based on last update time
+      const shouldUpdate = await this.shouldUpdateLocation();
+      if (shouldUpdate) {
+        console.log('LocationService: Triggering background update on app active');
+        this.getCurrentLocationWithFallback();
+      }
+    }
+  };
+
+  /**
+   * Check if location should be updated based on time elapsed
+   */
+  private async shouldUpdateLocation(): Promise<boolean> {
+    try {
+      const lastUpdateStr = await AsyncStorage.getItem(this.LAST_UPDATE_KEY);
+      if (!lastUpdateStr) return true;
+      
+      const lastUpdate = parseInt(lastUpdateStr);
+      const timeSinceUpdate = Date.now() - lastUpdate;
+      
+      return timeSinceUpdate >= this.UPDATE_INTERVAL;
+    } catch (error) {
+      console.warn('LocationService: Error checking last update time:', error);
+      return true;
+    }
+  };
+
+  /**
+   * Save the last update timestamp
+   */
+  private async saveLastUpdateTime(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(this.LAST_UPDATE_KEY, Date.now().toString());
+    } catch (error) {
+      console.warn('LocationService: Error saving last update time:', error);
+    }
+  };
 
   /**
    * Initialize location service - loads cached location and starts background updates
@@ -89,14 +143,14 @@ class LocationService {
     try {
       // Set default location immediately
       if (!this.currentLocation) {
-        this.currentLocation = { ...this.DEFAULT_LOCATION, timestamp: Date.now() };
+        this.currentLocation = { ...this.DEFAULT_LOCATION, timestamp: Date.now(), source: 'default' as const };
       }
 
       // Request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         console.log('LocationService: Permission denied, using default location');
-        const defaultLocation = { ...this.DEFAULT_LOCATION, timestamp: Date.now() };
+        const defaultLocation = { ...this.DEFAULT_LOCATION, timestamp: Date.now(), source: 'default' as const };
         await this.saveLocationToCache(defaultLocation);
         this.currentLocation = defaultLocation;
         this.scheduleNextUpdate(defaultLocation);
@@ -112,10 +166,9 @@ class LocationService {
         latitude: locationResult.coords.latitude,
         longitude: locationResult.coords.longitude,
         timestamp: Date.now(),
-        accuracy: locationResult.coords.accuracy || undefined,
-      };
-
-      console.log('LocationService: Got fresh location:', {
+        accuracy: locationResult.coords.accuracy ?? undefined,
+        source: 'gps' as const // GPS location source
+      };      console.log('LocationService: Got fresh location:', {
         lat: newLocation.latitude,
         lng: newLocation.longitude,
         accuracy: newLocation.accuracy
@@ -130,7 +183,7 @@ class LocationService {
 
     } catch (error) {
       console.warn('LocationService: Error getting location:', error);
-      const fallbackLocation = this.currentLocation || { ...this.DEFAULT_LOCATION, timestamp: Date.now() };
+      const fallbackLocation = this.currentLocation || { ...this.DEFAULT_LOCATION, timestamp: Date.now(), source: 'default' as const };
       await this.saveLocationToCache(fallbackLocation);
       this.scheduleNextUpdate(fallbackLocation);
       return fallbackLocation;
@@ -147,10 +200,17 @@ class LocationService {
       const cached = await AsyncStorage.getItem(this.STORAGE_KEY);
       if (cached) {
         const location: UserLocation = JSON.parse(cached);
+        
+        // Ensure source property exists for backward compatibility
+        if (!location.source) {
+          location.source = 'cache' as const;
+        }
+        
         console.log('LocationService: Loaded cached location:', {
           lat: location.latitude,
           lng: location.longitude,
-          age: Math.round((Date.now() - location.timestamp) / 1000 / 60) + ' minutes'
+          age: Math.round((Date.now() - location.timestamp) / 1000 / 60) + ' minutes',
+          source: location.source
         });
         return location;
       }
@@ -223,7 +283,7 @@ class LocationService {
   }
 
   /**
-   * Clean up timers
+   * Clean up timers and subscriptions
    */
   public cleanup(): void {
     if (this.locationUpdateTimer) {
@@ -234,6 +294,37 @@ class LocationService {
       clearTimeout(this.backgroundUpdateTimer);
       this.backgroundUpdateTimer = null;
     }
+    
+    // Clean up app state subscription
+    if (this.appStateSubscription) {
+      this.appStateSubscription.remove();
+      this.appStateSubscription = null;
+    }
+    
+    console.log('LocationService: Cleanup completed');
+  }
+
+  /**
+   * Get current location status for debugging
+   */
+  public getLocationStatus(): {
+    hasLocation: boolean;
+    age: number;
+    source: string;
+    isUpdating: boolean;
+    coordinates: { latitude: number; longitude: number };
+  } {
+    const location = this.currentLocation || this.DEFAULT_LOCATION;
+    return {
+      hasLocation: !!this.currentLocation,
+      age: this.getLocationAge(),
+      source: location.source || 'unknown',
+      isUpdating: this.isUpdating(),
+      coordinates: {
+        latitude: location.latitude,
+        longitude: location.longitude,
+      },
+    };
   }
 
   /**

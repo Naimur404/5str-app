@@ -18,9 +18,9 @@ import { StatusBar } from 'expo-status-bar';
 import { getSpecialOffers } from '@/services/api';
 import { SpecialOffer } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import * as Location from 'expo-location';
 
 interface OfferCardProps {
   offer: SpecialOffer;
@@ -107,6 +107,7 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, onPress, colors }) => (
 export default function SpecialOffersScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { getCoordinatesForAPI } = useLocation();
   const [offers, setOffers] = useState<SpecialOffer[]>([]);
   const [filteredOffers, setFilteredOffers] = useState<SpecialOffer[]>([]);
   const [location, setLocation] = useState<{
@@ -127,20 +128,16 @@ export default function SpecialOffersScreen() {
       if (isRefresh) setRefreshing(true);
       if (page > 1) setLoadingMore(true);
 
-      // Get user's current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show nearby offers.');
+      // Get location using LocationContext for instant access
+      const coordinates = await getCoordinatesForAPI();
+      if (!coordinates) {
+        Alert.alert('Location Error', 'Unable to get your location. Please try again.');
         return;
       }
 
-      const userLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
       const response = await getSpecialOffers(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
+        coordinates.latitude,
+        coordinates.longitude,
         20, // limit
         30, // radius
         page

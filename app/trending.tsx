@@ -18,8 +18,8 @@ import { StatusBar } from 'expo-status-bar';
 import { getTodayTrending } from '@/services/api';
 import { TrendingBusiness, TrendingOffering } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
-import * as Location from 'expo-location';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { BusinessListSkeleton } from '@/components/SkeletonLoader';
 
@@ -164,6 +164,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress, colors }
 export default function TrendingScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { getCoordinatesForAPI } = useLocation();
   const [trendingBusinesses, setTrendingBusinesses] = useState<TrendingBusiness[]>([]);
   const [trendingOfferings, setTrendingOfferings] = useState<TrendingOffering[]>([]);
   const [allTrendingItems, setAllTrendingItems] = useState<(TrendingBusiness | TrendingOffering)[]>([]);
@@ -171,10 +172,9 @@ export default function TrendingScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
-    initializeLocation();
+    fetchTrendingData();
   }, []);
 
   useEffect(() => {
@@ -187,33 +187,14 @@ export default function TrendingScreen() {
     filterItems();
   }, [searchQuery, allTrendingItems]);
 
-  const initializeLocation = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        // Use default location (Dhaka)
-        setLocation({ latitude: 23.8103, longitude: 90.4125 });
-        return;
-      }
-
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-    } catch (error) {
-      console.error('Error getting location:', error);
-      // Use default location (Dhaka)
-      setLocation({ latitude: 23.8103, longitude: 90.4125 });
-    }
-  };
-
   const fetchTrendingData = async () => {
-    if (!location) return;
-    
     try {
       setLoading(true);
-      const response = await getTodayTrending(location.latitude, location.longitude);
+      
+      // Get coordinates from LocationContext (instant, no permission delays!)
+      const coordinates = getCoordinatesForAPI();
+      
+      const response = await getTodayTrending(coordinates.latitude, coordinates.longitude);
       
       if (response.success) {
         const businesses = response.data.trending_businesses || [];
@@ -222,27 +203,19 @@ export default function TrendingScreen() {
         setTrendingBusinesses(businesses);
         setTrendingOfferings(offerings);
         
-        // Combine and sort all items by trend rank
-        const allItems = [
-          ...businesses.map(item => ({ ...item, type: 'business' as const })),
-          ...offerings.map(item => ({ ...item, type: 'offering' as const }))
-        ];
-        
-        allItems.sort((a, b) => {
-          const rankA = parseInt(a.trend_rank?.toString() || '999');
-          const rankB = parseInt(b.trend_rank?.toString() || '999');
-          return rankA - rankB;
-        });
-        
-        setAllTrendingItems(allItems);
+        // Combine and shuffle for mixed display
+        const combined = [...businesses, ...offerings];
+        setAllTrendingItems(combined);
+        setFilteredItems(combined);
       } else {
-        Alert.alert('Error', 'Failed to load trending data');
+        Alert.alert('Error', 'Failed to load trending data. Please try again.');
       }
     } catch (error) {
       console.error('Error fetching trending data:', error);
-      Alert.alert('Error', 'Failed to load trending data. Please check your internet connection.');
+      Alert.alert('Error', 'Unable to load trending data. Please check your internet connection.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 

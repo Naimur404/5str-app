@@ -17,10 +17,10 @@ import { StatusBar } from 'expo-status-bar';
 import { getTopRated, getCategories } from '@/services/api';
 import { Business, Category } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { BusinessLogo } from '@/components/SmartImage';
 import { BusinessListSkeleton } from '@/components/SkeletonLoader';
-import * as Location from 'expo-location';
 
 interface BusinessCardProps {
   business: Business;
@@ -125,6 +125,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
 export default function TopRatedScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme || 'light'];
+  const { getCoordinatesForAPI } = useLocation();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -147,20 +148,16 @@ export default function TopRatedScreen() {
       if (isRefresh) setRefreshing(true);
       if (page > 1) setLoadingMore(true);
 
-      // Get user's current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show top rated businesses.');
+      // Get location using LocationContext for instant access
+      const coordinates = await getCoordinatesForAPI();
+      if (!coordinates) {
+        Alert.alert('Location Error', 'Unable to get your location. Please try again.');
         return;
       }
 
-      const userLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
       const response = await getTopRated(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
+        coordinates.latitude,
+        coordinates.longitude,
         20, // limit
         15, // radius
         page,

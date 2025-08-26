@@ -1,10 +1,10 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Business, Category, getCategoryBusinesses } from '@/services/api';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -21,6 +21,7 @@ import {
 import { CategoryBusinessSkeleton } from '@/components/SkeletonLoader';
 
 export default function CategoryBusinessesScreen() {
+  const { getCoordinatesForAPI } = useLocation();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,24 +52,19 @@ export default function CategoryBusinessesScreen() {
 
   const getUserLocation = async () => {
     try {
-      // Request location permissions
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      // Get location using LocationContext for instant access
+      const coordinates = await getCoordinatesForAPI();
       
-      if (status !== 'granted') {
-        console.log('Location permission denied');
+      if (!coordinates) {
+        console.log('Unable to get location');
         // Load businesses without location
         loadBusinesses();
         return;
       }
 
-      // Get current location
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
       const coords = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
       };
 
       console.log('User location obtained:', coords);

@@ -17,8 +17,8 @@ import { StatusBar } from 'expo-status-bar';
 import { getTopServices, TopServicesResponse } from '@/services/api';
 import { TopService } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
-import * as Location from 'expo-location';
 import { CategoryIcon } from '@/components/SmartImage';
 
 interface ServiceCardProps {
@@ -91,6 +91,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onPress, colors }) =
 export default function TopServicesScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { getCoordinatesForAPI } = useLocation();
   const [services, setServices] = useState<TopService[]>([]);
   const [filteredServices, setFilteredServices] = useState<TopService[]>([]);
   const [location, setLocation] = useState<{
@@ -106,20 +107,16 @@ export default function TopServicesScreen() {
     try {
       if (showLoader) setLoading(true);
 
-      // Get user's current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show nearby services.');
+      // Get location using LocationContext for instant access
+      const coordinates = await getCoordinatesForAPI();
+      if (!coordinates) {
+        Alert.alert('Location Error', 'Unable to get your location. Please try again.');
         return;
       }
 
-      const userLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
       const response = await getTopServices(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
+        coordinates.latitude,
+        coordinates.longitude,
         50, // Show more services on dedicated page
         15 // 15km radius
       );

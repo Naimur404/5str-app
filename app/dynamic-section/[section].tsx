@@ -18,9 +18,9 @@ import { StatusBar } from 'expo-status-bar';
 import { getDynamicSection } from '@/services/api';
 import { Business } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import * as Location from 'expo-location';
 
 interface BusinessCardProps {
   business: Business;
@@ -104,6 +104,7 @@ export default function DynamicSectionScreen() {
   const colors = Colors[colorScheme || 'light'];
   const { section } = useLocalSearchParams();
   const sectionSlug = Array.isArray(section) ? section[0] : section || 'trending';
+  const { getCoordinatesForAPI } = useLocation();
   
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
@@ -145,21 +146,13 @@ export default function DynamicSectionScreen() {
       if (isRefresh) setRefreshing(true);
       if (page > 1) setLoadingMore(true);
 
-      // Get user's current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show nearby businesses.');
-        return;
-      }
-
-      const userLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // Get user's current location from LocationContext (no permission delays!)
+      const coordinates = getCoordinatesForAPI();
 
       const response = await getDynamicSection(
         sectionSlug,
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
+        coordinates.latitude,
+        coordinates.longitude,
         20, // limit
         20, // radius
         page

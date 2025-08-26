@@ -17,9 +17,9 @@ import { StatusBar } from 'expo-status-bar';
 import { getPopularNearby } from '@/services/api';
 import { Business } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { BusinessLogo } from '@/components/SmartImage';
-import * as Location from 'expo-location';
 
 interface BusinessCardProps {
   business: Business;
@@ -118,6 +118,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
 export default function PopularNearbyScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme || 'light'];
+  const { getCoordinatesForAPI } = useLocation();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [location, setLocation] = useState<{
@@ -138,20 +139,12 @@ export default function PopularNearbyScreen() {
       if (isRefresh) setRefreshing(true);
       if (page > 1) setLoadingMore(true);
 
-      // Get user's current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show nearby businesses.');
-        return;
-      }
-
-      const userLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // Get user's current location from LocationContext (fast, no permissions needed!)
+      const coordinates = getCoordinatesForAPI();
 
       const response = await getPopularNearby(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
+        coordinates.latitude,
+        coordinates.longitude,
         20, // limit
         15, // radius
         page

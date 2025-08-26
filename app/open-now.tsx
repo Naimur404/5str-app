@@ -17,10 +17,10 @@ import { StatusBar } from 'expo-status-bar';
 import { getOpenNow, getCategories } from '@/services/api';
 import { Business, Category } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { BusinessLogo } from '@/components/SmartImage';
 import { BusinessListSkeleton } from '@/components/SkeletonLoader';
-import * as Location from 'expo-location';
 
 interface BusinessCardProps {
   business: Business;
@@ -134,6 +134,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
 export default function OpenNowScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme || 'light'];
+  const { getCoordinatesForAPI } = useLocation();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -157,20 +158,12 @@ export default function OpenNowScreen() {
       if (isRefresh) setRefreshing(true);
       if (page > 1) setLoadingMore(true);
 
-      // Get user's current location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Location permission is required to show businesses open now.');
-        return;
-      }
-
-      const userLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      // Get user's current location from LocationContext (fast, no permission delays!)
+      const coordinates = getCoordinatesForAPI();
 
       const response = await getOpenNow(
-        userLocation.coords.latitude,
-        userLocation.coords.longitude,
+        coordinates.latitude,
+        coordinates.longitude,
         20, // limit
         15, // radius
         page,

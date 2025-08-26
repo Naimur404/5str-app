@@ -1,6 +1,7 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from '@/contexts/LocationContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
@@ -10,7 +11,6 @@ import CustomAlert from '@/components/CustomAlert';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -53,19 +53,18 @@ export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState('Chittagong');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
-  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
   const router = useRouter();
   const { colorScheme } = useTheme();
   const { unreadCount } = useNotifications();
+  const { getCoordinatesForAPI } = useLocation();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
 
@@ -81,14 +80,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     checkAuthAndLoadUser();
-    requestLocationPermission();
+    fetchHomeData(); // Fetch home data directly using LocationContext
   }, []);
-
-  useEffect(() => {
-    if (location) {
-      fetchHomeData();
-    }
-  }, [location]);
 
   const checkAuthAndLoadUser = async () => {
     try {
@@ -133,130 +126,17 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, [banners.length, width]);
 
-  const requestLocationPermission = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationPermissionDenied(true);
-        showAlert({
-          type: 'warning',
-          title: 'Location Permission Required',
-          message: 'Please enable location services to discover nearby businesses and get personalized recommendations.',
-          buttons: [
-            { text: 'Skip', style: 'cancel', onPress: () => setDefaultLocation() },
-            { text: 'Try Again', onPress: () => requestLocationPermission() },
-            { text: 'Settings', onPress: () => openLocationSettings() }
-          ]
-        });
-        return;
-      }
-
-      setLocationPermissionDenied(false);
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      
-      setLocation({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-
-      // Get address from coordinates with timeout and fallback
-      try {
-        // Create a promise that rejects after 5 seconds
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Reverse geocoding timeout')), 5000);
-        });
-
-        // Race between reverseGeocode and timeout
-        const addresses = await Promise.race([
-          Location.reverseGeocodeAsync({
-            latitude: currentLocation.coords.latitude,
-            longitude: currentLocation.coords.longitude,
-          }),
-          timeoutPromise
-        ]) as any[];
-
-        if (addresses && addresses.length > 0) {
-          const address = addresses[0];
-          setUserLocation(address.city || address.district || address.region || 'Current Location');
-        } else {
-          setUserLocation('Current Location');
-        }
-      } catch (geocodeError) {
-        console.warn('Reverse geocoding failed:', geocodeError);
-        // Fallback to coordinates or default
-        setUserLocation('Current Location');
-      }
-    } catch (error) {
-      console.error('Error getting location:', error);
-      
-      // Provide more specific error messages
-      let errorMessage = 'Unable to get your current location. Using default location.';
-      let errorTitle = 'Location Error';
-      
-      if (error instanceof Error) {
-        if (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout')) {
-          errorTitle = 'Network Timeout';
-          errorMessage = 'Location service is taking too long to respond. Using default location.';
-        } else if (error.message.includes('Network')) {
-          errorTitle = 'Network Error';
-          errorMessage = 'Please check your internet connection and try again.';
-        } else if (error.message.includes('Location request failed')) {
-          errorTitle = 'GPS Error';
-          errorMessage = 'Unable to get GPS location. Please ensure location services are enabled.';
-        }
-      }
-      
-      showAlert({
-        type: 'warning',
-        title: errorTitle,
-        message: errorMessage,
-        buttons: [
-          { text: 'Use Default', onPress: () => setDefaultLocation() },
-          { text: 'Try Again', onPress: () => requestLocationPermission() }
-        ]
-      });
-      
-      // Always set a fallback location
-      setDefaultLocation();
-    }
-  };
-
-  const openLocationSettings = () => {
-    // You could use expo-linking to open device settings
-    // For now, we'll just retry location permission
-    requestLocationPermission();
-  };
-
-  const setDefaultLocation = () => {
-    // Default location (Chittagong)
-    setLocation({ latitude: 22.3569, longitude: 91.7832 });
-    setUserLocation('Chittagong');
-  };
+  // Location is now handled by LocationContext - instant, no permission delays!
 
   const handleChangeLocation = () => {
-    if (locationPermissionDenied) {
-      showAlert({
-        type: 'info',
-        title: 'Change Location',
-        message: 'To change your location, please enable location services and try again.',
-        buttons: [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Enable Location', onPress: () => requestLocationPermission() }
-        ]
-      });
-    } else {
-      showAlert({
-        type: 'info',
-        title: 'Update Location',
-        message: 'This will refresh your current location and update nearby businesses.',
-        buttons: [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Update', onPress: () => requestLocationPermission() }
-        ]
-      });
-    }
+    showAlert({
+      type: 'info',
+      title: 'Location Updated',
+      message: 'Your location is automatically managed by the app. It updates every 10 minutes in the background.',
+      buttons: [
+        { text: 'OK' }
+      ]
+    });
   };
 
   const handleNotificationPress = () => {
@@ -276,10 +156,10 @@ export default function HomeScreen() {
   };
 
   const fetchHomeData = async () => {
-    if (!location) return;
-
     try {
-      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${location.latitude}&longitude=${location.longitude}&radius=15`;
+      // Get coordinates from LocationContext (instant, no permission delays!)
+      const coordinates = getCoordinatesForAPI();
+      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=15`;
       const data: HomeResponse = await fetchWithJsonValidation(url);
 
       if (data.success) {
@@ -536,16 +416,13 @@ export default function HomeScreen() {
               </Text>
               <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
                 <Ionicons 
-                  name={locationPermissionDenied ? "location-outline" : "location"} 
+                  name="location" 
                   size={16} 
-                  color={locationPermissionDenied ? "#FFB800" : "white"} 
+                  color="white" 
                 />
-                <Text style={[styles.location, { color: locationPermissionDenied ? "#FFB800" : "white" }]}>
-                  {locationPermissionDenied ? "Enable Location" : userLocation}
+                <Text style={[styles.location, { color: "white" }]}>
+                  {userLocation}
                 </Text>
-                {locationPermissionDenied && (
-                  <Ionicons name="warning" size={12} color="#FFB800" />
-                )}
                 <Ionicons name="chevron-down" size={14} color="white" />
                 <Text style={styles.changeLocation}>Change</Text>
               </TouchableOpacity>
@@ -599,16 +476,13 @@ export default function HomeScreen() {
             </Text>
             <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
               <Ionicons 
-                name={locationPermissionDenied ? "location-outline" : "location"} 
+                name="location" 
                 size={16} 
-                color={locationPermissionDenied ? "#FFB800" : "white"} 
+                color="white" 
               />
-              <Text style={[styles.location, { color: locationPermissionDenied ? "#FFB800" : "white" }]}>
-                {locationPermissionDenied ? "Enable Location" : userLocation}
+              <Text style={[styles.location, { color: "white" }]}>
+                {userLocation}
               </Text>
-              {locationPermissionDenied && (
-                <Ionicons name="warning" size={12} color="#FFB800" />
-              )}
               <Ionicons name="chevron-down" size={14} color="white" />
               <Text style={styles.changeLocation}>Change</Text>
             </TouchableOpacity>

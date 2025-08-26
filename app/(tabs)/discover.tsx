@@ -21,7 +21,6 @@ import {
     RefreshControl,
     Alert
 } from 'react-native';
-import * as Location from 'expo-location';
 import { useLocation } from '@/contexts/LocationContext';
 
 export default function DiscoverScreen() {
@@ -130,7 +129,7 @@ export default function DiscoverScreen() {
         style={styles.trendingOverlay}
       >
         <Text style={styles.trendingTitle} numberOfLines={1}>{item.business_name}</Text>
-        <Text style={styles.trendingSubtitle} numberOfLines={1}>{item.category_name}</Text>
+        <Text style={styles.trendingSubtitle} numberOfLines={1}>{item.category.name}</Text>
         <View style={styles.trendingMetrics}>
           <View style={styles.ratingBadge}>
             <Ionicons name="star" size={10} color="#FFD700" />

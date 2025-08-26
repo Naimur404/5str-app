@@ -58,6 +58,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       setLocation({
         ...defaultLocation,
         timestamp: Date.now(),
+        source: 'default',
       });
     } finally {
       setIsLoading(false);
