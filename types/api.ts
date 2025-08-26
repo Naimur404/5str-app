@@ -287,15 +287,30 @@ export interface TrendingBusiness {
   id: number;
   business_name: string;
   slug: string;
-  landmark: string;
+  landmark: string | null;
+  area: string;
   overall_rating: string;
   price_range: number;
-  category_name: string;
-  subcategory_name: string;
+  phone: string;
+  website: string;
+  is_featured: boolean;
+  is_verified: boolean;
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+    icon: string;
+    color: string;
+  };
+  subcategory: {
+    id: number;
+    name: string;
+    slug: string;
+  };
   images: {
     logo: string;
     cover: string | null;
-    gallery: string[];
+    gallery?: string[];
   };
   trend_score: string;
   trend_rank: number;
