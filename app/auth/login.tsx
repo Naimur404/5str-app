@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import { useToastGlobal } from '@/contexts/ToastContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -27,7 +28,8 @@ export default function LoginScreen() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { alertConfig, showError, showSuccess, hideAlert } = useCustomAlert();
+  const { alertConfig, showError, hideAlert } = useCustomAlert();
+  const { showSuccess } = useToastGlobal();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -58,11 +60,12 @@ export default function LoginScreen() {
           return;
         }
 
-        showSuccess('Success', 'Login successful! Welcome back!');
-        // Add a small delay to show the success message before navigation
+        // Navigate immediately to home page
+        router.replace('/(tabs)');
+        // Show success toast after a brief delay to ensure navigation is complete
         setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 1500);
+          showSuccess('Welcome back! Login successful');
+        }, 100);
       } else {
         showError('Error', data.message || 'Login failed');
       }

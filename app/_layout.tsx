@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { LocationProvider } from '@/contexts/LocationContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ToastProvider } from '@/contexts/ToastContext';
 import { Colors } from '@/constants/Colors';
 
 function RootLayoutInner() {
@@ -132,7 +133,9 @@ export default function RootLayout() {
     <CustomThemeProvider>
       <NotificationProvider>
         <LocationProvider>
-          <RootLayoutInner />
+          <ToastProvider>
+            <RootLayoutInner />
+          </ToastProvider>
         </LocationProvider>
       </NotificationProvider>
     </CustomThemeProvider>
