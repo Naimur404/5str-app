@@ -5,33 +5,47 @@ const { width } = Dimensions.get('window');
 
 interface SkeletonProps {
   colors: any;
+  visible?: boolean;
 }
 
-// Base skeleton box component
-const SkeletonBox = ({ width, height, borderRadius = 8, backgroundColor }: {
+// Optimized skeleton box component with memoization
+const SkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundColor }: {
   width: number | string;
   height: number;
   borderRadius?: number;
   backgroundColor: string;
 }) => {
   const animatedValue = React.useRef(new Animated.Value(0)).current;
+  const animationRef = React.useRef<Animated.CompositeAnimation | null>(null);
 
   React.useEffect(() => {
     const animate = () => {
-      Animated.sequence([
-        Animated.timing(animatedValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: false,
-        }),
-        Animated.timing(animatedValue, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: false,
-        }),
-      ]).start(() => animate());
+      animationRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(animatedValue, {
+            toValue: 1,
+            duration: 600, // Faster animation for better perceived performance
+            useNativeDriver: true, // Use native driver for better performance
+          }),
+          Animated.timing(animatedValue, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      
+      animationRef.current.start();
     };
+    
     animate();
+
+    // Cleanup function
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+      }
+    };
   }, [animatedValue]);
 
   const opacity = animatedValue.interpolate({
@@ -53,7 +67,7 @@ const SkeletonBox = ({ width, height, borderRadius = 8, backgroundColor }: {
       ]} 
     />
   );
-};
+});
 
 // Business Details Skeleton
 export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
@@ -258,8 +272,8 @@ export const CategoryBusinessSkeleton = ({ colors }: SkeletonProps) => (
   </View>
 );
 
-// Home Page Skeleton
-export const HomePageSkeleton = ({ colors }: SkeletonProps) => (
+// Home Page Skeleton - optimized with memoization
+export const HomePageSkeleton = React.memo(({ colors }: SkeletonProps) => (
   <View style={{ paddingBottom: 24 }}>
     {/* Hero Banner Skeleton */}
     <View style={styles.heroBannerSkeleton}>
@@ -370,7 +384,7 @@ export const HomePageSkeleton = ({ colors }: SkeletonProps) => (
       </View>
     ))}
   </View>
-);
+));
 
 // Favourites Page Skeleton
 export const FavouritesPageSkeleton = ({ colors }: SkeletonProps) => (
@@ -912,8 +926,8 @@ const discoverySkeletonStyles = StyleSheet.create({
   },
 });
 
-// Business List Page Skeleton (for Open Now, Top Rated, Popular Nearby)
-export const BusinessListSkeleton = ({ colors }: SkeletonProps) => (
+// Business List Page Skeleton - optimized with memoization
+export const BusinessListSkeleton = React.memo(({ colors }: SkeletonProps) => (
   <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
     {/* Category filters skeleton */}
     <View style={businessListStyles.categoryFiltersContainer}>
@@ -1047,7 +1061,7 @@ export const BusinessListSkeleton = ({ colors }: SkeletonProps) => (
       ))}
     </View>
   </View>
-);
+));
 
 // Additional styles for Business List skeleton
 const businessListStyles = StyleSheet.create({
@@ -1295,5 +1309,217 @@ const notificationSkeletonStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginTop: 2,
+  },
+});
+
+// Special Offers Page Skeleton - optimized for performance
+export const SpecialOffersSkeleton = React.memo(({ colors, visible = true }: SkeletonProps & { visible?: boolean }) => {
+  if (!visible) return null;
+  
+  return (
+    <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+      {/* Location info skeleton */}
+      <View style={[specialOffersStyles.locationInfo, { backgroundColor: colors.background }]}>
+        <SkeletonBox 
+          width={16} 
+          height={16} 
+          borderRadius={8}
+          backgroundColor={colors.buttonPrimary + '40'}
+        />
+        <SkeletonBox 
+          width={200} 
+          height={14} 
+          borderRadius={7}
+          backgroundColor={colors.icon + '20'}
+        />
+      </View>
+
+      {/* Offer cards skeleton */}
+      <View style={specialOffersStyles.offersList}>
+        {[...Array(6)].map((_, index) => (
+          <View key={index} style={[specialOffersStyles.offerCard, { backgroundColor: colors.card }]}>
+            <View style={specialOffersStyles.offerRow}>
+              {/* Offer image container skeleton */}
+              <View style={specialOffersStyles.offerImageContainer}>
+                <SkeletonBox 
+                  width={80} 
+                  height={80} 
+                  borderRadius={12}
+                  backgroundColor={colors.icon + '20'}
+                />
+                {/* Discount badge skeleton */}
+                <View style={specialOffersStyles.discountBadge}>
+                  <SkeletonBox 
+                    width={30} 
+                    height={16} 
+                    borderRadius={8}
+                    backgroundColor="#FF4444"
+                  />
+                </View>
+              </View>
+
+              {/* Offer content skeleton */}
+              <View style={specialOffersStyles.offerContent}>
+                <View style={specialOffersStyles.offerMainInfo}>
+                  <SkeletonBox 
+                    width="90%" 
+                    height={16} 
+                    borderRadius={8}
+                    backgroundColor={colors.icon + '20'}
+                  />
+                  <SkeletonBox 
+                    width="65%" 
+                    height={13} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '15'}
+                  />
+                </View>
+                
+                <View style={specialOffersStyles.offerMetrics}>
+                  <View style={specialOffersStyles.ratingRow}>
+                    <SkeletonBox 
+                      width={12} 
+                      height={12} 
+                      borderRadius={6}
+                      backgroundColor="#FFD700"
+                    />
+                    <SkeletonBox 
+                      width={30} 
+                      height={13} 
+                      borderRadius={6}
+                      backgroundColor={colors.icon + '20'}
+                    />
+                    <SkeletonBox 
+                      width={35} 
+                      height={11} 
+                      borderRadius={5}
+                      backgroundColor={colors.icon + '15'}
+                    />
+                  </View>
+                  <SkeletonBox 
+                    width={45} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.buttonPrimary + '40'}
+                  />
+                </View>
+
+                <View style={specialOffersStyles.expiryContainer}>
+                  <SkeletonBox 
+                    width={12} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '30'}
+                  />
+                  <SkeletonBox 
+                    width={120} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '15'}
+                  />
+                </View>
+              </View>
+
+              {/* Offer actions skeleton */}
+              <View style={specialOffersStyles.offerActions}>
+                <View style={[specialOffersStyles.savingsBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
+                  <SkeletonBox 
+                    width={50} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.buttonPrimary}
+                  />
+                </View>
+                <SkeletonBox 
+                  width={20} 
+                  height={20} 
+                  borderRadius={10}
+                  backgroundColor={colors.icon + '30'}
+                />
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+});
+
+// Additional styles for Special Offers skeleton
+const specialOffersStyles = StyleSheet.create({
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    gap: 6,
+  },
+  offersList: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  offerCard: {
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  offerRow: {
+    flexDirection: 'row',
+    padding: 12,
+    gap: 12,
+  },
+  offerImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    position: 'relative',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  offerContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  offerMainInfo: {
+    gap: 2,
+  },
+  offerMetrics: {
+    gap: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  expiryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  offerActions: {
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    minHeight: 80,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  savingsBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignItems: 'center',
   },
 });

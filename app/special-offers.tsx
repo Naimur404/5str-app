@@ -21,6 +21,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { SpecialOffersSkeleton } from '@/components/SkeletonLoader';
 
 interface OfferCardProps {
   offer: SpecialOffer;
@@ -281,12 +282,7 @@ export default function SpecialOffersScreen() {
 
       {/* Offers List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.buttonPrimary} />
-          <Text style={[styles.loadingText, { color: colors.icon }]}>
-            Loading special offers...
-          </Text>
-        </View>
+        <SpecialOffersSkeleton colors={colors} visible={loading} />
       ) : filteredOffers.length > 0 ? (
         <FlatList
           data={filteredOffers}
