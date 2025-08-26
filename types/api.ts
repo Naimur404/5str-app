@@ -40,18 +40,19 @@ export interface Business {
   id: number;
   business_name: string;
   slug: string;
-  landmark: string;
+  landmark: string | null;
   overall_rating: string;
   price_range: number;
-  distance?: number;
+  distance?: number | string;
   distance_km?: string;
   category_name: string;
   subcategory_name: string;
   logo_image?: string | { image_url: string } | null; // Legacy field
   images?: {
-    logo?: string;
-    cover?: string;
+    logo?: string | null;
+    cover?: string | null;
   }; // New API structure
+  section_priority?: string; // New field for section-specific data
   opening_status?: {
     is_open: boolean;
     status: string;
@@ -75,9 +76,21 @@ export interface SpecialOffer {
   id: number;
   title: string;
   description: string;
+  offer_type: string;
   discount_percentage: string;
-  valid_until: string | null;
-  business: Business;
+  valid_to: string;
+  valid_until?: string | null; // Legacy field for backward compatibility
+  business: {
+    id: number;
+    business_name: string;
+    slug: string;
+    landmark: string | null;
+    overall_rating: string;
+    price_range: number;
+    category_name: string;
+    subcategory_name: string;
+    logo_image: string | null;
+  };
 }
 
 // Dynamic Section types
@@ -111,6 +124,7 @@ export interface HomeResponse {
   data: {
     banners: Banner[];
     top_services: TopService[];
+    trending_businesses: Business[];
     popular_nearby: Business[];
     dynamic_sections: DynamicSection[];
     special_offers: SpecialOffer[];

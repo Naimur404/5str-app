@@ -337,6 +337,10 @@ export default function HomeScreen() {
     router.push('/open-now');
   };
 
+  const handleViewAllTrending = () => {
+    router.push('/trending' as any);
+  };
+
   const handleViewAllDynamicSection = (sectionSlug: string) => {
     router.push(`/dynamic-section/${sectionSlug}`);
   };
@@ -361,36 +365,74 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const renderBusinessCard = ({ item }: { item: Business }) => (
-    <TouchableOpacity 
-      style={[styles.businessCard, { backgroundColor: colors.card }]}
-      onPress={() => {
-        router.push(`/business/${item.id}` as any);
-      }}
-    >
-      <Image source={{ uri: getImageUrl(item.logo_image) || getFallbackImageUrl('business') }} style={styles.businessImage} />
-      <View style={styles.businessInfo}>
-        <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
-          {item.business_name}
-        </Text>
-        <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
-          {item.category_name} • {item.subcategory_name}
-        </Text>
-        <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
-          {item.landmark}
-        </Text>
-        <View style={styles.businessMeta}>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={12} color="#FFD700" />
-            <Text style={[styles.rating, { color: colors.text }]}>{item.overall_rating}</Text>
-          </View>
-          <Text style={[styles.priceRange, { color: colors.icon }]}>
-            {'$'.repeat(item.price_range)}
+  const renderBusinessCard = ({ item }: { item: Business }) => {
+    // Handle both old and new image structure
+    const getBusinessImage = () => {
+      if (item.images?.logo) {
+        return getImageUrl(item.images.logo);
+      }
+      if (item.logo_image) {
+        return getImageUrl(item.logo_image);
+      }
+      return getFallbackImageUrl('business');
+    };
+
+    // Format distance for display
+    const formatDistance = (distance?: number | string) => {
+      if (!distance) return null;
+      if (typeof distance === 'string') {
+        const numDistance = parseFloat(distance);
+        if (numDistance < 1) {
+          return `${Math.round(numDistance * 1000)}m`;
+        }
+        return `${numDistance.toFixed(1)}km`;
+      }
+      if (distance < 1) {
+        return `${Math.round(distance * 1000)}m`;
+      }
+      return `${distance.toFixed(1)}km`;
+    };
+
+    const distanceText = formatDistance(item.distance);
+
+    return (
+      <TouchableOpacity 
+        style={[styles.businessCard, { backgroundColor: colors.card }]}
+        onPress={() => {
+          router.push(`/business/${item.id}` as any);
+        }}
+      >
+        <Image source={{ uri: getBusinessImage() }} style={styles.businessImage} />
+        <View style={styles.businessInfo}>
+          <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+            {item.business_name}
           </Text>
+          <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
+            {item.category_name} • {item.subcategory_name}
+          </Text>
+          {item.landmark && (
+            <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
+              {item.landmark}
+            </Text>
+          )}
+          <View style={styles.businessMeta}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={12} color="#FFD700" />
+              <Text style={[styles.rating, { color: colors.text }]}>{item.overall_rating}</Text>
+            </View>
+            <View style={styles.metaRight}>
+              {distanceText && (
+                <Text style={[styles.distance, { color: colors.icon }]}>{distanceText}</Text>
+              )}
+              <Text style={[styles.priceRange, { color: colors.icon }]}>
+                {'$'.repeat(item.price_range)}
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderOfferCard = ({ item }: { item: SpecialOffer }) => (
     <TouchableOpacity 
@@ -412,6 +454,9 @@ export default function HomeScreen() {
         </Text>
         <Text style={[styles.offerBusiness, { color: colors.icon }]}>
           {item.business.business_name}
+        </Text>
+        <Text style={[styles.offerValidity, { color: colors.icon }]}>
+          Valid until: {new Date(item.valid_to).toLocaleDateString()}
         </Text>
       </View>
     </TouchableOpacity>
@@ -614,6 +659,26 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Trending Businesses */}
+        {homeData?.trending_businesses && homeData.trending_businesses.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Now</Text>
+              <TouchableOpacity onPress={handleViewAllTrending}>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={homeData.trending_businesses}
+              renderItem={renderBusinessCard}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.businessContainer}
+            />
           </View>
         )}
 
@@ -954,6 +1019,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  metaRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  distance: {
+    fontSize: 10,
+    fontWeight: '500',
+    opacity: 0.8,
+  },
   priceRange: {
     fontSize: 11,
     fontWeight: '600',
@@ -992,6 +1067,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     opacity: 0.7,
+  },
+  offerValidity: {
+    fontSize: 10,
+    fontWeight: '500',
+    opacity: 0.6,
+    marginTop: 2,
   },
   discountBadge: {
     position: 'absolute',

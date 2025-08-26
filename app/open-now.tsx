@@ -30,9 +30,9 @@ interface BusinessCardProps {
 
 const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }) => {
   // Helper function to get business logo URL from the API response structure
-  const getBusinessLogoUrl = (business: Business): string | undefined => {
-    // Handle the new API structure with images.logo
-    if (business.images && typeof business.images === 'object' && 'logo' in business.images) {
+  const getBusinessLogo = (business: Business) => {
+    // Handle new images structure first - simplified check
+    if (business.images?.logo) {
       return business.images.logo;
     }
     
@@ -54,7 +54,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
       <View style={styles.businessRow}>
         <View style={styles.businessImageContainer}>
           <BusinessLogo 
-            source={getBusinessLogoUrl(business)}
+            source={getBusinessLogo(business)}
             businessName={business.business_name}
             style={styles.businessImage}
           />

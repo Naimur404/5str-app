@@ -168,7 +168,7 @@ export default function SearchScreen() {
         activeOpacity={0.7}
       >
         <Image 
-          source={{ uri: getImageUrl(item.logo_image) || getFallbackImageUrl('business') }} 
+          source={{ uri: getImageUrl(item.images?.logo || item.logo_image) || getFallbackImageUrl('business') }} 
           style={styles.businessImage} 
         />
         <View style={styles.businessInfo}>

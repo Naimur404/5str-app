@@ -38,7 +38,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
       <View style={styles.businessImageContainer}>
         <Image 
           source={{ 
-            uri: getImageUrl(business.logo_image) || getFallbackImageUrl('business') 
+            uri: getImageUrl(business.images?.logo || business.logo_image) || getFallbackImageUrl('business') 
           }} 
           style={styles.businessImage} 
         />
