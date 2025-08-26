@@ -22,56 +22,27 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Business, SearchResponse, Offering } from '@/types/api';
 import { fetchWithJsonValidation } from '@/services/api';
+import { useLocation } from '@/contexts/LocationContext';
 
 export default function SearchScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { getCoordinatesForAPI } = useLocation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResponse['data'] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [showMinCharsMessage, setShowMinCharsMessage] = useState(false);
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    getCurrentLocation();
-    
     return () => {
       if (searchTimeout.current) {
         clearTimeout(searchTimeout.current);
       }
     };
   }, []);
-
-  const getCurrentLocation = async () => {
-    try {
-      console.log('Getting current location...');
-      
-      // Set default location immediately to ensure search can work
-      setLocation({ latitude: 22.3569, longitude: 91.7832 });
-      
-      // Request permission first
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      console.log('Location permission status:', status);
-      
-      if (status !== 'granted') {
-        console.log('Location permission denied, using default location');
-        return;
-      }
-      
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      console.log('Location obtained:', currentLocation.coords);
-      setLocation({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-    } catch (error) {
-      console.log('Location error, using default location:', error);
-      setLocation({ latitude: 22.3569, longitude: 91.7832 });
-    }
-  };
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -104,28 +75,18 @@ export default function SearchScreen() {
   };
 
   const performSearch = async (query: string) => {
-    console.log('performSearch called with:', {
-      query,
-      queryLength: query?.length,
-      location,
-      hasLocation: !!location
-    });
-
-    if (!query || query.length < 2 || !location) {
-      console.log('Search cancelled - conditions not met:', {
-        hasQuery: !!query,
-        queryLength: query?.length,
-        hasLocation: !!location
-      });
+    if (!query || query.length < 2) {
+      console.log('Search cancelled - query too short');
       setLoading(false);
       return;
     }
 
-    console.log('Starting API search...');
+    console.log('Starting API search for:', query);
     setLoading(true);
 
     try {
-      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?q=${encodeURIComponent(query)}&type=all&latitude=${location.latitude}&longitude=${location.longitude}&sort=rating&limit=10`;
+      const coordinates = getCoordinatesForAPI();
+      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?q=${encodeURIComponent(query)}&type=all&latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&sort=rating&limit=10`;
       console.log('Search URL:', url);
       
       const data: SearchResponse = await fetchWithJsonValidation(url);

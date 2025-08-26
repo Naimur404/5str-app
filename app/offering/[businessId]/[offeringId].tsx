@@ -10,6 +10,7 @@ import {
     Offering,
     Review
 } from '@/services/api';
+import { useLocation } from '@/contexts/LocationContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -43,6 +44,7 @@ export default function OfferingDetailsScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+  const { getCoordinatesForAPI } = useLocation();
 
   useEffect(() => {
     if (businessId && offeringId) {
@@ -55,8 +57,11 @@ export default function OfferingDetailsScreen() {
       setLoading(true);
       setError(null);
 
+      // Get coordinates from location service
+      const coordinates = getCoordinatesForAPI();
+
       // Load offering details
-      const offeringResponse = await getOfferingDetails(businessId, offeringId);
+      const offeringResponse = await getOfferingDetails(businessId, offeringId, coordinates.latitude, coordinates.longitude);
       if (offeringResponse.success) {
         setOffering(offeringResponse.data);
       }

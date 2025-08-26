@@ -800,9 +800,20 @@ export const getBusinessOffers = async (
   return makeApiCall(url, {}, false);
 };
 
-export const getOfferingDetails = async (businessId: number, offeringId: number): Promise<OfferingDetailsResponse> => {
+export const getOfferingDetails = async (
+  businessId: number, 
+  offeringId: number, 
+  latitude?: number, 
+  longitude?: number
+): Promise<OfferingDetailsResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.OFFERING_DETAILS}/${businessId}/offerings/${offeringId}`;
+  
+  if (latitude !== undefined && longitude !== undefined) {
+    url += `?latitude=${latitude}&longitude=${longitude}`;
+  }
+  
   // Send token if available for user-specific data and analytics
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.OFFERING_DETAILS}/${businessId}/offerings/${offeringId}`, {}, false);
+  return makeApiCall(url, {}, false);
 };
 
 export const getOfferingReviews = async (businessId: number, offeringId: number, page: number = 1): Promise<OfferingReviewsResponse> => {

@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { LocationProvider } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 
 function RootLayoutInner() {
@@ -124,7 +125,9 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <CustomThemeProvider>
-      <RootLayoutInner />
+      <LocationProvider>
+        <RootLayoutInner />
+      </LocationProvider>
     </CustomThemeProvider>
   );
 }

@@ -22,64 +22,36 @@ import {
     Alert
 } from 'react-native';
 import * as Location from 'expo-location';
+import { useLocation } from '@/contexts/LocationContext';
 
 export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [trendingBusinesses, setTrendingBusinesses] = useState<TrendingBusiness[]>([]);
   const [trendingOfferings, setTrendingOfferings] = useState<TrendingOffering[]>([]);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { getCoordinatesForAPI } = useLocation();
 
   useEffect(() => {
-    initializeData();
+    fetchAllData();
   }, []);
-
-  const initializeData = async () => {
-    await requestLocationPermission();
-    await fetchAllData();
-  };
-
-  const requestLocationPermission = async () => {
-    try {
-      // Set default location immediately
-      setLocation({ latitude: 22.3569, longitude: 91.7832 });
-      
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        
-        setLocation({
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-        });
-      }
-    } catch (error) {
-      console.warn('Location permission denied or error:', error);
-      // Use default location if anything fails
-      setLocation({ latitude: 22.3569, longitude: 91.7832 });
-    }
-  };
 
   const fetchAllData = async (isRefresh: boolean = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // Use current location state or default coordinates
-      const currentLat = location?.latitude || 22.3569;
-      const currentLng = location?.longitude || 91.7832;
+      // Get coordinates from location service
+      const coordinates = getCoordinatesForAPI();
 
       // Fetch both categories and trending data
       const [categoriesResponse, trendingResponse] = await Promise.all([
         getCategories(1, 50),
-        getTodayTrending(currentLat, currentLng)
+        getTodayTrending(coordinates.latitude, coordinates.longitude)
       ]);
 
       if (categoriesResponse.success) {

@@ -36,6 +36,7 @@ import { BusinessDetailsSkeleton } from '@/components/SkeletonLoader';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import * as Location from 'expo-location';
+import { useLocation } from '@/contexts/LocationContext';
 
 const { width } = Dimensions.get('window');
 
@@ -46,7 +47,6 @@ export default function BusinessDetailsScreen() {
   const [offerings, setOfferings] = useState<Offering[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [error, setError] = useState<string | null>(null);
@@ -63,37 +63,13 @@ export default function BusinessDetailsScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
+  const { getCoordinatesForAPI } = useLocation();
 
   useEffect(() => {
     if (businessId) {
-      initializeLocationAndLoadData();
+      checkAuthenticationAndLoadData();
     }
   }, [businessId]);
-
-  const initializeLocationAndLoadData = async () => {
-    // Set default location immediately
-    setLocation({ latitude: 22.3569, longitude: 91.7832 });
-    
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        
-        setLocation({
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
-        });
-      }
-    } catch (error) {
-      console.warn('Location permission denied or error:', error);
-      // Use default location
-    }
-    
-    // Now check authentication and load data
-    checkAuthenticationAndLoadData();
-  };
 
   const checkAuthenticationAndLoadData = async () => {
     try {
@@ -116,16 +92,15 @@ export default function BusinessDetailsScreen() {
       setLoading(true);
       console.log('Loading business data for ID:', businessId);
 
-      // Use current location state or default coordinates
-      const currentLat = location?.latitude || 22.3569;
-      const currentLng = location?.longitude || 91.7832;
+      // Get coordinates from location service
+      const coordinates = getCoordinatesForAPI();
 
       // Load business details with favorite status
       const [businessResponse, offeringsResponse, reviewsResponse, offersResponse] = await Promise.all([
-        getBusinessDetails(businessId, currentLat, currentLng),
-        getBusinessOfferings(businessId, currentLat, currentLng),
+        getBusinessDetails(businessId, coordinates.latitude, coordinates.longitude),
+        getBusinessOfferings(businessId, coordinates.latitude, coordinates.longitude),
         getBusinessReviews(businessId),
-        getBusinessOffers(businessId, currentLat, currentLng)
+        getBusinessOffers(businessId, coordinates.latitude, coordinates.longitude)
       ]);
 
       console.log('Business details response:', businessResponse);
