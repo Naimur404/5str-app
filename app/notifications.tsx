@@ -8,9 +8,11 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { 
   getAllNotifications, 
@@ -23,6 +25,11 @@ import { Notification } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { Colors } from '@/constants/Colors';
+import { NotificationPageSkeleton } from '@/components/SkeletonLoader';
+import CustomAlert from '@/components/CustomAlert';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+
+const { width } = Dimensions.get('window');
 
 const getIconName = (iconString: string): keyof typeof Ionicons.glyphMap => {
   // Map heroicon names to Ionicons
@@ -73,52 +80,76 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     style={[
       styles.notificationItem,
       { backgroundColor: colors.card },
-      !notification.is_read && { backgroundColor: colors.buttonPrimary + '10' }
+      !notification.is_read && { 
+        backgroundColor: colors.buttonPrimary + '08',
+        borderLeftWidth: 4,
+        borderLeftColor: colors.buttonPrimary
+      }
     ]}
     onPress={onPress}
     activeOpacity={0.7}
   >
     <View style={styles.notificationContent}>
-      <View style={styles.notificationHeader}>
+      <View style={styles.notificationMain}>
         <View style={styles.iconContainer}>
-          <Ionicons
-            name={getIconName(notification.icon)}
-            size={24}
-            color={getColorForNotification(notification.color)}
-          />
+          <View style={[
+            styles.iconWrapper,
+            { backgroundColor: getColorForNotification(notification.color) + '15' }
+          ]}>
+            <Ionicons
+              name={getIconName(notification.icon)}
+              size={20}
+              color={getColorForNotification(notification.color)}
+            />
+          </View>
           {!notification.is_read && (
-            <View style={[styles.unreadDot, { backgroundColor: colors.buttonPrimary }]} />
+            <View style={[styles.unreadIndicator, { backgroundColor: colors.buttonPrimary }]} />
           )}
         </View>
+        
         <View style={styles.notificationBody}>
-          <Text style={[styles.notificationTitle, { color: colors.text }]} numberOfLines={1}>
-            {notification.title}
-          </Text>
+          <View style={styles.notificationHeader}>
+            <Text style={[styles.notificationTitle, { color: colors.text }]} numberOfLines={1}>
+              {notification.title}
+            </Text>
+            <Text style={[styles.notificationTime, { color: colors.icon }]}>
+              {notification.time_ago}
+            </Text>
+          </View>
           <Text style={[styles.notificationMessage, { color: colors.icon }]} numberOfLines={2}>
             {notification.body}
           </Text>
-          <Text style={[styles.notificationTime, { color: colors.icon }]}>
-            {notification.time_ago}
-          </Text>
+          
+          {/* Status indicator */}
+          <View style={styles.statusContainer}>
+            <View style={[
+              styles.statusDot,
+              { backgroundColor: notification.is_read ? colors.icon + '30' : colors.buttonPrimary }
+            ]} />
+            <Text style={[styles.statusText, { color: colors.icon }]}>
+              {notification.is_read ? 'Read' : 'Unread'}
+            </Text>
+          </View>
         </View>
-        <View style={styles.notificationActions}>
+      </View>
+      
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: colors.icon + '10' }]}
+          onPress={onDelete}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+        </TouchableOpacity>
+        {!notification.is_read && (
           <TouchableOpacity
-            style={styles.actionButton}
-            onPress={onDelete}
+            style={[styles.actionButton, { backgroundColor: colors.buttonPrimary + '15' }]}
+            onPress={onMarkAsRead}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.icon} />
+            <Ionicons name="checkmark" size={16} color={colors.buttonPrimary} />
           </TouchableOpacity>
-          {!notification.is_read && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={onMarkAsRead}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="checkmark-circle-outline" size={18} color={colors.buttonPrimary} />
-            </TouchableOpacity>
-          )}
-        </View>
+        )}
       </View>
     </View>
   </TouchableOpacity>
@@ -128,6 +159,7 @@ export default function NotificationsScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { refreshNotifications, markAsRead, removeNotification, clearAllNotifications } = useNotifications();
+  const { alertConfig, showConfirm, hideAlert } = useCustomAlert();
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -265,26 +297,19 @@ export default function NotificationsScreen() {
   };
 
   const handleClearAll = async () => {
-    Alert.alert(
+    showConfirm(
       'Clear All Notifications',
       'Are you sure you want to delete all notifications? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear All',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAllNotifications();
-              setNotifications([]);
-              clearAllNotifications();
-            } catch (error) {
-              console.error('Error clearing all notifications:', error);
-              Alert.alert('Error', 'Failed to clear all notifications');
-            }
-          }
+      async () => {
+        try {
+          await deleteAllNotifications();
+          setNotifications([]);
+          clearAllNotifications();
+        } catch (error) {
+          console.error('Error clearing all notifications:', error);
+          Alert.alert('Error', 'Failed to clear all notifications');
         }
-      ]
+      }
     );
   };
 
@@ -309,85 +334,108 @@ export default function NotificationsScreen() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <NotificationPageSkeleton colors={colors} />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style="light" />
       
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
-            {unreadCount > 0 && (
-              <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
-                {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
-              </Text>
-            )}
-          </View>
-        </View>
-        
-        {notifications.length > 0 && (
-          <View style={styles.headerActions}>
-            {unreadCount > 0 && (
-              <TouchableOpacity
-                style={[styles.headerAction, { backgroundColor: colors.buttonPrimary + '20' }]}
-                onPress={handleMarkAllAsRead}
-              >
-                <Ionicons name="checkmark-done" size={18} color={colors.buttonPrimary} />
-                <Text style={[styles.headerActionText, { color: colors.buttonPrimary }]}>
-                  Mark All Read
-                </Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[styles.headerAction, { backgroundColor: '#FF3B30' + '20' }]}
-              onPress={handleClearAll}
-            >
-              <Ionicons name="trash" size={18} color="#FF3B30" />
-              <Text style={[styles.headerActionText, { color: '#FF3B30' }]}>
-                Clear All
-              </Text>
+      {/* Header with gradient */}
+      <LinearGradient
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-          <Text style={[styles.loadingText, { color: colors.icon }]}>Loading notifications...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={notifications}
-          renderItem={renderNotificationItem}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={notifications.length === 0 ? styles.emptyContainer : styles.listContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.tint}
-            />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.1}
-          ListFooterComponent={renderFooter}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="notifications-outline" size={80} color={colors.icon} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No Notifications</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
-                You're all caught up! We'll notify you when something important happens.
-              </Text>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>Notifications</Text>
+              <View style={styles.subtitleRow}>
+                {unreadCount > 0 ? (
+                  <Text style={styles.headerSubtitle}>
+                    {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+                  </Text>
+                ) : (
+                  <Text style={styles.headerSubtitle}>
+                    All notifications are read
+                  </Text>
+                )}
+                
+                {/* Action buttons in current time position */}
+                {notifications.length > 0 && (
+                  <View style={styles.actionButtonsRow}>
+                    {unreadCount > 0 && (
+                      <TouchableOpacity
+                        style={[styles.headerActionButton, { backgroundColor: colors.buttonPrimary }]}
+                        onPress={handleMarkAllAsRead}
+                      >
+                        <Ionicons name="checkmark-done" size={16} color="white" />
+                        <Text style={styles.headerActionText}>Mark All Read</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={[styles.headerActionButton, styles.deleteButton]}
+                      onPress={handleClearAll}
+                    >
+                      <Ionicons name="trash" size={16} color="white" />
+                      <Text style={styles.headerActionText}>Clear All</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
-          }
-        />
-      )}
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Content */}
+      <FlatList
+        data={notifications}
+        renderItem={renderNotificationItem}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={notifications.length === 0 ? styles.emptyContainer : styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.tint}
+          />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <View style={[styles.emptyIconContainer, { backgroundColor: colors.buttonPrimary + '20' }]}>
+              <Ionicons name="notifications-outline" size={48} color={colors.buttonPrimary} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Notifications</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+              You're all caught up! We'll notify you when something important happens.
+            </Text>
+          </View>
+        }
+      />
+
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }
@@ -396,120 +444,171 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  gradientHeader: {
     paddingTop: 50,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  headerLeft: {
+  headerContent: {
+    paddingHorizontal: 24,
+  },
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    marginBottom: 16,
   },
   backButton: {
     marginRight: 16,
     padding: 4,
   },
+  headerTitleContainer: {
+    flex: 1,
+  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    marginTop: 2,
+    color: 'white',
+    opacity: 0.9,
+    flex: 1,
+  },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
-  headerAction: {
+  headerActionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     gap: 4,
   },
+  deleteButton: {
+    backgroundColor: 'rgba(255, 59, 48, 0.3)',
+  },
   headerActionText: {
-    fontSize: 12,
-    fontWeight: '600',
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '500',
   },
   listContainer: {
-    paddingVertical: 8,
+    paddingVertical: 16,
+    paddingBottom: 100,
   },
   emptyContainer: {
     flex: 1,
   },
   notificationItem: {
     marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
+    marginVertical: 6,
+    borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   notificationContent: {
     padding: 16,
   },
-  notificationHeader: {
+  notificationMain: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    marginBottom: 12,
   },
   iconContainer: {
     position: 'relative',
-    marginRight: 12,
-    marginTop: 2,
+    marginRight: 16,
   },
-  unreadDot: {
+  iconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unreadIndicator: {
     position: 'absolute',
     top: -2,
     right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'white',
   },
   notificationBody: {
     flex: 1,
-    marginRight: 8,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
   },
   notificationTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
-  },
-  notificationMessage: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
+    flex: 1,
+    marginRight: 8,
   },
   notificationTime: {
     fontSize: 12,
     opacity: 0.7,
+    marginTop: 2,
   },
-  notificationActions: {
+  notificationMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    opacity: 0.8,
+  },
+  statusContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+    opacity: 0.7,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     gap: 8,
   },
   actionButton: {
-    padding: 8,
-  },
-  loadingContainer: {
-    flex: 1,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: '500',
   },
   loadingFooter: {
     paddingVertical: 20,
@@ -522,10 +621,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 80,
   },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
-    marginTop: 20,
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -533,5 +639,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 22,
+    opacity: 0.7,
   },
 });

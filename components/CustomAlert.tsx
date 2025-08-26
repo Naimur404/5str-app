@@ -134,51 +134,62 @@ export default function CustomAlert({
       transparent
       animationType="none"
       statusBarTranslucent
+      onRequestClose={onClose}
     >
-      <View style={[styles.overlay, { backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>
-        <BlurView intensity={20} style={StyleSheet.absoluteFill} />
-        <Animated.View
-          style={[
-            styles.alertContainer,
-            {
-              backgroundColor: colors.card,
-              transform: [{ scale: scaleValue }],
-              opacity: opacityValue,
-            },
-          ]}
+      <TouchableOpacity 
+        style={[styles.overlay, { backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <BlurView intensity={20} style={StyleSheet.absoluteFill} pointerEvents="none" />
+        <TouchableOpacity 
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
         >
-          <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
-            <Ionicons name={icon as any} size={32} color={color} />
-          </View>
-          
-          <View style={styles.contentContainer}>
-            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-            {message && <Text style={[styles.message, { color: colors.icon }]}>{message}</Text>}
-          </View>
+          <Animated.View
+            style={[
+              styles.alertContainer,
+              {
+                backgroundColor: colors.card,
+                transform: [{ scale: scaleValue }],
+                opacity: opacityValue,
+              },
+            ]}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
+              <Ionicons name={icon as any} size={32} color={color} />
+            </View>
+            
+            <View style={styles.contentContainer}>
+              <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+              {message && <Text style={[styles.message, { color: colors.icon }]}>{message}</Text>}
+            </View>
 
-          <View style={buttons.length > 2 ? styles.buttonContainerVertical : styles.buttonContainer}>
-            {buttons.map((button, index) => {
-              const buttonStyle = getButtonStyle(button.style || 'default');
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    buttons.length > 2 ? styles.buttonVertical : styles.button,
-                    { backgroundColor: buttonStyle.backgroundColor },
-                    buttons.length === 1 && styles.singleButton,
-                  ]}
-                  onPress={() => handleButtonPress(button)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.buttonText, { color: buttonStyle.color }]}>
-                    {button.text}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </Animated.View>
-      </View>
+            <View style={buttons.length > 2 ? styles.buttonContainerVertical : styles.buttonContainer}>
+              {buttons.map((button, index) => {
+                const buttonStyle = getButtonStyle(button.style || 'default');
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      buttons.length > 2 ? styles.buttonVertical : styles.button,
+                      { backgroundColor: buttonStyle.backgroundColor },
+                      buttons.length === 1 && styles.singleButton,
+                    ]}
+                    onPress={() => handleButtonPress(button)}
+                    activeOpacity={0.8}
+                    delayPressIn={0}
+                  >
+                    <Text style={[styles.buttonText, { color: buttonStyle.color }]}>
+                      {button.text}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 }

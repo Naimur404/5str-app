@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -13,19 +13,47 @@ const SkeletonBox = ({ width, height, borderRadius = 8, backgroundColor }: {
   height: number;
   borderRadius?: number;
   backgroundColor: string;
-}) => (
-  <View 
-    style={[
-      styles.skeletonBox, 
-      { 
-        width: width as any, 
-        height, 
-        borderRadius, 
-        backgroundColor 
-      }
-    ]} 
-  />
-);
+}) => {
+  const animatedValue = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    const animate = () => {
+      Animated.sequence([
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: false,
+        }),
+      ]).start(() => animate());
+    };
+    animate();
+  }, [animatedValue]);
+
+  const opacity = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <Animated.View 
+      style={[
+        styles.skeletonBox, 
+        { 
+          width: width as any, 
+          height, 
+          borderRadius, 
+          backgroundColor,
+          opacity 
+        }
+      ]} 
+    />
+  );
+};
 
 // Business Details Skeleton
 export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
@@ -545,7 +573,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   skeletonBox: {
-    opacity: 0.7,
+    // Removed opacity from here since it's now handled by animation
   },
   quickActions: {
     flexDirection: 'row',
@@ -1085,5 +1113,187 @@ const businessListStyles = StyleSheet.create({
     minHeight: 80,
     paddingVertical: 4,
     gap: 4,
+  },
+});
+
+// Notifications Page Skeleton
+export const NotificationPageSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={[notificationSkeletonStyles.container, { backgroundColor: colors.background }]}>
+    {/* Header skeleton */}
+    <View style={[notificationSkeletonStyles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <View style={notificationSkeletonStyles.headerLeft}>
+        <SkeletonBox 
+          width={24} 
+          height={24} 
+          borderRadius={12}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={notificationSkeletonStyles.headerTitles}>
+          <SkeletonBox 
+            width={120} 
+            height={24} 
+            borderRadius={12}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width={80} 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+        </View>
+      </View>
+      <View style={notificationSkeletonStyles.headerActions}>
+        <SkeletonBox 
+          width={90} 
+          height={32} 
+          borderRadius={16}
+          backgroundColor={colors.buttonPrimary + '20'} 
+        />
+        <SkeletonBox 
+          width={70} 
+          height={32} 
+          borderRadius={16}
+          backgroundColor={'#FF3B30' + '20'} 
+        />
+      </View>
+    </View>
+
+    {/* Notification items skeleton */}
+    <View style={notificationSkeletonStyles.listContainer}>
+      {[...Array(6)].map((_, index) => (
+        <View key={index} style={[notificationSkeletonStyles.notificationItem, { backgroundColor: colors.card }]}>
+          <View style={notificationSkeletonStyles.notificationContent}>
+            {/* Icon and unread dot */}
+            <View style={notificationSkeletonStyles.iconContainer}>
+              <SkeletonBox 
+                width={24} 
+                height={24} 
+                borderRadius={12}
+                backgroundColor={colors.icon + '20'} 
+              />
+              {index % 3 === 0 && (
+                <View style={[notificationSkeletonStyles.unreadDot, { backgroundColor: colors.buttonPrimary }]} />
+              )}
+            </View>
+            
+            {/* Content */}
+            <View style={notificationSkeletonStyles.notificationBody}>
+              <SkeletonBox 
+                width="85%" 
+                height={16} 
+                borderRadius={8}
+                backgroundColor={colors.icon + '20'} 
+              />
+              <SkeletonBox 
+                width="95%" 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + '15'} 
+              />
+              <SkeletonBox 
+                width="75%" 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + '15'} 
+              />
+              <SkeletonBox 
+                width={60} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+            
+            {/* Actions */}
+            <View style={notificationSkeletonStyles.notificationActions}>
+              <SkeletonBox 
+                width={18} 
+                height={18} 
+                borderRadius={9}
+                backgroundColor={colors.icon + '20'} 
+              />
+              {index % 3 === 0 && (
+                <SkeletonBox 
+                  width={18} 
+                  height={18} 
+                  borderRadius={9}
+                  backgroundColor={colors.buttonPrimary + '30'} 
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+);
+
+// Additional styles for Notification skeleton
+const notificationSkeletonStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 16,
+  },
+  headerTitles: {
+    gap: 4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  listContainer: {
+    paddingVertical: 8,
+    gap: 4,
+  },
+  notificationItem: {
+    marginHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  notificationContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 16,
+    gap: 12,
+  },
+  iconContainer: {
+    position: 'relative',
+    marginTop: 2,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  notificationBody: {
+    flex: 1,
+    gap: 6,
+  },
+  notificationActions: {
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
   },
 });

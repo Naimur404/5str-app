@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { getUnreadNotifications, isAuthenticated } from '@/services/api';
 import { Notification, NotificationStats } from '@/types/api';
 
@@ -7,10 +8,12 @@ interface NotificationContextType {
   notifications: Notification[];
   stats: NotificationStats | null;
   loading: boolean;
+  error: string | null;
   refreshNotifications: () => Promise<void>;
   markAsRead: (notificationId: string) => void;
   removeNotification: (notificationId: string) => void;
   clearAllNotifications: () => void;
+  clearError: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -24,6 +27,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const refreshNotifications = async () => {
     try {
@@ -32,10 +36,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setUnreadCount(0);
         setNotifications([]);
         setStats(null);
+        setError(null);
         return;
       }
 
       setLoading(true);
+      setError(null);
       const response = await getUnreadNotifications();
       
       if (response.success) {
@@ -43,13 +49,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setStats(response.data.stats);
         setUnreadCount(response.data.stats.unread_count);
       } else {
+        setError('Failed to fetch notifications');
         console.error('Failed to fetch notifications');
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch notifications';
+      setError(errorMessage);
       console.error('Error fetching notifications:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const clearError = () => {
+    setError(null);
   };
 
   const markAsRead = (notificationId: string) => {
@@ -103,10 +116,26 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     refreshNotifications();
   }, []);
 
-  // Refresh notifications every 30 seconds if user is on the app
+  // Refresh notifications every 5 minutes (300 seconds) in background
   useEffect(() => {
-    const interval = setInterval(refreshNotifications, 30000);
+    const interval = setInterval(refreshNotifications, 300000); // 5 minutes
     return () => clearInterval(interval);
+  }, []);
+
+  // Handle app state changes to refresh when app becomes active
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // Refresh notifications when app becomes active
+        refreshNotifications();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription?.remove();
+    };
   }, []);
 
   const value: NotificationContextType = {
@@ -114,10 +143,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     notifications,
     stats,
     loading,
+    error,
     refreshNotifications,
     markAsRead,
     removeNotification,
     clearAllNotifications,
+    clearError,
   };
 
   return (

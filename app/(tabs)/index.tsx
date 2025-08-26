@@ -2,6 +2,7 @@ import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { NotificationBadge } from '@/components/NotificationBadge';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User } from '@/services/api';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
@@ -552,10 +553,8 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
               <Ionicons name="notifications-outline" size={24} color="white" />
               {isUserAuthenticated && unreadCount > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount.toString()}
-                  </Text>
+                <View style={styles.badgeContainer}>
+                  <NotificationBadge count={unreadCount} size="small" />
                 </View>
               )}
             </TouchableOpacity>
@@ -617,10 +616,8 @@ export default function HomeScreen() {
           <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
             <Ionicons name="notifications-outline" size={24} color="white" />
             {isUserAuthenticated && unreadCount > 0 && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>
-                  {unreadCount > 99 ? '99+' : unreadCount.toString()}
-                </Text>
+              <View style={styles.badgeContainer}>
+                <NotificationBadge count={unreadCount} size="small" />
               </View>
             )}
           </TouchableOpacity>
@@ -874,24 +871,10 @@ const styles = StyleSheet.create({
     padding: 8,
     position: 'relative',
   },
-  notificationBadge: {
+  badgeContainer: {
     position: 'absolute',
     top: 2,
     right: 2,
-    backgroundColor: '#FF3B30',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
-  },
-  notificationBadgeText: {
-    color: 'white',
-    fontSize: 11,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
   searchContainer: {
     marginBottom: 8,
