@@ -41,11 +41,14 @@ export default function DiscoverScreen() {
 
   const initializeData = async () => {
     await requestLocationPermission();
-    fetchAllData();
+    await fetchAllData();
   };
 
   const requestLocationPermission = async () => {
     try {
+      // Set default location immediately
+      setLocation({ latitude: 22.3569, longitude: 91.7832 });
+      
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const currentLocation = await Location.getCurrentPositionAsync({
@@ -59,7 +62,8 @@ export default function DiscoverScreen() {
       }
     } catch (error) {
       console.warn('Location permission denied or error:', error);
-      // Continue without location
+      // Use default location if anything fails
+      setLocation({ latitude: 22.3569, longitude: 91.7832 });
     }
   };
 
@@ -68,10 +72,14 @@ export default function DiscoverScreen() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
+      // Use current location state or default coordinates
+      const currentLat = location?.latitude || 22.3569;
+      const currentLng = location?.longitude || 91.7832;
+
       // Fetch both categories and trending data
       const [categoriesResponse, trendingResponse] = await Promise.all([
         getCategories(1, 50),
-        getTodayTrending(location?.latitude, location?.longitude)
+        getTodayTrending(currentLat, currentLng)
       ]);
 
       if (categoriesResponse.success) {

@@ -750,14 +750,34 @@ export const logout = async (): Promise<{success: boolean; message?: string}> =>
 };
 
 // Business Details API Functions
-export const getBusinessDetails = async (businessId: number): Promise<BusinessDetailsResponse> => {
+export const getBusinessDetails = async (
+  businessId: number, 
+  latitude?: number, 
+  longitude?: number
+): Promise<BusinessDetailsResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.BUSINESS_DETAILS}/${businessId}`;
+  
+  if (latitude !== undefined && longitude !== undefined) {
+    url += `?latitude=${latitude}&longitude=${longitude}`;
+  }
+  
   // Send token if available for user-specific data and analytics
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_DETAILS}/${businessId}`, {}, false);
+  return makeApiCall(url, {}, false);
 };
 
-export const getBusinessOfferings = async (businessId: number): Promise<BusinessOfferingsResponse> => {
+export const getBusinessOfferings = async (
+  businessId: number, 
+  latitude?: number, 
+  longitude?: number
+): Promise<BusinessOfferingsResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.BUSINESS_OFFERINGS}/${businessId}/offerings`;
+  
+  if (latitude !== undefined && longitude !== undefined) {
+    url += `?latitude=${latitude}&longitude=${longitude}`;
+  }
+  
   // Send token if available for user-specific data and analytics
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_OFFERINGS}/${businessId}/offerings`, {}, false);
+  return makeApiCall(url, {}, false);
 };
 
 export const getBusinessReviews = async (businessId: number, page: number = 1): Promise<BusinessReviewsResponse> => {
@@ -765,9 +785,19 @@ export const getBusinessReviews = async (businessId: number, page: number = 1): 
   return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_REVIEWS}/${businessId}/reviews?page=${page}`, {}, false);
 };
 
-export const getBusinessOffers = async (businessId: number): Promise<any> => {
+export const getBusinessOffers = async (
+  businessId: number, 
+  latitude?: number, 
+  longitude?: number
+): Promise<any> => {
+  let url = `${API_CONFIG.ENDPOINTS.BUSINESS_OFFERS}/${businessId}/offers`;
+  
+  if (latitude !== undefined && longitude !== undefined) {
+    url += `?latitude=${latitude}&longitude=${longitude}`;
+  }
+  
   // Send token if available for user-specific data and analytics
-  return makeApiCall(`${API_CONFIG.ENDPOINTS.BUSINESS_OFFERS}/${businessId}/offers`, {}, false);
+  return makeApiCall(url, {}, false);
 };
 
 export const getOfferingDetails = async (businessId: number, offeringId: number): Promise<OfferingDetailsResponse> => {

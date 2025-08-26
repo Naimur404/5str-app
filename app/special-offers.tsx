@@ -66,22 +66,22 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, onPress, colors }) => (
               {parseFloat(offer.business.overall_rating || '0').toFixed(1)}
             </Text>
             <Text style={[styles.reviewCountText, { color: colors.icon }]}>
-              ({offer.business.total_reviews || 0})
+              ({(offer.business as any).total_reviews || 0})
             </Text>
           </View>
           
-          {offer.business.distance_km && (
+          {(offer.business as any).distance_km && (
             <Text style={[styles.distanceText, { color: colors.buttonPrimary }]}>
-              {offer.business.distance_km}
+              {(offer.business as any).distance_km}
             </Text>
           )}
         </View>
 
-        {offer.valid_until && (
+        {(offer.valid_to || offer.valid_until) && (
           <View style={styles.expiryContainer}>
             <Ionicons name="time-outline" size={12} color={colors.icon} />
             <Text style={[styles.expiryText, { color: colors.icon }]} numberOfLines={1}>
-              Valid until {new Date(offer.valid_until).toLocaleDateString()}
+              Valid until {new Date((offer.valid_to || offer.valid_until)!).toLocaleDateString()}
             </Text>
           </View>
         )}

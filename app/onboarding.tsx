@@ -4,7 +4,7 @@ import { AppState } from '@/utils/appState';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import {
     Dimensions,
     FlatList,
@@ -88,15 +88,15 @@ export default function OnboardingScreen() {
     }
   };
 
-  const onViewableItemsChanged = ({ viewableItems }: any) => {
+  const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
     }
-  };
+  }, []);
 
-  const viewabilityConfig = {
+  const viewabilityConfig = useMemo(() => ({
     itemVisiblePercentThreshold: 50,
-  };
+  }), []);
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
     <View style={[styles.slide, { width, backgroundColor: colors.background }]}>

@@ -154,7 +154,7 @@ export interface SearchResponse {
         };
       };
       offerings: {
-        data: any[];
+        data: Offering[];
         pagination: {
           current_page: number;
           last_page: number;
@@ -165,6 +165,34 @@ export interface SearchResponse {
       };
     };
   };
+}
+
+// Offering types
+export interface Offering {
+  id: number;
+  name: string;
+  description: string;
+  offering_type: string;
+  price: string;
+  price_max?: string;
+  price_range?: string;
+  currency: string;
+  image_url: string;
+  is_available: boolean;
+  is_popular: boolean;
+  is_featured: boolean;
+  average_rating: string;
+  total_reviews: number;
+  business: {
+    id: number;
+    business_name: string;
+    slug: string;
+    city: string;
+    area: string;
+    distance_km: number;
+  };
+  category: any;
+  type: string;
 }
 
 // Popular Nearby Response

@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
     Dimensions,
     FlatList,
@@ -113,12 +113,14 @@ export default function HomeScreen() {
         // Use a timeout to ensure the ref is ready
         setTimeout(() => {
           try {
-            bannerRef.current?.scrollToOffset({ 
-              offset: nextIndex * (width - 48), 
-              animated: true 
-            });
+            if (bannerRef.current && banners.length > 0) {
+              bannerRef.current.scrollToOffset({ 
+                offset: nextIndex * (width - 48), 
+                animated: true 
+              });
+            }
           } catch (error) {
-            console.warn('Auto-scroll failed');
+            console.warn('Auto-scroll failed:', error);
           }
         }, 50);
         return nextIndex;
@@ -126,7 +128,7 @@ export default function HomeScreen() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [banners]);
+  }, [banners.length, width]);
 
   const requestLocationPermission = async () => {
     try {
@@ -344,6 +346,31 @@ export default function HomeScreen() {
   const handleViewAllDynamicSection = (sectionSlug: string) => {
     router.push(`/dynamic-section/${sectionSlug}`);
   };
+
+  const handleBannerScroll = useCallback((event: any) => {
+    const slideSize = width - 48;
+    const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+    setCurrentBannerIndex(index);
+  }, [width]);
+
+  const renderBannerItem = useCallback(({ item }: { item: Banner }) => (
+    <TouchableOpacity 
+      style={styles.heroSlide}
+      onPress={() => handleBannerPress(item)}
+    >
+      <Image 
+        source={{ uri: getImageUrl(item.image_url) || getFallbackImageUrl('general') }} 
+        style={styles.heroImage}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.6)']}
+        style={styles.heroOverlay}
+      >
+        <Text style={styles.heroTitle}>{item.title}</Text>
+        <Text style={styles.heroSubtitle}>{item.subtitle}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  ), []);
 
   const renderServiceItem = ({ item }: { item: TopService }) => (
     <TouchableOpacity 
@@ -596,34 +623,14 @@ export default function HomeScreen() {
           <View style={styles.heroSection}>
             <FlatList
               ref={bannerRef}
+              key="banner-flatlist"
               data={banners}
-              renderItem={({ item, index }) => (
-                <TouchableOpacity 
-                  style={styles.heroSlide}
-                  onPress={() => handleBannerPress(item)}
-                >
-                  <Image 
-                    source={{ uri: getImageUrl(item.image_url) || getFallbackImageUrl('general') }} 
-                    style={styles.heroImage}
-                  />
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.6)']}
-                    style={styles.heroOverlay}
-                  >
-                    <Text style={styles.heroTitle}>{item.title}</Text>
-                    <Text style={styles.heroSubtitle}>{item.subtitle}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              )}
+              renderItem={renderBannerItem}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
-              onScroll={(event) => {
-                const slideSize = width - 48;
-                const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
-                setCurrentBannerIndex(index);
-              }}
+              onScroll={handleBannerScroll}
               scrollEventThrottle={16}
             />
             

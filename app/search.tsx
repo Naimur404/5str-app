@@ -20,7 +20,7 @@ import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { Business, SearchResponse } from '@/types/api';
+import { Business, SearchResponse, Offering } from '@/types/api';
 import { fetchWithJsonValidation } from '@/services/api';
 
 export default function SearchScreen() {
@@ -49,13 +49,15 @@ export default function SearchScreen() {
     try {
       console.log('Getting current location...');
       
+      // Set default location immediately to ensure search can work
+      setLocation({ latitude: 22.3569, longitude: 91.7832 });
+      
       // Request permission first
       const { status } = await Location.requestForegroundPermissionsAsync();
       console.log('Location permission status:', status);
       
       if (status !== 'granted') {
         console.log('Location permission denied, using default location');
-        setLocation({ latitude: 22.3569, longitude: 91.7832 });
         return;
       }
       
@@ -214,6 +216,58 @@ export default function SearchScreen() {
     );
   };
 
+  const renderOfferingItem = ({ item }: { item: Offering }) => {
+    if (!item || !item.id) {
+      return null;
+    }
+    
+    return (
+      <TouchableOpacity 
+        style={[styles.businessItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => router.push(`/offering/${item.business.id}/${item.id}`)}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={{ uri: getImageUrl(item.image_url) || getFallbackImageUrl('offering') }} 
+          style={styles.businessImage} 
+        />
+        <View style={styles.businessInfo}>
+          <View style={styles.businessHeader}>
+            <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+              {item.name || 'Unknown Offering'}
+            </Text>
+            {item.is_featured ? (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="star" size={16} color="#d97706" />
+              </View>
+            ) : null}
+          </View>
+          <Text style={[styles.businessCategory, { color: colors.icon }]}>
+            {`${item.business.business_name} • ${item.business.area}`}
+          </Text>
+          {item.description ? (
+            <Text style={[styles.businessDescription, { color: colors.icon }]} numberOfLines={2}>
+              {item.description}
+            </Text>
+          ) : null}
+          <View style={styles.businessMeta}>
+            <View style={styles.ratingContainer}>
+              <Text style={[styles.rating, { color: '#059669' }]}>{item.price_range || `${item.currency} ${item.price}`}</Text>
+            </View>
+            {item.business.distance_km ? (
+              <Text style={[styles.distance, { color: colors.tint }]}>
+                {item.business.distance_km} km
+              </Text>
+            ) : null}
+          </View>
+        </View>
+        <View style={styles.chevronContainer}>
+          <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   console.log('Render called with state:', { 
     searchQuery, 
     hasResults: !!searchResults, 
@@ -260,7 +314,7 @@ export default function SearchScreen() {
           <View style={[styles.messageContainer, { backgroundColor: colors.card }]}>
             <Text style={[styles.messageText, { color: colors.icon }]}>Type at least 2 characters to search</Text>
           </View>
-        ) : searchResults && searchResults.results && searchResults.results.businesses ? (
+        ) : searchResults && searchResults.results ? (
           <View>
             <View style={[styles.resultsSummary, { backgroundColor: colors.card }]}>
               <Text style={[styles.resultsText, { color: colors.text }]}>
@@ -268,20 +322,38 @@ export default function SearchScreen() {
               </Text>
             </View>
 
-            {searchResults.results.businesses.data && searchResults.results.businesses.data.length > 0 ? (
+            {/* Businesses Section */}
+            {searchResults.results.businesses.data && searchResults.results.businesses.data.length > 0 && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Businesses</Text>
                 <FlatList
                   data={searchResults.results.businesses.data.filter((item: any) => item && item.id)}
                   renderItem={renderBusinessItem}
-                  keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                  keyExtractor={(item) => `business-${item.id?.toString() || Math.random().toString()}`}
                   scrollEnabled={false}
                 />
               </View>
-            ) : (
+            )}
+
+            {/* Offerings Section */}
+            {searchResults.results.offerings.data && searchResults.results.offerings.data.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Products & Services</Text>
+                <FlatList
+                  data={searchResults.results.offerings.data.filter((item: any) => item && item.id)}
+                  renderItem={renderOfferingItem}
+                  keyExtractor={(item) => `offering-${item.id?.toString() || Math.random().toString()}`}
+                  scrollEnabled={false}
+                />
+              </View>
+            )}
+
+            {/* No Results */}
+            {(!searchResults.results.businesses.data || searchResults.results.businesses.data.length === 0) &&
+             (!searchResults.results.offerings.data || searchResults.results.offerings.data.length === 0) && (
               <View style={[styles.noResults, { backgroundColor: colors.card }]}>
                 <Ionicons name="search-outline" size={80} color={colors.icon} />
-                <Text style={[styles.noResultsTitle, { color: colors.text }]}>No businesses found</Text>
+                <Text style={[styles.noResultsTitle, { color: colors.text }]}>No results found</Text>
                 <Text style={[styles.noResultsText, { color: colors.icon }]}>
                   Try searching with different keywords
                 </Text>
@@ -326,14 +398,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 4,
+    paddingTop: 45,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    height: 130,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     gap: 12,
   },
   backButton: {
@@ -346,10 +421,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -358,7 +433,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 13,
     color: '#333',
     fontWeight: '500',
   },
@@ -448,8 +523,8 @@ const styles = StyleSheet.create({
     borderColor: '#f1f5f9',
   },
   businessImage: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 80,
     borderRadius: 12,
     backgroundColor: '#f1f5f9',
   },
