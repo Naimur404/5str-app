@@ -73,7 +73,7 @@ export default function HomeScreen() {
   const searchParams = useLocalSearchParams();
   const { colorScheme } = useTheme();
   const { unreadCount } = useNotifications();
-  const { getCoordinatesForAPI, requestLocationUpdate, location, isUpdating, getCurrentLocationInfo } = useLocation();
+  const { getCoordinatesForAPI, requestLocationUpdate, location, isUpdating, getCurrentLocationInfo, onLocationChange, manualLocation, isLocationChanging } = useLocation();
   const { showSuccess, showToast } = useToastGlobal();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
@@ -156,7 +156,37 @@ export default function HomeScreen() {
     } else {
       setUserLocation('Chittagong, Bangladesh');
     }
-  }, [location, getCurrentLocationInfo]);
+  }, [location, manualLocation]); // Include manualLocation to track manual location changes
+
+  // Listen for location changes and refresh data
+  useEffect(() => {
+    console.log('🎬 Setting up location change listener...');
+    const cleanup = onLocationChange(async () => {
+      console.log('� LOCATION CHANGE TRIGGERED!');
+      const oldCoords = homeData ? 'cached data exists' : 'no cached data';
+      const newCoords = getCoordinatesForAPI();
+      console.log('�🔄 Location changed, refreshing home data...');
+      console.log('📍 Old state:', oldCoords);
+      console.log('📍 New coordinates:', newCoords);
+      
+      // Set loading state to show skeleton immediately
+      setLoading(true);
+      // Clear current data to force fresh fetch
+      setHomeData(null);
+      console.log('🗑️ HomeData cleared');
+      
+      // Force clear all cache to ensure fresh data
+      await cacheService.forceRefreshHomeData();
+      console.log('🗑️ All cache forcefully cleared');
+      
+      // Fetch fresh data with new location (guaranteed fresh)
+      await fetchFreshHomeData();
+      showSuccess('Home data updated for new location');
+    });
+
+    console.log('✅ Location change listener setup complete');
+    return cleanup;
+  }, []); // Empty dependency array since we only want this to run once
 
   // Run main initialization after login check
   useEffect(() => {
@@ -360,6 +390,57 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  // Fetch fresh data bypassing cache (used when location changes)
+  const fetchFreshHomeData = async () => {
+    try {
+      // Get coordinates from LocationContext
+      const coordinates = getCoordinatesForAPI();
+      
+      console.log('🔄 Fetching fresh home data for new location:', coordinates);
+      
+      // Force clear any existing cache first
+      await cacheService.forceRefreshHomeData();
+      
+      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=15`;
+      console.log('🌐 API URL:', url);
+      
+      const data: HomeResponse = await fetchWithJsonValidation(url);
+
+      if (data.success) {
+        console.log('✅ Fresh data received:', {
+          banners: data.data.banners?.length || 0,
+          topServices: data.data.top_services?.length || 0,
+          businesses: data.data.featured_businesses?.length || 0
+        });
+        
+        setHomeData(data.data);
+        // Cache the new data with new coordinates
+        await cacheService.setHomeData(data.data, coordinates);
+        console.log('💾 Fresh home data cached for new location');
+      } else {
+        showAlert({
+          type: 'error',
+          title: 'Loading Error',
+          message: 'Failed to load home data. Please try again.',
+          buttons: [{ text: 'OK' }]
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching fresh home data:', error);
+      showAlert({
+        type: 'error',
+        title: 'Network Error',
+        message: 'Failed to fetch data for new location. Please try again.',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Retry', onPress: () => fetchFreshHomeData() }
+        ]
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -572,7 +653,7 @@ export default function HomeScreen() {
     return iconMap[slug] || 'business';
   };
 
-  if (loading && !homeData) {
+  if (loading && !homeData || isLocationChanging) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style="light" />

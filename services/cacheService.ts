@@ -166,16 +166,18 @@ class CacheService {
         return null;
       }
 
-      // Check if coordinates have changed significantly (more than 1km)
-      const distance = this.calculateDistance(
-        cached.coordinates.latitude,
-        cached.coordinates.longitude,
-        currentCoordinates.latitude,
-        currentCoordinates.longitude
-      );
-
-      if (distance > 1) { // More than 1km difference
-        console.log(`Location changed by ${distance.toFixed(2)}km, invalidating home cache`);
+      // Check if coordinates have changed at all (even slightly)
+      const latDiff = Math.abs(cached.coordinates.latitude - currentCoordinates.latitude);
+      const lngDiff = Math.abs(cached.coordinates.longitude - currentCoordinates.longitude);
+      
+      // If coordinates changed by any amount, invalidate cache
+      if (latDiff > 0.0001 || lngDiff > 0.0001) { // About 10 meters precision
+        console.log('📍 Location coordinates changed, invalidating home cache:', {
+          old: cached.coordinates,
+          new: currentCoordinates,
+          latDiff,
+          lngDiff
+        });
         await this.removeCache(this.CACHE_KEYS.HOME_DATA);
         return null;
       }
@@ -188,7 +190,16 @@ class CacheService {
   }
 
   public async clearHomeData(): Promise<void> {
-    await this.removeCache(this.CACHE_KEYS.HOME_DATA);
+    console.log('🗑️ Clearing home data cache completely');
+    // Clear from both memory and AsyncStorage
+    this.memoryCache.delete(this.CACHE_KEYS.HOME_DATA);
+    await AsyncStorage.removeItem(this.CACHE_KEYS.HOME_DATA);
+  }
+
+  // Force clear all cache and fetch fresh data
+  public async forceRefreshHomeData(): Promise<void> {
+    console.log('💥 Force clearing all home data cache');
+    await this.clearHomeData();
   }
 
   // User profile cache methods

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react';
 import { locationService, UserLocation } from '../services/locationService';
 
 interface LocationContextType {
@@ -6,6 +6,7 @@ interface LocationContextType {
   manualLocation: { name: string; latitude: number; longitude: number; division?: string } | null;
   isLoading: boolean;
   isUpdating: boolean;
+  isLocationChanging: boolean;
   refreshLocation: () => Promise<void>;
   requestLocationUpdate: () => Promise<{
     success: boolean;
@@ -16,6 +17,7 @@ interface LocationContextType {
   clearManualLocation: () => void;
   getCoordinatesForAPI: () => { latitude: number; longitude: number };
   getCurrentLocationInfo: () => { name: string; isManual: boolean; division?: string };
+  onLocationChange: (callback: () => void) => () => void;
   locationAge: number;
 }
 
@@ -30,7 +32,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   const [manualLocation, setManualLocationState] = useState<{ name: string; latitude: number; longitude: number; division?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLocationChanging, setIsLocationChanging] = useState(false);
   const [locationAge, setLocationAge] = useState(0);
+  const locationChangeCallbacks = useRef<Set<() => void>>(new Set());
+  
+  // Use ref for immediate access to manual location
+  const manualLocationRef = useRef<{ name: string; latitude: number; longitude: number; division?: string } | null>(null);
 
   useEffect(() => {
     initializeLocation();
@@ -75,7 +82,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   };
 
-  const refreshLocation = async () => {
+  const refreshLocation = useCallback(async () => {
     try {
       setIsUpdating(true);
       console.log('LocationProvider: Manual refresh requested');
@@ -90,19 +97,34 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, []);
 
-  const requestLocationUpdate = async () => {
+  const requestLocationUpdate = useCallback(async () => {
     try {
       setIsUpdating(true);
-      console.log('LocationProvider: User requested location update');
+      setIsLocationChanging(true);
+      console.log('🔄 LocationProvider: User requested location update');
+      
+      // Clear manual location when using GPS
+      manualLocationRef.current = null;
+      setManualLocationState(null);
       
       const result = await locationService.requestLocationUpdate();
       
       if (result.success && result.location) {
         setLocation(result.location);
         setLocationAge(locationService.getLocationAge());
-        console.log('LocationProvider: Location updated successfully');
+        console.log('✅ LocationProvider: Location updated successfully');
+        
+        // Notify all listeners that location changed
+        console.log('🔔 Notifying', locationChangeCallbacks.current.size, 'location change listeners');
+        locationChangeCallbacks.current.forEach(callback => {
+          try {
+            callback();
+          } catch (error) {
+            console.error('LocationProvider: Error in location change callback:', error);
+          }
+        });
       }
       
       return result;
@@ -114,36 +136,69 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       };
     } finally {
       setIsUpdating(false);
+      // Reset location changing state after a delay to allow for data fetching
+      setTimeout(() => {
+        setIsLocationChanging(false);
+      }, 1000);
     }
-  };
+  }, []);
 
-  const getCoordinatesForAPI = () => {
-    // If manual location is set, use it; otherwise use the service
-    if (manualLocation) {
+  const getCoordinatesForAPI = useCallback(() => {
+    // Use ref for immediate access to manual location
+    const currentManualLocation = manualLocationRef.current;
+    
+    if (currentManualLocation) {
+      console.log('🎯 Using manual location for API:', currentManualLocation);
       return {
-        latitude: manualLocation.latitude,
-        longitude: manualLocation.longitude,
+        latitude: currentManualLocation.latitude,
+        longitude: currentManualLocation.longitude,
       };
     }
-    return locationService.getCoordinatesForAPI();
-  };
+    const serviceCoords = locationService.getCoordinatesForAPI();
+    console.log('📡 Using service location for API:', serviceCoords);
+    return serviceCoords;
+  }, []); // Remove manualLocation dependency since we're using ref
 
-  const setManualLocation = (location: { name: string; latitude: number; longitude: number; division?: string }) => {
+  const setManualLocation = useCallback((location: { name: string; latitude: number; longitude: number; division?: string }) => {
+    setIsLocationChanging(true);
+    
+    // Update ref immediately for instant access
+    manualLocationRef.current = location;
+    // Update state for UI
     setManualLocationState(location);
-    console.log('LocationProvider: Manual location set:', location);
-  };
+    
+    console.log('🎯 LocationProvider: Manual location set:', location);
+    
+    // Immediately notify listeners since ref is updated
+    console.log('🔔 Notifying', locationChangeCallbacks.current.size, 'location change listeners');
+    locationChangeCallbacks.current.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('LocationProvider: Error in location change callback:', error);
+      }
+    });
+    
+    // Reset location changing state after a delay to allow for data fetching
+    setTimeout(() => {
+      setIsLocationChanging(false);
+    }, 1500);
+  }, []);
 
-  const clearManualLocation = () => {
+  const clearManualLocation = useCallback(() => {
+    manualLocationRef.current = null;
     setManualLocationState(null);
     console.log('LocationProvider: Manual location cleared');
-  };
+  }, []);
 
-  const getCurrentLocationInfo = () => {
-    if (manualLocation) {
+  const getCurrentLocationInfo = useCallback(() => {
+    const currentManualLocation = manualLocationRef.current;
+    
+    if (currentManualLocation) {
       return {
-        name: manualLocation.name,
+        name: currentManualLocation.name,
         isManual: true,
-        division: manualLocation.division,
+        division: currentManualLocation.division,
       };
     }
     
@@ -152,19 +207,33 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       name: 'Current Location',
       isManual: false,
     };
-  };
+  }, []); // Remove manualLocation dependency since we're using ref
+
+  // Subscribe to location changes
+  const onLocationChange = useCallback((callback: () => void) => {
+    locationChangeCallbacks.current.add(callback);
+    console.log('📝 LocationProvider: Added location change listener. Total listeners:', locationChangeCallbacks.current.size);
+    
+    // Return unsubscribe function
+    return () => {
+      locationChangeCallbacks.current.delete(callback);
+      console.log('🗑️ LocationProvider: Removed location change listener. Total listeners:', locationChangeCallbacks.current.size);
+    };
+  }, []);
 
   const contextValue: LocationContextType = {
     location,
     manualLocation,
     isLoading,
     isUpdating,
+    isLocationChanging,
     refreshLocation,
     requestLocationUpdate,
     setManualLocation,
     clearManualLocation,
     getCoordinatesForAPI,
     getCurrentLocationInfo,
+    onLocationChange,
     locationAge,
   };
 

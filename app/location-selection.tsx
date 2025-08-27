@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
+import { useToastGlobal } from '@/contexts/ToastContext';
 import { Colors } from '@/constants/Colors';
 
 // Bangladesh districts with coordinates
@@ -115,6 +115,7 @@ export default function LocationSelectionScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme || 'light'];
   const { requestLocationUpdate, clearManualLocation, setManualLocation } = useLocation();
+  const { showSuccess, showError } = useToastGlobal();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredDistricts, setFilteredDistricts] = useState(BANGLADESH_DISTRICTS);
@@ -138,7 +139,7 @@ export default function LocationSelectionScreen() {
     setFilteredDistricts(filtered);
   };
 
-  const handleDistrictSelect = async (district: typeof BANGLADESH_DISTRICTS[0]) => {
+    const handleDistrictSelect = async (district: typeof BANGLADESH_DISTRICTS[0]) => {
     try {
       // Set the manual location in the context
       setManualLocation({
@@ -148,18 +149,10 @@ export default function LocationSelectionScreen() {
         division: district.division,
       });
 
-      Alert.alert(
-        'Location Selected',
-        `You selected ${district.name}, ${district.division}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      showSuccess(`Location set to ${district.name}, ${district.division}`);
+      router.back();
     } catch (error) {
-      Alert.alert('Error', 'Failed to set location. Please try again.');
+      showError('Failed to set location. Please try again.');
     }
   };
 
@@ -173,27 +166,17 @@ export default function LocationSelectionScreen() {
       const result = await requestLocationUpdate();
       
       if (result.success) {
-        Alert.alert(
-          'Location Updated',
-          'Your current location has been updated successfully.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.back(),
-            },
-          ]
-        );
+        showSuccess('Current location updated successfully');
+        router.back();
       } else {
-        Alert.alert('Error', result.message || 'Failed to get current location.');
+        showError(result.message || 'Failed to get current location.');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to get current location. Please try again.');
+      showError('Failed to get current location. Please try again.');
     } finally {
       setIsGettingLocation(false);
     }
-  };
-
-  const handleBackPress = () => {
+  };  const handleBackPress = () => {
     router.back();
   };
 
@@ -231,7 +214,7 @@ export default function LocationSelectionScreen() {
         
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
+          <View style={[styles.searchBar, { backgroundColor: colors.card }]}>
             <Ionicons name="search-outline" size={20} color={colors.icon} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
@@ -337,7 +320,6 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
