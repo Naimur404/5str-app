@@ -20,6 +20,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { CategoryIcon } from '@/components/SmartImage';
+import { TopServicesSkeleton } from '@/components/SkeletonLoader';
 
 interface ServiceCardProps {
   service: TopService;
@@ -242,12 +243,7 @@ export default function TopServicesScreen() {
 
       {/* Services List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.buttonPrimary} />
-          <Text style={[styles.loadingText, { color: colors.icon }]}>
-            Loading services...
-          </Text>
-        </View>
+        <TopServicesSkeleton colors={colors} />
       ) : filteredServices.length > 0 ? (
         <FlatList
           data={filteredServices}

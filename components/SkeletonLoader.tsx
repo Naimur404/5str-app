@@ -2002,3 +2002,86 @@ const featuredBusinessesStyles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+export const TopServicesSkeleton = React.memo(({ colors }: SkeletonProps) => (
+  <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 12 }}>
+    {[...Array(8)].map((_, index) => (
+      <View key={index} style={{
+        backgroundColor: colors.card,
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
+      }}>
+        <View style={{ flexDirection: 'row', padding: 12 }}>
+          <View style={{
+            width: 80,
+            height: 80,
+            borderRadius: 12,
+            overflow: 'hidden',
+            marginRight: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <SkeletonBox 
+              width={80} 
+              height={80} 
+              borderRadius={12}
+              backgroundColor={colors.icon + '20'} 
+            />
+          </View>
+
+          <View style={{ flex: 1, justifyContent: 'space-between' }}>
+            <View style={{ marginBottom: 6, gap: 6 }}>
+              <SkeletonBox 
+                width="70%" 
+                height={16} 
+                borderRadius={4}
+                backgroundColor={colors.icon + '20'} 
+              />
+              <SkeletonBox 
+                width="50%" 
+                height={13} 
+                borderRadius={4}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+            
+            <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+              <SkeletonBox 
+                width={60} 
+                height={18} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+              <SkeletonBox 
+                width={50} 
+                height={18} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+          </View>
+
+          <View style={{
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            minHeight: 80,
+            paddingVertical: 4,
+          }}>
+            <SkeletonBox 
+              width={36} 
+              height={32} 
+              borderRadius={12}
+              backgroundColor={colors.icon + '20'} 
+            />
+          </View>
+        </View>
+      </View>
+    ))}
+  </View>
+));

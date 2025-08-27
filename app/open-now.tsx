@@ -45,6 +45,34 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
     return undefined;
   };
 
+  // Helper function to get price range description
+  const getPriceRangeInfo = (priceRange: string | number | undefined) => {
+    if (!priceRange) return { symbols: '৳', label: 'Budget' };
+    
+    // Convert to number if it's a string
+    const numericValue = typeof priceRange === 'number' ? priceRange : parseInt(priceRange.toString());
+    
+    if (!isNaN(numericValue)) {
+      switch (numericValue) {
+        case 1:
+          return { symbols: '৳', label: 'Budget' };
+        case 2:
+          return { symbols: '৳', label: 'Moderate' };
+        case 3:
+          return { symbols: '৳', label: 'High' };
+        case 4:
+          return { symbols: '৳', label: 'Expensive' };
+        case 5:
+          return { symbols: '৳', label: 'Luxury' };
+        default:
+          return { symbols: '৳', label: 'Budget' };
+      }
+    }
+    
+    // Fallback to budget if parsing fails
+    return { symbols: '৳', label: 'Budget' };
+  };
+
   return (
     <TouchableOpacity 
       style={[styles.businessCard, { backgroundColor: colors.card }]}
@@ -116,7 +144,10 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
         </View>
         <View style={[styles.priceRangeBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
           <Text style={[styles.priceRangeText, { color: colors.buttonPrimary }]}>
-            {'$'.repeat(business.price_range || 1)}
+            {getPriceRangeInfo(business.price_range).symbols}
+          </Text>
+          <Text style={[styles.priceRangeLabel, { color: colors.buttonPrimary }]}>
+            {getPriceRangeInfo(business.price_range).label}
           </Text>
         </View>
         <Ionicons 
@@ -603,7 +634,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -612,14 +643,14 @@ const styles = StyleSheet.create({
   },
   businessRow: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 16,
   },
   businessImageContainer: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: 12,
     overflow: 'hidden',
-    marginRight: 12,
+    marginRight: 16,
   },
   businessImage: {
     width: '100%',
@@ -690,7 +721,7 @@ const styles = StyleSheet.create({
   businessActions: {
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    minHeight: 80,
+    minHeight: 100,
     paddingVertical: 4,
   },
   openNowBadge: {
@@ -713,15 +744,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   priceRangeBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 12,
-    minWidth: 36,
+    minWidth: 70,
+    width: 70,
+    height: 45,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   priceRangeText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  priceRangeLabel: {
+    fontSize: 10,
+    fontWeight: '500',
+    marginTop: 2,
   },
   emptyState: {
     flex: 1,
