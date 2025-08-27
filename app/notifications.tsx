@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
@@ -161,7 +160,7 @@ export default function NotificationsScreen() {
   const colors = Colors[colorScheme];
   const { refreshNotifications, markAsRead, removeNotification, clearAllNotifications, newNotifications } = useNotifications();
   const { alertConfig, showConfirm, hideAlert } = useCustomAlert();
-  const { showSuccess, showInfo } = useToastGlobal();
+  const { showSuccess, showError, showInfo } = useToastGlobal();
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,11 +210,11 @@ export default function NotificationsScreen() {
         setHasMore(response.data.pagination.has_more);
         setPage(pageNum);
       } else {
-        Alert.alert('Error', 'Failed to load notifications');
+        showError('❌ Failed to load notifications');
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      Alert.alert('Error', 'Failed to load notifications. Please check your internet connection.');
+      showError('❌ Failed to load notifications. Please check your internet connection.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -267,33 +266,28 @@ export default function NotificationsScreen() {
             : notif
         )
       );
+      showSuccess('✅ Notification marked as read');
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      Alert.alert('Error', 'Failed to mark notification as read');
+      showError('❌ Failed to mark notification as read');
     }
   };
 
   const handleDeleteNotification = async (notification: Notification) => {
-    Alert.alert(
+    showConfirm(
       'Delete Notification',
       'Are you sure you want to delete this notification?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteNotification(notification.id);
-              removeNotification(notification.id);
-              setNotifications(prev => prev.filter(notif => notif.id !== notification.id));
-            } catch (error) {
-              console.error('Error deleting notification:', error);
-              Alert.alert('Error', 'Failed to delete notification');
-            }
-          }
+      async () => {
+        try {
+          await deleteNotification(notification.id);
+          removeNotification(notification.id);
+          setNotifications(prev => prev.filter(notif => notif.id !== notification.id));
+          showSuccess('🗑️ Notification deleted successfully');
+        } catch (error) {
+          console.error('Error deleting notification:', error);
+          showError('❌ Failed to delete notification');
         }
-      ]
+      }
     );
   };
 
@@ -308,9 +302,10 @@ export default function NotificationsScreen() {
         }))
       );
       await refreshNotifications();
+      showSuccess('✅ All notifications marked as read');
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      Alert.alert('Error', 'Failed to mark all notifications as read');
+      showError('❌ Failed to mark all notifications as read');
     }
   };
 
@@ -327,14 +322,14 @@ export default function NotificationsScreen() {
           if (response.success) {
             setNotifications([]);
             clearAllNotifications();
-            showSuccess('All clear! Your notifications have been deleted successfully');
+            showSuccess('🗑️ All notifications deleted successfully');
           } else {
             console.error('Failed to clear notifications:', response);
-            Alert.alert('Error', response.message || 'Failed to clear all notifications');
+            showError(response.message || '❌ Failed to clear all notifications');
           }
         } catch (error) {
           console.error('Error clearing all notifications:', error);
-          Alert.alert('Error', 'Failed to clear all notifications. Please try again.');
+          showError('❌ Failed to clear all notifications. Please try again.');
         }
       }
     );

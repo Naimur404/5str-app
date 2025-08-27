@@ -316,7 +316,7 @@ export default function TrendingScreen() {
         
         {/* Header */}
         <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
           style={styles.headerLoading}
         >
           <View style={styles.headerContent}>
@@ -362,7 +362,7 @@ export default function TrendingScreen() {
       
       {/* Header outside FlatList */}
       <LinearGradient
-        colors={['#6366f1', '#8b5cf6']}
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.headerLoading}
       >
         <View style={styles.headerContent}>
