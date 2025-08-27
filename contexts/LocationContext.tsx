@@ -3,6 +3,7 @@ import { locationService, UserLocation } from '../services/locationService';
 
 interface LocationContextType {
   location: UserLocation | null;
+  manualLocation: { name: string; latitude: number; longitude: number; division?: string } | null;
   isLoading: boolean;
   isUpdating: boolean;
   refreshLocation: () => Promise<void>;
@@ -11,7 +12,10 @@ interface LocationContextType {
     location?: UserLocation;
     message: string;
   }>;
+  setManualLocation: (location: { name: string; latitude: number; longitude: number; division?: string }) => void;
+  clearManualLocation: () => void;
   getCoordinatesForAPI: () => { latitude: number; longitude: number };
+  getCurrentLocationInfo: () => { name: string; isManual: boolean; division?: string };
   locationAge: number;
 }
 
@@ -23,6 +27,7 @@ interface LocationProviderProps {
 
 export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) => {
   const [location, setLocation] = useState<UserLocation | null>(null);
+  const [manualLocation, setManualLocationState] = useState<{ name: string; latitude: number; longitude: number; division?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [locationAge, setLocationAge] = useState(0);
@@ -113,16 +118,53 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
   };
 
   const getCoordinatesForAPI = () => {
+    // If manual location is set, use it; otherwise use the service
+    if (manualLocation) {
+      return {
+        latitude: manualLocation.latitude,
+        longitude: manualLocation.longitude,
+      };
+    }
     return locationService.getCoordinatesForAPI();
+  };
+
+  const setManualLocation = (location: { name: string; latitude: number; longitude: number; division?: string }) => {
+    setManualLocationState(location);
+    console.log('LocationProvider: Manual location set:', location);
+  };
+
+  const clearManualLocation = () => {
+    setManualLocationState(null);
+    console.log('LocationProvider: Manual location cleared');
+  };
+
+  const getCurrentLocationInfo = () => {
+    if (manualLocation) {
+      return {
+        name: manualLocation.name,
+        isManual: true,
+        division: manualLocation.division,
+      };
+    }
+    
+    // For GPS location, provide a generic name
+    return {
+      name: 'Current Location',
+      isManual: false,
+    };
   };
 
   const contextValue: LocationContextType = {
     location,
+    manualLocation,
     isLoading,
     isUpdating,
     refreshLocation,
     requestLocationUpdate,
+    setManualLocation,
+    clearManualLocation,
     getCoordinatesForAPI,
+    getCurrentLocationInfo,
     locationAge,
   };
 

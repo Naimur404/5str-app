@@ -402,7 +402,7 @@ export default function BusinessDetailsScreen() {
     });
   };
 
-  const getPriceRangeText = (priceRange: number) => {
+  const getPriceRangeText = (priceRange: number | null | undefined) => {
     const ranges = {
       1: '$',
       2: '$$',
@@ -415,7 +415,8 @@ export default function BusinessDetailsScreen() {
   const getOfferingsTabName = () => {
     if (!business?.category?.name) return 'MENU';
     
-    const categoryName = business.category.name.toLowerCase();
+    const categoryName = business?.category?.name?.toLowerCase();
+    if (!categoryName) return 'MENU';
     
     if (categoryName.includes('restaurant') || categoryName.includes('food') || categoryName.includes('cafe') || categoryName.includes('coffee')) {
       return 'MENU';
@@ -428,8 +429,10 @@ export default function BusinessDetailsScreen() {
     }
   };
 
-  const formatOpeningHours = (hours: Record<string, string>) => {
+  const formatOpeningHours = (hours: Record<string, string> | null | undefined) => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    if (!hours) return days.map(day => ({ day, hours: 'Closed' }));
+    
     return days.map(day => ({
       day,
       hours: hours[day.toLowerCase()] || 'Closed'
@@ -459,7 +462,7 @@ export default function BusinessDetailsScreen() {
               {business?.business_name}
             </Text>
             <Text style={[styles.businessInfoCategory, { color: colors.icon }]}>
-              {business?.category.name} • {business?.subcategory.name}
+              {business?.category?.name} • {business?.subcategory?.name}
             </Text>
             <View style={styles.businessInfoMeta}>
               <View style={styles.businessInfoRating}>
@@ -519,7 +522,7 @@ export default function BusinessDetailsScreen() {
             <View style={styles.contactTextContainer}>
               <Text style={[styles.contactLabel, { color: colors.icon }]}>Website</Text>
               <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
-                {business.website_url}
+                {business?.website_url}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={colors.icon} />
@@ -549,7 +552,7 @@ export default function BusinessDetailsScreen() {
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>About this Business</Text>
           <Text style={[styles.description, { color: colors.text }]}>
-            {business.description}
+            {business?.description}
           </Text>
         </View>
       )}
@@ -559,7 +562,7 @@ export default function BusinessDetailsScreen() {
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
           <View style={styles.hoursContainer}>
-            {formatOpeningHours(business.opening_hours).map((item, index) => (
+            {formatOpeningHours(business?.opening_hours).map((item, index) => (
               <View key={index} style={styles.hourItem}>
                 <Text style={[styles.dayText, { color: colors.text }]}>{item.day}</Text>
                 <Text style={[styles.hoursText, { color: item.hours === 'Closed' ? '#ef4444' : colors.tint }]}>
@@ -825,7 +828,7 @@ export default function BusinessDetailsScreen() {
       {/* Header with Hero Image */}
       <View style={styles.heroSection}>
         <Image 
-          source={{ uri: getImageUrl(business.logo_image?.image_url) || getFallbackImageUrl('business') }} 
+          source={{ uri: getImageUrl(business?.logo_image?.image_url) || getFallbackImageUrl('business') }} 
           style={styles.heroImage} 
         />
         <LinearGradient
@@ -852,18 +855,18 @@ export default function BusinessDetailsScreen() {
           </TouchableOpacity>
 
           <View style={styles.heroContent}>
-            <Text style={styles.businessName}>{business.business_name}</Text>
+            <Text style={styles.businessName}>{business?.business_name}</Text>
             <Text style={styles.businessSubtitle}>
-              {business.category.name} • {business.subcategory.name}
+              {business?.category?.name} • {business?.subcategory?.name}
             </Text>
             <View style={styles.businessMeta}>
               <View style={styles.ratingBadge}>
                 <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={styles.ratingBadgeText}>{business.overall_rating}</Text>
-                <Text style={styles.ratingBadgeText}>({business.total_reviews})</Text>
+                <Text style={styles.ratingBadgeText}>{business?.overall_rating}</Text>
+                <Text style={styles.ratingBadgeText}>({business?.total_reviews})</Text>
               </View>
-              <Text style={styles.priceRange}>{getPriceRangeText(business.price_range)}</Text>
-              {business.is_verified && (
+              <Text style={styles.priceRange}>{getPriceRangeText(business?.price_range)}</Text>
+              {business?.is_verified && (
                 <View style={styles.verifiedBadge}>
                   <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
                   <Text style={styles.verifiedText}>Verified</Text>

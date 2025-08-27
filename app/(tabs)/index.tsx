@@ -29,6 +29,7 @@ import {
 import { HomePageSkeleton } from '@/components/SkeletonLoader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import { LocationHeader } from '@/components/LocationHeader';
 import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -72,7 +73,7 @@ export default function HomeScreen() {
   const searchParams = useLocalSearchParams();
   const { colorScheme } = useTheme();
   const { unreadCount } = useNotifications();
-  const { getCoordinatesForAPI, requestLocationUpdate, location, isUpdating } = useLocation();
+  const { getCoordinatesForAPI, requestLocationUpdate, location, isUpdating, getCurrentLocationInfo } = useLocation();
   const { showSuccess, showToast } = useToastGlobal();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
@@ -136,7 +137,12 @@ export default function HomeScreen() {
 
   // Update location display when location context changes
   useEffect(() => {
-    if (location?.address) {
+    const locationInfo = getCurrentLocationInfo();
+    
+    if (locationInfo.isManual) {
+      // Manual location selected
+      setUserLocation(`${locationInfo.name}${locationInfo.division ? `, ${locationInfo.division}` : ''}`);
+    } else if (location?.address) {
       setUserLocation(location.address);
     } else if (location) {
       // Fallback based on source if no address
@@ -147,8 +153,10 @@ export default function HomeScreen() {
       } else {
         setUserLocation('Chittagong, Bangladesh');
       }
+    } else {
+      setUserLocation('Chittagong, Bangladesh');
     }
-  }, [location]);
+  }, [location, getCurrentLocationInfo]);
 
   // Run main initialization after login check
   useEffect(() => {
@@ -288,58 +296,6 @@ export default function HomeScreen() {
   }, [banners.length, width]);
 
   // Location is now handled by LocationContext - instant, no permission delays!
-
-  const handleChangeLocation = async () => {
-    try {
-      showAlert({
-        type: 'info',
-        title: 'Update Location',
-        message: 'Do you want to update your current location? This will require location permission.',
-        buttons: [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Update Location', 
-            onPress: async () => {
-              try {
-                const result = await requestLocationUpdate();
-                
-                if (result.success) {
-                  showSuccess(result.message);
-                  // Clear home data cache since location changed
-                  await cacheService.clearHomeData();
-                  // Refresh home data with new location
-                  await fetchHomeData();
-                } else {
-                  // Use setTimeout to avoid alert conflict
-                  setTimeout(() => {
-                    showAlert({
-                      type: 'warning',
-                      title: 'Location Update Failed',
-                      message: result.message,
-                      buttons: [{ text: 'OK' }]
-                    });
-                  }, 100);
-                }
-              } catch (error) {
-                console.error('Error updating location:', error);
-                // Use setTimeout to avoid alert conflict
-                setTimeout(() => {
-                  showAlert({
-                    type: 'error',
-                    title: 'Update Failed',
-                    message: 'Failed to update location. Please try again.',
-                    buttons: [{ text: 'OK' }]
-                  });
-                }, 100);
-              }
-            }
-          }
-        ]
-      });
-    } catch (error) {
-      console.error('Error showing location update dialog:', error);
-    }
-  };
 
   const handleNotificationPress = () => {
     if (!isUserAuthenticated) {
@@ -631,7 +587,10 @@ export default function HomeScreen() {
               <Text style={styles.greeting}>
                 {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
               </Text>
-              <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
+              <TouchableOpacity 
+                style={styles.locationContainer} 
+                onPress={() => router.push('/location-selection')}
+              >
                 <Ionicons 
                   name="location" 
                   size={16} 
@@ -691,7 +650,10 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>
               {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
             </Text>
-            <TouchableOpacity style={styles.locationContainer} onPress={handleChangeLocation}>
+            <TouchableOpacity 
+              style={styles.locationContainer} 
+              onPress={() => router.push('/location-selection')}
+            >
               <Ionicons 
                 name="location" 
                 size={16} 
