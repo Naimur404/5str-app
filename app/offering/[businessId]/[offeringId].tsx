@@ -382,7 +382,11 @@ export default function OfferingDetailsScreen() {
         )}
       </View>
 
-      <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollViewContainer} 
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Offering Details Card */}
         <View style={[styles.detailsCard, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Details</Text>
@@ -648,10 +652,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  contentContainer: {
+  scrollViewContainer: {
     flex: 1,
+  },
+  contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 40,
   },
   detailsCard: {
     borderRadius: 12,
