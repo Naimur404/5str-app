@@ -223,16 +223,6 @@ export default function NotificationsScreen() {
     }
   };
 
-  // Test function to simulate new notification
-  const testNewNotification = () => {
-    console.log('Testing new notification popup');
-    // Show the same alert that should appear for real notifications
-    Alert.alert('📢 Test Notification', 'New Order\n\nYour order has been confirmed and is being prepared!', 
-      [{ text: 'OK', style: 'default' }],
-      { cancelable: true }
-    );
-  };
-
   const handleRefresh = async () => {
     await fetchNotifications(1, true);
     await refreshNotifications();
@@ -407,29 +397,9 @@ export default function NotificationsScreen() {
                   </Text>
                 )}
                 
-                {/* Action buttons in current time position */}
+                {/* Action buttons */}
                 {notifications.length > 0 && (
                   <View style={styles.actionButtonsRow}>
-                    {/* Test popup button */}
-                    <TouchableOpacity
-                      style={[styles.headerActionButton, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}
-                      onPress={testNewNotification}
-                    >
-                      <Ionicons name="notifications" size={16} color="white" />
-                      <Text style={styles.headerActionText}>Test</Text>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      style={[styles.headerActionButton, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}
-                      onPress={() => {
-                        console.log('Force refresh notifications');
-                        refreshNotifications();
-                      }}
-                    >
-                      <Ionicons name="refresh" size={16} color="white" />
-                      <Text style={styles.headerActionText}>Refresh</Text>
-                    </TouchableOpacity>
-                    
                     {unreadCount > 0 && (
                       <TouchableOpacity
                         style={[styles.headerActionButton, { backgroundColor: colors.buttonPrimary }]}

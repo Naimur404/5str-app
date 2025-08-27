@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { LocationProvider } from '@/contexts/LocationContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { PushNotificationProvider } from '@/contexts/PushNotificationContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { Colors } from '@/constants/Colors';
 
@@ -121,6 +122,10 @@ function RootLayoutInner() {
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
         }} />
+        <Stack.Screen name="notification-settings" options={{ 
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
@@ -131,13 +136,15 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <CustomThemeProvider>
-      <NotificationProvider>
-        <LocationProvider>
-          <ToastProvider>
-            <RootLayoutInner />
-          </ToastProvider>
-        </LocationProvider>
-      </NotificationProvider>
+      <PushNotificationProvider>
+        <NotificationProvider>
+          <LocationProvider>
+            <ToastProvider>
+              <RootLayoutInner />
+            </ToastProvider>
+          </LocationProvider>
+        </NotificationProvider>
+      </PushNotificationProvider>
     </CustomThemeProvider>
   );
 }

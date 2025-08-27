@@ -21,7 +21,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   const displayCount = count > maxCount ? `${maxCount}+` : count.toString();
   
   const sizeConfig = {
-    small: { minWidth: 16, height: 16, fontSize: 10, borderRadius: 8 },
+    small: { minWidth: 18, height: 18, fontSize: 10, borderRadius: 9 },
     medium: { minWidth: 20, height: 20, fontSize: 11, borderRadius: 10 },
     large: { minWidth: 24, height: 24, fontSize: 12, borderRadius: 12 },
   };

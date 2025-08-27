@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import { useToastGlobal } from '@/contexts/ToastContext';
 
 // Hide development overlays
 if (__DEV__) {
@@ -60,6 +61,7 @@ export default function WriteReviewScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showError, showSuccess, showInfo, hideAlert } = useCustomAlert();
+  const { showSuccess: showToastSuccess, showError: showToastError, showInfo: showToastInfo } = useToastGlobal();
 
   useEffect(() => {
     checkAuthentication();
@@ -217,7 +219,14 @@ export default function WriteReviewScreen() {
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
-        showError('Error', 'Failed to submit review. Please try again.');
+        // Check if it's the "already reviewed" error
+        if (response.message && response.message.includes('already reviewed')) {
+          // Show red toast message for already reviewed error (user stays on page)
+          showToastError('You have already reviewed this item. You can edit your existing review instead.', 4000);
+        } else {
+          // Show alert for other errors
+          showError('Error', response.message || 'Failed to submit review. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error submitting review:', error);
@@ -590,6 +599,8 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingBottom: 20,
     paddingHorizontal: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerContent: {
     flexDirection: 'row',

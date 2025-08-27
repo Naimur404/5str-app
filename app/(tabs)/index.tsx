@@ -964,8 +964,8 @@ const styles = StyleSheet.create({
   },
   badgeContainer: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 6,
+    right: 6,
   },
   searchContainer: {
     marginBottom: 8,
