@@ -37,16 +37,9 @@
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE",
-        "android.permission.WAKE_LOCK",
-        "com.android.alarm.permission.SET_ALARM"
-      ],
-      "notification": {
-        "icon": "./assets/images/icon.png",
-        "color": "#1e3a5f",
-        "defaultChannel": "default"
-      }
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -54,15 +47,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#ffffff",
-          "defaultChannel": "default"
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
