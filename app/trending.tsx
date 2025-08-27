@@ -40,11 +40,11 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
       <View style={styles.serviceImageContainer}>
         <Image
           source={{ 
-            uri: getImageUrl(business.images?.logo) || getFallbackImageUrl('business')
+            uri: getImageUrl(business?.images?.logo) || getFallbackImageUrl('business')
           }}
           style={styles.serviceImage}
         />
-        {business.is_verified && (
+        {business?.is_verified && (
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={16} color="#10b981" />
           </View>
@@ -54,12 +54,12 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
       <View style={styles.serviceContent}>
         <View style={styles.serviceMainInfo}>
           <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={1}>
-            {business.business_name}
+            {business?.business_name || 'Business Name'}
           </Text>
           <Text style={[styles.serviceCategory, { color: colors.icon }]} numberOfLines={1}>
-            {business.category?.name} • {business.subcategory?.name}
+            {business?.category?.name || 'Category'} • {business?.subcategory?.name || 'Subcategory'}
           </Text>
-          {business.area && (
+          {business?.area && (
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={12} color={colors.icon} />
               <Text style={[styles.locationText, { color: colors.icon }]} numberOfLines={1}>
@@ -73,7 +73,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
               <Ionicons name="trending-up" size={10} color="#FFFFFF" />
               <Text style={styles.badgeText}>Trending</Text>
             </View>
-            {business.is_featured && (
+            {business?.is_featured && (
               <View style={[styles.badge, styles.featuredBadge]}>
                 <Ionicons name="star" size={10} color="#FFFFFF" />
                 <Text style={styles.badgeText}>Featured</Text>
@@ -86,7 +86,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
       <View style={styles.serviceActions}>
         <View style={[styles.serviceCountBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
           <Text style={[styles.serviceCountBadgeText, { color: colors.buttonPrimary }]}>
-            #{business.trend_rank || 'N/A'}
+            #{business?.trend_rank || 'N/A'}
           </Text>
         </View>
         <Ionicons 
@@ -117,7 +117,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress, colors }
       <View style={styles.serviceImageContainer}>
         <Image
           source={{ 
-            uri: getImageUrl(offering.image_url) || getFallbackImageUrl('offering')
+            uri: getImageUrl(offering?.image_url) || getFallbackImageUrl('offering')
           }}
           style={styles.serviceImage}
         />
@@ -126,19 +126,19 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress, colors }
       <View style={styles.serviceContent}>
         <View style={styles.serviceMainInfo}>
           <Text style={[styles.serviceName, { color: colors.text }]} numberOfLines={1}>
-            {offering.name}
+            {offering?.name || 'Offering Name'}
           </Text>
           <Text style={[styles.serviceCategory, { color: colors.icon }]} numberOfLines={1}>
-            {offering.business?.business_name}
+            {offering?.business?.business_name || 'Business Name'}
           </Text>
           <Text style={[styles.offeringDescription, { color: colors.icon }]} numberOfLines={1}>
-            {offering.description}
+            {offering?.description || 'No description available'}
           </Text>
           
           <View style={styles.badgeContainer}>
             <View style={[styles.badge, styles.offeringBadge]}>
               <Ionicons name="pricetag" size={10} color="#FFFFFF" />
-              <Text style={styles.badgeText}>{offering.offering_type}</Text>
+              <Text style={styles.badgeText}>{offering?.offering_type || 'Service'}</Text>
             </View>
           </View>
         </View>
@@ -147,7 +147,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress, colors }
       <View style={styles.serviceActions}>
         <View style={[styles.serviceCountBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
           <Text style={[styles.serviceCountBadgeText, { color: colors.buttonPrimary }]}>
-            #{offering.trend_rank || 'N/A'}
+            #{offering?.trend_rank || 'N/A'}
           </Text>
         </View>
         <Ionicons 
@@ -164,7 +164,7 @@ const OfferingCard: React.FC<OfferingCardProps> = ({ offering, onPress, colors }
 export default function TrendingScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { getCoordinatesForAPI } = useLocation();
+  const { location, getCoordinatesForAPI } = useLocation();
   const [trendingBusinesses, setTrendingBusinesses] = useState<TrendingBusiness[]>([]);
   const [trendingOfferings, setTrendingOfferings] = useState<TrendingOffering[]>([]);
   const [allTrendingItems, setAllTrendingItems] = useState<(TrendingBusiness | TrendingOffering)[]>([]);
@@ -194,11 +194,15 @@ export default function TrendingScreen() {
       // Get coordinates from LocationContext (instant, no permission delays!)
       const coordinates = getCoordinatesForAPI();
       
+      if (!coordinates || typeof coordinates.latitude !== 'number' || typeof coordinates.longitude !== 'number') {
+        throw new Error('Invalid coordinates from location service');
+      }
+      
       const response = await getTodayTrending(coordinates.latitude, coordinates.longitude);
       
-      if (response.success) {
-        const businesses = response.data.trending_businesses || [];
-        const offerings = response.data.trending_offerings || [];
+      if (response?.success && response?.data) {
+        const businesses = Array.isArray(response.data.trending_businesses) ? response.data.trending_businesses : [];
+        const offerings = Array.isArray(response.data.trending_offerings) ? response.data.trending_offerings : [];
         
         setTrendingBusinesses(businesses);
         setTrendingOfferings(offerings);
@@ -208,6 +212,7 @@ export default function TrendingScreen() {
         setAllTrendingItems(combined);
         setFilteredItems(combined);
       } else {
+        console.error('API response error:', response);
         Alert.alert('Error', 'Failed to load trending data. Please try again.');
       }
     } catch (error) {
@@ -256,12 +261,31 @@ export default function TrendingScreen() {
   };
 
   const handleItemPress = (item: TrendingBusiness | TrendingOffering) => {
-    if ('business_name' in item) {
-      // Business item
-      router.push(`/business/${item.id}`);
-    } else {
-      // Offering item
-      router.push(`/offering/${item.business.id}/${item.id}`);
+    try {
+      if ('business_name' in item) {
+        // Business item - ensure ID exists
+        if (item?.id) {
+          router.push(`/business/${item.id}`);
+        } else {
+          console.error('Business item missing ID:', item);
+          Alert.alert('Error', 'Unable to view this business. Missing ID.');
+        }
+      } else {
+        // Offering item - ensure both business ID and offering ID exist
+        if (item?.business?.id && item?.id) {
+          router.push(`/offering/${item.business.id}/${item.id}`);
+        } else {
+          console.error('Offering item missing required IDs:', {
+            businessId: item?.business?.id,
+            offeringId: item?.id,
+            item
+          });
+          Alert.alert('Error', 'Unable to view this offering. Missing required information.');
+        }
+      }
+    } catch (error) {
+      console.error('Error navigating to item:', error);
+      Alert.alert('Error', 'Unable to open this item. Please try again.');
     }
   };
 
@@ -382,7 +406,12 @@ export default function TrendingScreen() {
       <FlatList
         data={filteredItems}
         renderItem={renderItem}
-        keyExtractor={(item, index) => `trending-${index}-${item.id}`}
+        keyExtractor={(item, index) => {
+          // Ensure unique keys with proper fallbacks
+          const itemId = item?.id || index;
+          const itemType = 'business_name' in item ? 'business' : 'offering';
+          return `trending-${itemType}-${itemId}-${index}`;
+        }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
         refreshControl={

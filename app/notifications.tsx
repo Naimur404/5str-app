@@ -24,6 +24,7 @@ import {
 import { Notification } from '@/types/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useToastGlobal } from '@/contexts/ToastContext';
 import { Colors } from '@/constants/Colors';
 import { NotificationPageSkeleton } from '@/components/SkeletonLoader';
 import CustomAlert from '@/components/CustomAlert';
@@ -98,7 +99,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           ]}>
             <Ionicons
               name={getIconName(notification.icon)}
-              size={20}
+              size={18}
               color={getColorForNotification(notification.color)}
             />
           </View>
@@ -158,8 +159,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
 export default function NotificationsScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { refreshNotifications, markAsRead, removeNotification, clearAllNotifications } = useNotifications();
+  const { refreshNotifications, markAsRead, removeNotification, clearAllNotifications, newNotifications } = useNotifications();
   const { alertConfig, showConfirm, hideAlert } = useCustomAlert();
+  const { showSuccess, showInfo } = useToastGlobal();
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,6 +173,22 @@ export default function NotificationsScreen() {
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  // Watch for new notifications and show alerts
+  useEffect(() => {
+    if (newNotifications.length > 0) {
+      if (newNotifications.length === 1) {
+        const latestNotif = newNotifications[0];
+        // Create a messenger-style notification
+        const message = latestNotif.body.length > 50 
+          ? `${latestNotif.body.substring(0, 47)}...` 
+          : latestNotif.body;
+        showInfo(`📢 ${latestNotif.title}\n${message}`, 5000);
+      } else {
+        showInfo(`📢 ${newNotifications.length} new notifications received`, 4000);
+      }
+    }
+  }, [newNotifications, showInfo]);
 
   const fetchNotifications = async (pageNum: number = 1, refresh: boolean = false) => {
     try {
@@ -203,6 +221,16 @@ export default function NotificationsScreen() {
       setRefreshing(false);
       setLoadingMore(false);
     }
+  };
+
+  // Test function to simulate new notification
+  const testNewNotification = () => {
+    console.log('Testing new notification popup');
+    // Show the same alert that should appear for real notifications
+    Alert.alert('📢 Test Notification', 'New Order\n\nYour order has been confirmed and is being prepared!', 
+      [{ text: 'OK', style: 'default' }],
+      { cancelable: true }
+    );
   };
 
   const handleRefresh = async () => {
@@ -302,12 +330,21 @@ export default function NotificationsScreen() {
       'Are you sure you want to delete all notifications? This action cannot be undone.',
       async () => {
         try {
-          await deleteAllNotifications();
-          setNotifications([]);
-          clearAllNotifications();
+          console.log('Attempting to clear all notifications...');
+          const response = await deleteAllNotifications();
+          console.log('Clear all notifications response:', response);
+          
+          if (response.success) {
+            setNotifications([]);
+            clearAllNotifications();
+            showSuccess('All clear! Your notifications have been deleted successfully');
+          } else {
+            console.error('Failed to clear notifications:', response);
+            Alert.alert('Error', response.message || 'Failed to clear all notifications');
+          }
         } catch (error) {
           console.error('Error clearing all notifications:', error);
-          Alert.alert('Error', 'Failed to clear all notifications');
+          Alert.alert('Error', 'Failed to clear all notifications. Please try again.');
         }
       }
     );
@@ -373,6 +410,26 @@ export default function NotificationsScreen() {
                 {/* Action buttons in current time position */}
                 {notifications.length > 0 && (
                   <View style={styles.actionButtonsRow}>
+                    {/* Test popup button */}
+                    <TouchableOpacity
+                      style={[styles.headerActionButton, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}
+                      onPress={testNewNotification}
+                    >
+                      <Ionicons name="notifications" size={16} color="white" />
+                      <Text style={styles.headerActionText}>Test</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={[styles.headerActionButton, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}
+                      onPress={() => {
+                        console.log('Force refresh notifications');
+                        refreshNotifications();
+                      }}
+                    >
+                      <Ionicons name="refresh" size={16} color="white" />
+                      <Text style={styles.headerActionText}>Refresh</Text>
+                    </TouchableOpacity>
+                    
                     {unreadCount > 0 && (
                       <TouchableOpacity
                         style={[styles.headerActionButton, { backgroundColor: colors.buttonPrimary }]}
@@ -511,7 +568,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   listContainer: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingBottom: 100,
   },
   emptyContainer: {
@@ -519,41 +576,37 @@ const styles = StyleSheet.create({
   },
   notificationItem: {
     marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 16,
+    marginVertical: 4,
+    borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    // Removed shadow properties for cleaner look
   },
   notificationContent: {
-    padding: 16,
+    padding: 12,
   },
   notificationMain: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   iconContainer: {
     position: 'relative',
-    marginRight: 16,
+    marginRight: 12,
   },
   iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   unreadIndicator: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    top: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     borderWidth: 2,
     borderColor: 'white',
   },
@@ -567,20 +620,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   notificationTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     flex: 1,
     marginRight: 8,
   },
   notificationTime: {
-    fontSize: 12,
+    fontSize: 11,
     opacity: 0.7,
     marginTop: 2,
   },
   notificationMessage: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 8,
     opacity: 0.8,
   },
   statusContainer: {

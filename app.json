@@ -1,23 +1,30 @@
 {
   "expo": {
-    "name": "5srt-app",
-    "slug": "5srt-app",
+    "name": "5str",
+    "slug": "5str-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "5srtapp",
+    "scheme": "5str",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.5str.app"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.x5srtapp"
+      "package": "com.fivestr.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",

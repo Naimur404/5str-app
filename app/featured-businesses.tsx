@@ -21,6 +21,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { FeaturedBusinessesSkeleton } from '@/components/SkeletonLoader';
 
 interface BusinessCardProps {
   business: Business;
@@ -218,126 +219,125 @@ export default function FeaturedBusinessesScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="light" />
       
-      {/* Header */}
-      <LinearGradient
-        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
-        style={styles.header}
-      >
-        <View style={styles.headerContent}>
-          <View style={styles.headerTitleContainer}>
-            <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
-            <Ionicons name="star-outline" size={32} color="white" style={styles.headerIcon} />
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.headerTitle}>Featured Businesses</Text>
-              <Text style={styles.headerSubtitle}>
-                {location 
-                  ? `${businesses.length} featured businesses within ${location.radius_km}km`
-                  : 'Handpicked excellence near you'
+      {loading ? (
+        <FeaturedBusinessesSkeleton colors={colors} />
+      ) : (
+        <>
+          {/* Header */}
+          <LinearGradient
+            colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+            style={styles.header}
+          >
+            <View style={styles.headerContent}>
+              <View style={styles.headerTitleContainer}>
+                <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+                  <Ionicons name="arrow-back" size={24} color="white" />
+                </TouchableOpacity>
+                <Ionicons name="star-outline" size={32} color="white" style={styles.headerIcon} />
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.headerTitle}>Featured Businesses</Text>
+                  <Text style={styles.headerSubtitle}>
+                    {location 
+                      ? `${businesses.length} featured businesses within ${location.radius_km}km`
+                      : 'Handpicked excellence near you'
+                    }
+                  </Text>
+                </View>
+              </View>
+            </View>
+            
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons name="search-outline" size={20} color={colors.icon} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder="Search featured businesses..."
+                  placeholderTextColor={colors.icon}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery ? (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={20} color={colors.icon} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* Location Info */}
+          {location && (
+            <View style={[styles.locationInfo, { backgroundColor: colors.background }]}>
+              <View style={styles.locationRow}>
+                <Ionicons 
+                  name="location-outline" 
+                  size={16} 
+                  color={colors.buttonPrimary} 
+                />
+                <Text style={[styles.locationInfoText, { color: colors.icon }]}>
+                  Your location • {location.radius_km}km radius
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Businesses List */}
+          {filteredBusinesses.length > 0 ? (
+            <FlatList
+              data={filteredBusinesses}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderBusinessItem}
+              contentContainerStyle={styles.businessesList}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.buttonPrimary}
+                />
+              }
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.1}
+              showsVerticalScrollIndicator={false}
+              ListFooterComponent={
+                loadingMore ? (
+                  <View style={styles.loadingMore}>
+                    <ActivityIndicator size="small" color={colors.buttonPrimary} />
+                  </View>
+                ) : null
+              }
+            />
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIconContainer, { backgroundColor: colors.icon + '20' }]}>
+                <Ionicons 
+                  name={searchQuery ? "search-outline" : "star-outline"} 
+                  size={48} 
+                  color={colors.icon} 
+                />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                {searchQuery ? 'No Results Found' : 'No Featured Businesses'}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+                {searchQuery 
+                  ? 'Try adjusting your search terms'
+                  : 'We couldn\'t find any featured businesses in your area.'
                 }
               </Text>
+              {searchQuery && (
+                <TouchableOpacity 
+                  style={[styles.exploreButton, { backgroundColor: colors.buttonPrimary }]}
+                  onPress={() => setSearchQuery('')}
+                >
+                  <Text style={[styles.exploreButtonText, { color: colors.buttonText }]}>
+                    Clear Search
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
-          </View>
-        </View>
-        
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color={colors.icon} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search featured businesses..."
-              placeholderTextColor={colors.icon}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color={colors.icon} />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
-      </LinearGradient>
-
-      {/* Location Info */}
-      {location && (
-        <View style={[styles.locationInfo, { backgroundColor: colors.background }]}>
-          <View style={styles.locationRow}>
-            <Ionicons 
-              name="location-outline" 
-              size={16} 
-              color={colors.buttonPrimary} 
-            />
-            <Text style={[styles.locationInfoText, { color: colors.icon }]}>
-              Your location • {location.radius_km}km radius
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {/* Businesses List */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.buttonPrimary} />
-          <Text style={[styles.loadingText, { color: colors.icon }]}>
-            Loading featured businesses...
-          </Text>
-        </View>
-      ) : filteredBusinesses.length > 0 ? (
-        <FlatList
-          data={filteredBusinesses}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderBusinessItem}
-          contentContainerStyle={styles.businessesList}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.buttonPrimary}
-            />
-          }
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.1}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.loadingMore}>
-                <ActivityIndicator size="small" color={colors.buttonPrimary} />
-              </View>
-            ) : null
-          }
-        />
-      ) : (
-        <View style={styles.emptyState}>
-          <View style={[styles.emptyIconContainer, { backgroundColor: colors.icon + '20' }]}>
-            <Ionicons 
-              name={searchQuery ? "search-outline" : "star-outline"} 
-              size={48} 
-              color={colors.icon} 
-            />
-          </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            {searchQuery ? 'No Results Found' : 'No Featured Businesses'}
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
-            {searchQuery 
-              ? 'Try adjusting your search terms'
-              : 'We couldn\'t find any featured businesses in your area.'
-            }
-          </Text>
-          {searchQuery && (
-            <TouchableOpacity 
-              style={[styles.exploreButton, { backgroundColor: colors.buttonPrimary }]}
-              onPress={() => setSearchQuery('')}
-            >
-              <Text style={[styles.exploreButtonText, { color: colors.buttonText }]}>
-                Clear Search
-              </Text>
-            </TouchableOpacity>
           )}
-        </View>
+        </>
       )}
     </View>
   );

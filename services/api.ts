@@ -1165,5 +1165,8 @@ export const deleteNotification = async (notificationId: string): Promise<Notifi
 export const deleteAllNotifications = async (): Promise<NotificationActionResponse> => {
   return makeApiCall(`${API_CONFIG.ENDPOINTS.NOTIFICATIONS}`, {
     method: 'DELETE',
+    body: JSON.stringify({
+      confirm: true
+    }),
   }, true);
 };

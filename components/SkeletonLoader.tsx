@@ -1698,3 +1698,307 @@ const specialOffersStyles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
+// Featured Businesses Page Skeleton
+export const FeaturedBusinessesSkeleton = React.memo(({ colors }: SkeletonProps) => (
+  <View style={[featuredBusinessesStyles.container, { backgroundColor: colors.background }]}>
+    {/* Header skeleton */}
+    <View style={[featuredBusinessesStyles.headerSkeleton, { backgroundColor: colors.headerGradientStart }]}>
+      <View style={featuredBusinessesStyles.headerContent}>
+        <View style={featuredBusinessesStyles.headerTitleContainer}>
+          <SkeletonBox 
+            width={24} 
+            height={24} 
+            borderRadius={12}
+            backgroundColor="rgba(255,255,255,0.3)" 
+          />
+          <SkeletonBox 
+            width={32} 
+            height={32} 
+            borderRadius={16}
+            backgroundColor="rgba(255,255,255,0.3)" 
+          />
+          <View style={featuredBusinessesStyles.headerTextContainer}>
+            <SkeletonBox 
+              width={180} 
+              height={22} 
+              borderRadius={11}
+              backgroundColor="rgba(255,255,255,0.4)" 
+            />
+            <SkeletonBox 
+              width={250} 
+              height={13} 
+              borderRadius={6}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+          </View>
+        </View>
+      </View>
+      
+      {/* Search Bar skeleton */}
+      <View style={featuredBusinessesStyles.searchContainer}>
+        <View style={featuredBusinessesStyles.searchBar}>
+          <SkeletonBox 
+            width={20} 
+            height={20} 
+            borderRadius={10}
+            backgroundColor={colors.icon + '40'} 
+          />
+          <SkeletonBox 
+            width="70%" 
+            height={15} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '20'} 
+          />
+        </View>
+      </View>
+    </View>
+
+    {/* Location info skeleton */}
+    <View style={[featuredBusinessesStyles.locationInfo, { backgroundColor: colors.background }]}>
+      <SkeletonBox 
+        width={16} 
+        height={16} 
+        borderRadius={8}
+        backgroundColor={colors.buttonPrimary + '40'} 
+      />
+      <SkeletonBox 
+        width={250} 
+        height={14} 
+        borderRadius={7}
+        backgroundColor={colors.icon + '20'} 
+      />
+    </View>
+
+    {/* Business cards skeleton */}
+    <View style={featuredBusinessesStyles.businessList}>
+      {[...Array(6)].map((_, index) => (
+        <View key={index} style={[featuredBusinessesStyles.businessCard, { backgroundColor: colors.card }]}>
+          <View style={featuredBusinessesStyles.businessRow}>
+            {/* Business image skeleton with featured badge */}
+            <View style={featuredBusinessesStyles.businessImageContainer}>
+              <SkeletonBox 
+                width={80} 
+                height={80} 
+                borderRadius={12}
+                backgroundColor={colors.icon + '20'} 
+              />
+              {/* Featured badge skeleton */}
+              <View style={featuredBusinessesStyles.featuredBadge}>
+                <SkeletonBox 
+                  width={12} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor="#FFD700" 
+                />
+              </View>
+            </View>
+            
+            {/* Business content skeleton */}
+            <View style={featuredBusinessesStyles.businessContent}>
+              <View style={featuredBusinessesStyles.businessMainInfo}>
+                <SkeletonBox 
+                  width="85%" 
+                  height={16} 
+                  borderRadius={8}
+                  backgroundColor={colors.icon + '20'} 
+                />
+                <SkeletonBox 
+                  width="60%" 
+                  height={13} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+              
+              <View style={featuredBusinessesStyles.businessMetrics}>
+                <View style={featuredBusinessesStyles.ratingRow}>
+                  <SkeletonBox 
+                    width={12} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor="#FFD700" 
+                  />
+                  <SkeletonBox 
+                    width={30} 
+                    height={13} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '20'} 
+                  />
+                  <SkeletonBox 
+                    width={40} 
+                    height={11} 
+                    borderRadius={5}
+                    backgroundColor={colors.icon + '15'} 
+                  />
+                </View>
+                <SkeletonBox 
+                  width={50} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.buttonPrimary + '40'} 
+                />
+              </View>
+              
+              <View style={featuredBusinessesStyles.locationContainer}>
+                <SkeletonBox 
+                  width={12} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '30'} 
+                />
+                <SkeletonBox 
+                  width="70%" 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+            </View>
+            
+            {/* Business actions skeleton */}
+            <View style={featuredBusinessesStyles.businessActions}>
+              <View style={[featuredBusinessesStyles.priceRangeBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
+                <SkeletonBox 
+                  width={36} 
+                  height={20} 
+                  borderRadius={10}
+                  backgroundColor={colors.buttonPrimary} 
+                />
+              </View>
+              <SkeletonBox 
+                width={20} 
+                height={20} 
+                borderRadius={10}
+                backgroundColor={colors.icon + '30'} 
+              />
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+));
+
+// Additional styles for Featured Businesses skeleton
+const featuredBusinessesStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerSkeleton: {
+    paddingTop: 45,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    height: 165,
+  },
+  headerContent: {
+    marginBottom: 12,
+  },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  searchContainer: {
+    marginBottom: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    gap: 6,
+  },
+  businessList: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  businessCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  businessRow: {
+    flexDirection: 'row',
+    padding: 12,
+    gap: 12,
+  },
+  businessImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    position: 'relative',
+  },
+  featuredBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#FFD700',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  businessContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  businessMainInfo: {
+    gap: 2,
+  },
+  businessMetrics: {
+    gap: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  businessActions: {
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    minHeight: 80,
+    paddingVertical: 4,
+    gap: 8,
+  },
+  priceRangeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    minWidth: 36,
+    alignItems: 'center',
+  },
+});

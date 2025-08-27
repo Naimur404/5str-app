@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { AppState, AppStateStatus, Alert } from 'react-native';
 import { getUnreadNotifications, isAuthenticated } from '@/services/api';
 import { Notification, NotificationStats } from '@/types/api';
 
@@ -14,6 +14,7 @@ interface NotificationContextType {
   removeNotification: (notificationId: string) => void;
   clearAllNotifications: () => void;
   clearError: () => void;
+  newNotifications: Notification[]; // Add this to track new notifications
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -28,8 +29,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newNotifications, setNewNotifications] = useState<Notification[]>([]);
+  const previousNotificationIds = useRef<Set<string>>(new Set());
 
   const refreshNotifications = async () => {
+    console.log('[NotificationContext] refreshNotifications called');
     try {
       const authenticated = await isAuthenticated();
       if (!authenticated) {
@@ -42,12 +46,57 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       setLoading(true);
       setError(null);
+      console.log('[NotificationContext] Fetching notifications...');
       const response = await getUnreadNotifications();
       
       if (response.success) {
-        setNotifications(response.data.notifications);
+        const newNotifications = response.data.notifications;
+        const currentNotificationIds = new Set(newNotifications.map(n => n.id));
+        
+        // Check for new notifications (only if we have previous data)
+        if (previousNotificationIds.current.size > 0) {
+          const newNotifs = newNotifications.filter(notif => 
+            !previousNotificationIds.current.has(notif.id) && !notif.is_read
+          );
+          
+          console.log('[NotificationContext] Previous IDs:', Array.from(previousNotificationIds.current));
+          console.log('[NotificationContext] Current IDs:', Array.from(currentNotificationIds));
+          console.log('[NotificationContext] New notifications found:', newNotifs.length);
+          
+          // Show popup alert for new notifications
+          if (newNotifs.length > 0) {
+            console.log('[NotificationContext] Showing alert for new notifications');
+            if (newNotifs.length === 1) {
+              const latestNotif = newNotifs[0];
+              // Create a messenger-style notification
+              const message = latestNotif.body.length > 80 
+                ? `${latestNotif.body.substring(0, 77)}...` 
+                : latestNotif.body;
+              Alert.alert('📢 New Notification', `${latestNotif.title}\n\n${message}`, 
+                [{ text: 'OK', style: 'default' }],
+                { cancelable: true }
+              );
+            } else {
+              Alert.alert('📢 New Notifications', `You have ${newNotifs.length} new notifications`, 
+                [{ text: 'OK', style: 'default' }],
+                { cancelable: true }
+              );
+            }
+            
+            // Set new notifications for screen-level alerts too
+            setNewNotifications(newNotifs);
+            // Clear after a short delay to prevent showing multiple times
+            setTimeout(() => setNewNotifications([]), 5000);
+          }
+        }
+        
+        // Update state
+        setNotifications(newNotifications);
         setStats(response.data.stats);
         setUnreadCount(response.data.stats.unread_count);
+        
+        // Update previous notification IDs for next comparison
+        previousNotificationIds.current = currentNotificationIds;
       } else {
         setError('Failed to fetch notifications');
         console.error('Failed to fetch notifications');
@@ -109,6 +158,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications([]);
     setUnreadCount(0);
     setStats(null);
+    previousNotificationIds.current.clear();
   };
 
   // Initial load
@@ -116,9 +166,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     refreshNotifications();
   }, []);
 
-  // Refresh notifications every 5 minutes (300 seconds) in background
+  // Refresh notifications every 30 seconds for testing (normally 2 minutes)
   useEffect(() => {
-    const interval = setInterval(refreshNotifications, 300000); // 5 minutes
+    const interval = setInterval(refreshNotifications, 30000); // 30 seconds for testing
     return () => clearInterval(interval);
   }, []);
 
@@ -149,6 +199,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     removeNotification,
     clearAllNotifications,
     clearError,
+    newNotifications,
   };
 
   return (
