@@ -8,10 +8,12 @@ import {
     getOfferingDetails,
     getOfferingReviews,
     getUserFavorites,
+    getUserProfile,
     isAuthenticated,
     Offering,
     removeFromFavorites,
-    Review
+    Review,
+    deleteReview
 } from '@/services/api';
 import { useLocation } from '@/contexts/LocationContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
@@ -26,10 +28,12 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ReviewCard from '@/components/ReviewCard';
+import ProfileAvatar from '@/components/ProfileAvatar';
 import { OfferDetailsSkeleton } from '@/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
@@ -43,6 +47,7 @@ export default function OfferingDetailsScreen() {
   const [favoriteId, setFavoriteId] = useState<number | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -66,6 +71,18 @@ export default function OfferingDetailsScreen() {
       const authenticated = await isAuthenticated();
       setIsUserAuthenticated(authenticated);
       console.log('User authenticated:', authenticated);
+      
+      // Load user profile if authenticated
+      if (authenticated) {
+        try {
+          const userResponse = await getUserProfile();
+          if (userResponse.success) {
+            setCurrentUser(userResponse.data.user);
+          }
+        } catch (error) {
+          console.error('Error loading user profile:', error);
+        }
+      }
       
       // Load offering data (which now includes favorite status)
       loadOfferingData();
@@ -256,6 +273,56 @@ export default function OfferingDetailsScreen() {
           : review
       )
     );
+  };
+
+  const handleEditReview = (reviewId: number) => {
+    router.push(`/reviews/edit/${reviewId}` as any);
+  };
+
+  const handleDeleteReview = (reviewId: number) => {
+    showAlert({
+      type: 'warning',
+      title: 'Delete Review',
+      message: 'Are you sure you want to delete this review? This action cannot be undone.',
+      buttons: [
+        { 
+          text: 'Cancel', 
+          style: 'cancel' 
+        },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => confirmDeleteReview(reviewId)
+        }
+      ]
+    });
+  };
+
+  const confirmDeleteReview = async (reviewId: number) => {
+    try {
+      const response = await deleteReview(reviewId);
+      
+      if (response.success) {
+        // Remove review from local state
+        setReviews(prev => prev.filter(review => review.id !== reviewId));
+        showSuccess('Review deleted successfully');
+      } else {
+        showAlert({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to delete review. Please try again.',
+          buttons: [{ text: 'OK' }]
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      showAlert({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete review. Please try again.',
+        buttons: [{ text: 'OK' }]
+      });
+    }
   };
 
   if (loading) {
@@ -481,12 +548,108 @@ export default function OfferingDetailsScreen() {
           {reviews.length > 0 ? (
             <View>
               {reviews.map((item) => (
-                <ReviewCard
-                  key={item.id}
-                  review={item}
-                  onVoteUpdate={handleVoteUpdate}
-                  flat={true}
-                />
+                <View key={item.id} style={[styles.reviewItem, { backgroundColor: colors.background }]}>
+                  {/* Review Header */}
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.reviewUserInfo}>
+                      <ProfileAvatar
+                        profileImage={item.user.profile_image}
+                        userName={item.user.name}
+                        size={40}
+                        seed={item.user.id.toString()}
+                      />
+                      <View style={styles.userDetails}>
+                        <Text style={[styles.userName, { color: colors.text }]}>{item.user.name}</Text>
+                        <View style={styles.reviewMeta}>
+                          <View style={styles.starRating}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Ionicons
+                                key={star}
+                                name={star <= item.overall_rating ? "star" : "star-outline"}
+                                size={14}
+                                color="#FFD700"
+                              />
+                            ))}
+                          </View>
+                          <Text style={[styles.reviewDate, { color: colors.icon }]}>
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    
+                    {/* Edit/Delete buttons for user's own reviews */}
+                    {isUserAuthenticated && currentUser && item.user.id === currentUser.id && (
+                      <View style={styles.reviewActions}>
+                        <TouchableOpacity
+                          style={[styles.reviewActionButton, { backgroundColor: colors.tint + '15' }]}
+                          onPress={() => handleEditReview(item.id)}
+                        >
+                          <Ionicons name="pencil" size={14} color={colors.tint} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.reviewActionButton, { backgroundColor: '#ef4444' + '15' }]}
+                          onPress={() => handleDeleteReview(item.id)}
+                        >
+                          <Ionicons name="trash" size={14} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Review Title */}
+                  {item.title && (
+                    <Text style={[styles.reviewTitle, { color: colors.text }]}>{item.title}</Text>
+                  )}
+
+                  {/* Review Text */}
+                  <Text style={[styles.reviewText, { color: colors.text }]}>{item.review_text}</Text>
+
+                  {/* Review Images */}
+                  {item.images && item.images.length > 0 && (
+                    <View style={styles.reviewImages}>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
+                        {item.images.map((imageUri: string, index: number) => (
+                          <TouchableOpacity key={index} activeOpacity={0.8}>
+                            <Image
+                              source={{ uri: imageUri }}
+                              style={styles.reviewImage}
+                            />
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+
+                  {/* Review Footer */}
+                  <View style={styles.reviewFooter}>
+                    <View style={styles.reviewTags}>
+                      {item.is_recommended && (
+                        <View style={[styles.recommendedBadge, { backgroundColor: colors.tint + '20' }]}>
+                          <Ionicons name="thumbs-up" size={12} color={colors.tint} />
+                          <Text style={[styles.recommendedText, { color: colors.tint }]}>Recommended</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    <View style={styles.helpfulStats}>
+                      <View style={styles.helpfulItem}>
+                        <Ionicons name="thumbs-up-outline" size={14} color={colors.icon} />
+                        <Text style={[styles.helpfulCount, { color: colors.icon }]}>
+                          {item.helpful_count}
+                        </Text>
+                      </View>
+                      {item.not_helpful_count > 0 && (
+                        <View style={styles.helpfulItem}>
+                          <Ionicons name="thumbs-down-outline" size={14} color={colors.icon} />
+                          <Text style={[styles.helpfulCount, { color: colors.icon }]}>
+                            {item.not_helpful_count}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </View>
               ))}
             </View>
           ) : (
@@ -845,5 +1008,111 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  // Review styles
+  reviewItem: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  reviewUserInfo: {
+    flexDirection: 'row',
+    flex: 1,
+    gap: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  reviewMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  starRating: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewDate: {
+    fontSize: 12,
+  },
+  reviewActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  reviewActionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  reviewText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  reviewImages: {
+    marginBottom: 12,
+  },
+  imagesScroll: {
+    marginHorizontal: -4,
+  },
+  reviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  reviewFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  reviewTags: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  recommendedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  recommendedText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  helpfulStats: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  helpfulItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  helpfulCount: {
+    fontSize: 12,
   },
 });

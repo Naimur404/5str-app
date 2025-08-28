@@ -2145,3 +2145,141 @@ export const TopServicesSkeleton = React.memo(({ colors }: SkeletonProps) => (
     ))}
   </View>
 ));
+
+export const ReviewFormSkeleton = React.memo(({ colors }: SkeletonProps) => (
+  <View style={{ backgroundColor: colors.background, flex: 1 }}>
+    {/* Header Section */}
+    <View style={{ 
+      height: 200,
+      backgroundColor: colors.card,
+      paddingTop: 50,
+      paddingHorizontal: 20,
+      paddingBottom: 20,
+      justifyContent: 'space-between'
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <SkeletonBox 
+          width={24} 
+          height={24} 
+          borderRadius={12}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <SkeletonBox 
+          width="60%" 
+          height={24} 
+          borderRadius={6}
+          backgroundColor={colors.icon + '20'} 
+        />
+      </View>
+      
+      <View style={{ alignItems: 'center', gap: 8 }}>
+        <SkeletonBox 
+          width="80%" 
+          height={20} 
+          borderRadius={6}
+          backgroundColor={colors.icon + '15'} 
+        />
+        <SkeletonBox 
+          width="60%" 
+          height={16} 
+          borderRadius={4}
+          backgroundColor={colors.icon + '15'} 
+        />
+      </View>
+    </View>
+
+    {/* Form Content */}
+    <View style={{ flex: 1, padding: 20, gap: 24 }}>
+      {/* Rating Section */}
+      <View style={{ gap: 12 }}>
+        <SkeletonBox 
+          width="40%" 
+          height={18} 
+          borderRadius={4}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center' }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <SkeletonBox 
+              key={i}
+              width={32} 
+              height={32} 
+              borderRadius={16}
+              backgroundColor={colors.icon + '15'} 
+            />
+          ))}
+        </View>
+      </View>
+
+      {/* Detailed Ratings */}
+      {['Service', 'Quality', 'Value'].map((label, index) => (
+        <View key={index} style={{ gap: 8 }}>
+          <SkeletonBox 
+            width="30%" 
+            height={16} 
+            borderRadius={4}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <SkeletonBox 
+                key={i}
+                width={24} 
+                height={24} 
+                borderRadius={12}
+                backgroundColor={colors.icon + '15'} 
+              />
+            ))}
+          </View>
+        </View>
+      ))}
+
+      {/* Text Input Fields */}
+      <View style={{ gap: 12 }}>
+        <SkeletonBox 
+          width="25%" 
+          height={16} 
+          borderRadius={4}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <SkeletonBox 
+          width="100%" 
+          height={40} 
+          borderRadius={8}
+          backgroundColor={colors.icon + '10'} 
+        />
+      </View>
+
+      <View style={{ gap: 12 }}>
+        <SkeletonBox 
+          width="35%" 
+          height={16} 
+          borderRadius={4}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <SkeletonBox 
+          width="100%" 
+          height={100} 
+          borderRadius={8}
+          backgroundColor={colors.icon + '10'} 
+        />
+      </View>
+
+      {/* Action Buttons */}
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+        <SkeletonBox 
+          width="48%" 
+          height={48} 
+          borderRadius={24}
+          backgroundColor={colors.icon + '15'} 
+        />
+        <SkeletonBox 
+          width="48%" 
+          height={48} 
+          borderRadius={24}
+          backgroundColor={colors.icon + '20'} 
+        />
+      </View>
+    </View>
+  </View>
+));

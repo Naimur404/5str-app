@@ -25,6 +25,7 @@ import {
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import { ReviewFormSkeleton } from '@/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -220,11 +221,11 @@ export default function EditReviewScreen() {
       const response = await updateReview(reviewId, updateData);
       
       if (response.success) {
-        showSuccess(
-          'Success',
-          response.message,
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        showToastSuccess('Review updated successfully!');
+        // Navigate back after showing success
+        setTimeout(() => {
+          router.back();
+        }, 1000);
       } else {
         showError('Error', response.message || 'Failed to update review. Please try again.');
       }
@@ -239,13 +240,8 @@ export default function EditReviewScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style="dark" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>
-            Loading review...
-          </Text>
-        </View>
+        <StatusBar style="light" backgroundColor="transparent" translucent={true} />
+        <ReviewFormSkeleton colors={colors} />
       </View>
     );
   }
