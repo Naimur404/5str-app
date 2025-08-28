@@ -10,6 +10,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,14 +28,16 @@ import { useLocation } from '@/contexts/LocationContext';
 export default function SearchScreen() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { getCoordinatesForAPI } = useLocation();
+  const { getCoordinatesForAPI, getCurrentLocationInfo, location, manualLocation } = useLocation();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResponse['data'] | null>(null);
   const [loading, setLoading] = useState(false);
   const [showMinCharsMessage, setShowMinCharsMessage] = useState(false);
+  const [searchWholeBangladesh, setSearchWholeBangladesh] = useState(false);
   
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toggleAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     return () => {
@@ -81,13 +84,21 @@ export default function SearchScreen() {
       return;
     }
 
-    console.log('Starting API search for:', query);
+    console.log('Starting API search for:', query, 'Whole Bangladesh:', searchWholeBangladesh);
     setLoading(true);
 
     try {
-      const coordinates = getCoordinatesForAPI();
-      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?q=${encodeURIComponent(query)}&type=all&latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&sort=rating&limit=10`;
-      console.log('Search URL:', url);
+      const baseParams = `q=${encodeURIComponent(query)}&type=all&sort=rating&limit=10`;
+      let url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?${baseParams}`;
+      
+      // Only add coordinates if not searching whole Bangladesh
+      if (!searchWholeBangladesh) {
+        const coordinates = getCoordinatesForAPI();
+        url += `&latitude=${coordinates.latitude}&longitude=${coordinates.longitude}`;
+        console.log('Search URL (with location):', url);
+      } else {
+        console.log('Search URL (whole Bangladesh):', url);
+      }
       
       const data: SearchResponse = await fetchWithJsonValidation(url);
       console.log('Search API response:', data);
@@ -117,6 +128,51 @@ export default function SearchScreen() {
     setSearchResults(null);
     setLoading(false);
     setShowMinCharsMessage(false);
+  };
+
+  const handleLocationToggle = () => {
+    const newValue = !searchWholeBangladesh;
+    setSearchWholeBangladesh(newValue);
+    
+    // Animate toggle
+    Animated.timing(toggleAnimation, {
+      toValue: newValue ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+    
+    // If there's an active search query, re-trigger the search with new location setting
+    if (searchQuery.length >= 2) {
+      setLoading(true);
+      // Clear existing timeout
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+      // Trigger new search with updated location setting
+      searchTimeout.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 300);
+    }
+  };
+
+  const getDetailedLocationInfo = () => {
+    const locationInfo = getCurrentLocationInfo();
+    
+    if (manualLocation) {
+      // Manual location selected
+      return manualLocation.division 
+        ? `${manualLocation.name}, ${manualLocation.division}`
+        : manualLocation.name;
+    } else if (location && location.address) {
+      // GPS location with address
+      return location.address;
+    } else if (locationInfo.name !== 'Current Location') {
+      // Fallback to location context name
+      return locationInfo.name;
+    } else {
+      // Default fallback
+      return "Current Location";
+    }
   };
 
   const renderBusinessItem = ({ item }: { item: Business }) => {
@@ -263,6 +319,67 @@ export default function SearchScreen() {
           </View>
         </View>
       </LinearGradient>
+
+      {/* Location Search Scope */}
+      <View style={[styles.locationSection, { backgroundColor: colors.background }]}>
+        <View style={[styles.locationCard, { backgroundColor: colors.card }]}>
+          <View style={styles.locationHeader}>
+            <View style={styles.locationIconContainer}>
+              <Ionicons 
+                name={searchWholeBangladesh ? "globe" : "location"} 
+                size={20} 
+                color={searchWholeBangladesh ? "#10B981" : colors.tint} 
+              />
+            </View>
+            <View style={styles.locationTextContainer}>
+              <Text style={[styles.locationTitle, { color: colors.text }]}>
+                Search Location
+              </Text>
+              <Text style={[styles.locationSubtitle, { color: colors.icon }]}>
+                {searchWholeBangladesh ? "All of Bangladesh" : getDetailedLocationInfo()}
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={[styles.modernToggle, { 
+                backgroundColor: searchWholeBangladesh ? "#10B981" : colors.border 
+              }]}
+              onPress={handleLocationToggle}
+              activeOpacity={0.8}
+            >
+              <Animated.View style={[
+                styles.modernToggleThumb, 
+                { 
+                  backgroundColor: colors.card,
+                  transform: [{ 
+                    translateX: toggleAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [3, 27]
+                    })
+                  }]
+                }
+              ]} />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Location Details */}
+          <View style={styles.locationDetails}>
+            <View style={[styles.scopeIndicator, { 
+              backgroundColor: searchWholeBangladesh ? "#F0FDF4" : colors.tint + "10" 
+            }]}>
+              <Ionicons 
+                name={searchWholeBangladesh ? "earth" : "navigate-circle"} 
+                size={14} 
+                color={searchWholeBangladesh ? "#10B981" : colors.tint} 
+              />
+              <Text style={[styles.scopeText, { 
+                color: searchWholeBangladesh ? "#10B981" : colors.tint 
+              }]}>
+                {searchWholeBangladesh ? "National search active" : "Local search active"}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
 
       {/* Content */}
       <ScrollView style={styles.content}>
@@ -669,6 +786,124 @@ const styles = StyleSheet.create({
   },
   chevronContainer: {
     padding: 4,
+  },
+  locationToggle: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  locationToggleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  locationLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  toggleButton: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  toggleIndicator: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    position: 'absolute',
+  },
+  toggleHint: {
+    fontSize: 12,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  locationSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  locationCard: {
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  locationIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  locationTextContainer: {
+    flex: 1,
+  },
+  locationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  locationSubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  modernToggle: {
+    width: 52,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    padding: 2,
+  },
+  modernToggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  locationDetails: {
+    marginTop: 8,
+  },
+  scopeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  scopeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
   },
 });
 

@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   locationInfo: {
-    marginTop: 16,
+    marginTop: 8,
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
