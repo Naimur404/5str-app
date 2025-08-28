@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, Animated } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -8,37 +8,33 @@ interface SkeletonProps {
   visible?: boolean;
 }
 
-// Optimized skeleton box component with memoization
+// Optimized skeleton box component with smooth shimmer animation
 const SkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundColor }: {
   width: number | string;
   height: number;
   borderRadius?: number;
   backgroundColor: string;
 }) => {
-  const animatedValue = React.useRef(new Animated.Value(0)).current;
+  const shimmerAnimation = React.useRef(new Animated.Value(0)).current;
   const animationRef = React.useRef<Animated.CompositeAnimation | null>(null);
 
   React.useEffect(() => {
-    const animate = () => {
+    const startShimmer = () => {
+      shimmerAnimation.setValue(0);
       animationRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(animatedValue, {
-            toValue: 1,
-            duration: 600, // Faster animation for better perceived performance
-            useNativeDriver: true, // Use native driver for better performance
-          }),
-          Animated.timing(animatedValue, {
-            toValue: 0,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ])
+        Animated.timing(shimmerAnimation, {
+          toValue: 1,
+          duration: 1500, // Longer duration for smoother effect
+          easing: Easing.bezier(0.4, 0.0, 0.6, 1.0), // Smooth easing curve
+          useNativeDriver: true,
+        }),
+        { iterations: -1 }
       );
       
       animationRef.current.start();
     };
     
-    animate();
+    startShimmer();
 
     // Cleanup function
     return () => {
@@ -46,11 +42,12 @@ const SkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundCol
         animationRef.current.stop();
       }
     };
-  }, [animatedValue]);
+  }, [shimmerAnimation]);
 
-  const opacity = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.7],
+  // Create a smooth shimmer effect with sin wave
+  const opacity = shimmerAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.4, 0.8, 0.4], // Smooth wave transition
   });
 
   return (
@@ -468,7 +465,70 @@ export const HomePageSkeleton = React.memo(({ colors }: SkeletonProps) => (
   </View>
 ));
 
-// Favourites Page Skeleton
+// Staggered skeleton box for smoother animation waves
+const StaggeredSkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundColor, delay = 0 }: {
+  width: number | string;
+  height: number;
+  borderRadius?: number;
+  backgroundColor: string;
+  delay?: number;
+}) => {
+  const shimmerAnimation = React.useRef(new Animated.Value(0)).current;
+  const animationRef = React.useRef<Animated.CompositeAnimation | null>(null);
+
+  React.useEffect(() => {
+    const startShimmer = () => {
+      shimmerAnimation.setValue(0);
+      
+      // Add initial delay before starting the animation
+      const delayedAnimation = Animated.sequence([
+        Animated.delay(delay),
+        Animated.loop(
+          Animated.timing(shimmerAnimation, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.bezier(0.4, 0.0, 0.6, 1.0), // Smooth easing
+            useNativeDriver: true,
+          }),
+          { iterations: -1 }
+        )
+      ]);
+      
+      animationRef.current = delayedAnimation;
+      animationRef.current.start();
+    };
+    
+    startShimmer();
+
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+      }
+    };
+  }, [shimmerAnimation, delay]);
+
+  const opacity = shimmerAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.4, 0.8, 0.4],
+  });
+
+  return (
+    <Animated.View 
+      style={[
+        styles.skeletonBox, 
+        { 
+          width: width as any, 
+          height, 
+          borderRadius, 
+          backgroundColor,
+          opacity 
+        }
+      ]} 
+    />
+  );
+});
+
+// Favourites Page Skeleton with improved smooth animation
 export const FavouritesPageSkeleton = ({ colors }: SkeletonProps) => (
   <View style={styles.contentSkeleton}>
     {/* Filter buttons skeleton */}

@@ -1170,3 +1170,65 @@ export const deleteAllNotifications = async (): Promise<NotificationActionRespon
     }),
   }, true);
 };
+
+// Location Recommendations API Functions
+export interface LocationRecommendation {
+  id: number;
+  business_name: string;
+  slug: string;
+  phone: string | null;
+  landmark: string | null;
+  latitude: string;
+  longitude: string;
+  distance_km: number;
+  overall_rating: string;
+  total_reviews: number;
+  price_range: number;
+  is_featured: boolean;
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+    icon_image: string;
+    color_code: string;
+  };
+  subcategory: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  logo_image: string;
+  area_relevance_score: number;
+  recommendation_reason: string;
+}
+
+export interface LocationRecommendationsResponse {
+  success: boolean;
+  data: {
+    user_location: {
+      specific_area: string;
+      coordinates: {
+        latitude: string;
+        longitude: string;
+      };
+      precision_level: string;
+    };
+    recommendations: LocationRecommendation[];
+    metadata: {
+      total_found: number;
+      search_radius_km: number;
+      area_based_scoring: boolean;
+    };
+  };
+}
+
+export const getLocationRecommendations = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15
+): Promise<LocationRecommendationsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.LOCATION_RECOMMENDATIONS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}`;
+  // Send token if available for personalized recommendations
+  return makeApiCall(url, {}, false);
+};

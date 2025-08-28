@@ -343,6 +343,10 @@ export default function HomeScreen() {
     router.push('/notifications');
   };
 
+  const handleRecommendationsPress = () => {
+    router.push('/recommendations');
+  };
+
   const fetchHomeData = async () => {
     try {
       // Get coordinates from LocationContext (instant, no permission delays!)
@@ -684,14 +688,19 @@ export default function HomeScreen() {
                 <Text style={styles.changeLocation}>Change</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
-              <Ionicons name="notifications-outline" size={24} color="white" />
-              {isUserAuthenticated && unreadCount > 0 && (
-                <View style={styles.badgeContainer}>
-                  <NotificationBadge count={unreadCount} size="small" />
-                </View>
-              )}
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity style={styles.recommendationsButton} onPress={handleRecommendationsPress}>
+                <Ionicons name="compass-outline" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
+                <Ionicons name="notifications-outline" size={24} color="white" />
+                {isUserAuthenticated && unreadCount > 0 && (
+                  <View style={styles.badgeContainer}>
+                    <NotificationBadge count={unreadCount} size="small" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Search Bar */}
@@ -812,6 +821,30 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+
+        {/* Recommendations Quick Access */}
+        <View style={styles.section}>
+          <TouchableOpacity 
+            style={[styles.recommendationsBanner, { backgroundColor: colors.card }]}
+            onPress={handleRecommendationsPress}
+            activeOpacity={0.7}
+          >
+            <View style={styles.recommendationsBannerContent}>
+              <View style={[styles.recommendationsIcon, { backgroundColor: colors.tint }]}>
+                <Ionicons name="compass" size={16} color="white" />
+              </View>
+              <View style={styles.recommendationsText}>
+                <Text style={[styles.recommendationsTitle, { color: colors.text }]}>
+                  Discover Places for You
+                </Text>
+                <Text style={[styles.recommendationsSubtitle, { color: colors.icon }]}>
+                  Personalized recommendations based on your location
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tint} />
+            </View>
+          </TouchableOpacity>
+        </View>
 
         {/* Top Services */}
         {homeData?.top_services && (
@@ -1004,6 +1037,44 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8,
     position: 'relative',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  recommendationsButton: {
+    padding: 8,
+  },
+  recommendationsBanner: {
+    marginHorizontal: 16,
+    marginVertical: 4,
+    borderRadius: 12,
+    padding: 12,
+  },
+  recommendationsBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  recommendationsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recommendationsText: {
+    flex: 1,
+  },
+  recommendationsTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  recommendationsSubtitle: {
+    fontSize: 12,
+    opacity: 0.7,
   },
   badgeContainer: {
     position: 'absolute',
