@@ -15,10 +15,14 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    Image,
+    Alert,
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 // Hide development overlays
 if (__DEV__) {
@@ -50,6 +54,8 @@ export default function WriteReviewScreen() {
   const [visitDate, setVisitDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [userAuthenticated, setUserAuthenticated] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [imagePickerLoading, setImagePickerLoading] = useState(false);
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -161,6 +167,121 @@ export default function WriteReviewScreen() {
     }
   };
 
+  const pickImages = async () => {
+    if (images.length >= 5) {
+      showError('Error', 'You can upload maximum 5 images');
+      return;
+    }
+
+    try {
+      // Request permission
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        showError('Permission Required', 'Please allow access to your photo library to upload images');
+        return;
+      }
+
+      setImagePickerLoading(true);
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        
+        // Check file size (max 5MB)
+        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+        if (fileInfo.exists && fileInfo.size && fileInfo.size > 5 * 1024 * 1024) {
+          showError('Error', 'Image size must be less than 5MB');
+          return;
+        }
+
+        // Convert to base64
+        const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Add data URL prefix
+        const mimeType = asset.uri.toLowerCase().includes('.png') ? 'image/png' : 'image/jpeg';
+        const base64Image = `data:${mimeType};base64,${base64}`;
+
+        setImages(prev => [...prev, base64Image]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      showError('Error', 'Failed to pick image. Please try again.');
+    } finally {
+      setImagePickerLoading(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    if (images.length >= 5) {
+      showError('Error', 'You can upload maximum 5 images');
+      return;
+    }
+
+    try {
+      // Request permission
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        showError('Permission Required', 'Please allow camera access to take photos');
+        return;
+      }
+
+      setImagePickerLoading(true);
+
+      // Launch camera
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        
+        // Convert to base64
+        const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Add data URL prefix
+        const base64Image = `data:image/jpeg;base64,${base64}`;
+        setImages(prev => [...prev, base64Image]);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      showError('Error', 'Failed to take photo. Please try again.');
+    } finally {
+      setImagePickerLoading(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Add Photo',
+      'Choose how you want to add a photo',
+      [
+        { text: 'Camera', onPress: takePhoto },
+        { text: 'Photo Library', onPress: pickImages },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
   const validateForm = () => {
     if (rating === 0) {
       showError('Error', 'Please provide an overall rating');
@@ -209,6 +330,11 @@ export default function WriteReviewScreen() {
       const validCons = cons.filter(con => con.trim().length > 0);
       if (validPros.length > 0) reviewData.pros = validPros;
       if (validCons.length > 0) reviewData.cons = validCons;
+
+      // Add images if any
+      if (images.length > 0) {
+        reviewData.images = images;
+      }
 
       const response = await submitReview(reviewData);
       
@@ -372,6 +498,58 @@ export default function WriteReviewScreen() {
               />
             </View>
           </View>
+        </View>
+
+        {/* Photos Card */}
+        <View style={[styles.photosCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Photos (Optional)</Text>
+          <Text style={[styles.photosDescription, { color: colors.icon }]}>
+            Add up to 5 photos to help others understand your experience better
+          </Text>
+          
+          {/* Images Preview */}
+          {images.length > 0 && (
+            <View style={styles.imagesPreview}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScrollView}>
+                {images.map((imageUri, index) => (
+                  <View key={index} style={styles.imagePreviewContainer}>
+                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                    <TouchableOpacity 
+                      style={styles.removeImageButton}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close-circle" size={24} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Add Photo Button */}
+          {images.length < 5 && (
+            <TouchableOpacity
+              style={[styles.addPhotoButton, { borderColor: colors.icon }]}
+              onPress={showImageOptions}
+              disabled={imagePickerLoading}
+            >
+              {imagePickerLoading ? (
+                <ActivityIndicator size="small" color={colors.tint} />
+              ) : (
+                <>
+                  <View style={[styles.addPhotoIcon, { backgroundColor: colors.tint + '20' }]}>
+                    <Ionicons name="camera" size={24} color={colors.tint} />
+                  </View>
+                  <Text style={[styles.addPhotoText, { color: colors.text }]}>
+                    Add Photo ({images.length}/5)
+                  </Text>
+                  <Text style={[styles.addPhotoSubtext, { color: colors.icon }]}>
+                    Tap to choose from gallery or take a photo
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Pros & Cons Card */}
@@ -937,5 +1115,77 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+
+  // Photos Card
+  photosCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  photosDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  imagesPreview: {
+    marginBottom: 16,
+  },
+  imagesScrollView: {
+    paddingVertical: 8,
+  },
+  imagePreviewContainer: {
+    marginRight: 12,
+    position: 'relative',
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  addPhotoButton: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(99, 102, 241, 0.02)',
+    minHeight: 120,
+  },
+  addPhotoIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addPhotoText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  addPhotoSubtext: {
+    fontSize: 12,
+    textAlign: 'center',
   },
 });

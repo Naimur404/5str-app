@@ -98,7 +98,7 @@ export interface SubmitReviewRequest {
   party_size?: number;
   is_recommended?: boolean;
   is_verified_visit?: boolean;
-  images?: any[]; // Will handle image upload separately
+  images?: string[]; // Base64 encoded images with data URL prefix
 }
 
 export interface SubmitReviewResponse {
