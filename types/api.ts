@@ -410,3 +410,106 @@ export interface NotificationActionResponse {
   success: boolean;
   message?: string;
 }
+
+// Collection types
+export interface Collection {
+  id: number;
+  name: string;
+  description: string;
+  is_public: boolean;
+  cover_image: string | null;
+  slug: string;
+  businesses_count: number;
+  followers_count: number;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: number;
+    name: string;
+    profile_image?: string | null;
+  };
+  businesses?: CollectionBusiness[];
+  is_following?: boolean; // For authenticated users
+  can_edit?: boolean; // If current user owns this collection
+}
+
+export interface CollectionBusiness {
+  id: number;
+  name: string;
+  phone: string;
+  address: string;
+  image_url: string | null;
+  rating?: number;
+  category_name?: string;
+  notes?: string; // User's personal notes about the business
+  sort_order?: number;
+  added_at?: string;
+}
+
+export interface CollectionItem {
+  id: number;
+  collection_id: number;
+  business_id: number;
+  notes: string | null;
+  sort_order: number;
+  added_at: string;
+  business: CollectionBusiness;
+}
+
+// Collection API Request types
+export interface CreateCollectionRequest {
+  name: string;
+  description: string;
+  is_public: boolean;
+  cover_image?: string;
+}
+
+export interface UpdateCollectionRequest extends CreateCollectionRequest {}
+
+export interface AddBusinessToCollectionRequest {
+  business_id: number;
+  notes?: string;
+  sort_order?: number;
+}
+
+// Collection API Response types
+export interface CollectionsResponse {
+  success: boolean;
+  data: {
+    collections: Collection[];
+  };
+}
+
+export interface CollectionResponse {
+  success: boolean;
+  data: {
+    collection: Collection;
+  };
+}
+
+export interface CollectionItemResponse {
+  success: boolean;
+  message: string;
+  data: {
+    collection_item: CollectionItem;
+  };
+}
+
+export interface CollectionActionResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface PopularCollectionsResponse {
+  success: boolean;
+  data: {
+    collections: Collection[];
+  };
+}
+
+export interface SearchCollectionsResponse {
+  success: boolean;
+  data: {
+    collections: Collection[];
+  };
+}

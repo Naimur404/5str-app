@@ -146,6 +146,35 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="collections"
+        options={{
+          title: 'Collections',
+          sceneStyle: { backgroundColor: colors.background },
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              transform: [{ scale: focused ? 1.1 : 1 }],
+            }}>
+              <Ionicons 
+                name={focused ? 'albums' : 'albums-outline'} 
+                size={focused ? 26 : 24} 
+                color={color} 
+              />
+              {focused && (
+                <View style={{
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: color,
+                  marginTop: 2,
+                }} />
+              )}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',

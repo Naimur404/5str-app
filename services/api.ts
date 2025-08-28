@@ -1,6 +1,22 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TopService, CategoriesResponse, TodayTrendingResponse, NotificationsResponse, NotificationActionResponse } from '../types/api';
+import { 
+  TopService, 
+  CategoriesResponse, 
+  TodayTrendingResponse, 
+  NotificationsResponse, 
+  NotificationActionResponse,
+  Collection,
+  CollectionsResponse,
+  CollectionResponse,
+  CreateCollectionRequest,
+  UpdateCollectionRequest,
+  AddBusinessToCollectionRequest,
+  CollectionItemResponse,
+  CollectionActionResponse,
+  PopularCollectionsResponse,
+  SearchCollectionsResponse
+} from '../types/api';
 
 /**
  * API Service with Smart Authentication
@@ -1335,5 +1351,87 @@ export const getLocationRecommendations = async (
 ): Promise<LocationRecommendationsResponse> => {
   const url = `${API_CONFIG.ENDPOINTS.LOCATION_RECOMMENDATIONS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}`;
   // Send token if available for personalized recommendations
+  return makeApiCall(url, {}, false);
+};
+
+// Collection API Functions
+
+// Get user's collections
+export const getUserCollections = async (): Promise<CollectionsResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.COLLECTIONS, {}, true);
+};
+
+// Create a new collection
+export const createCollection = async (collectionData: CreateCollectionRequest): Promise<CollectionResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.COLLECTIONS, {
+    method: 'POST',
+    body: JSON.stringify(collectionData),
+  }, true);
+};
+
+// Get collection details
+export const getCollectionDetails = async (collectionId: number): Promise<CollectionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTIONS}/${collectionId}`, {}, false);
+};
+
+// Update collection
+export const updateCollection = async (collectionId: number, collectionData: UpdateCollectionRequest): Promise<CollectionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTIONS}/${collectionId}`, {
+    method: 'PUT',
+    body: JSON.stringify(collectionData),
+  }, true);
+};
+
+// Delete collection
+export const deleteCollection = async (collectionId: number): Promise<CollectionActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTIONS}/${collectionId}`, {
+    method: 'DELETE',
+  }, true);
+};
+
+// Add business to collection
+export const addBusinessToCollection = async (
+  collectionId: number, 
+  businessData: AddBusinessToCollectionRequest
+): Promise<CollectionItemResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTIONS}/${collectionId}/businesses`, {
+    method: 'POST',
+    body: JSON.stringify(businessData),
+  }, true);
+};
+
+// Remove business from collection
+export const removeBusinessFromCollection = async (
+  collectionId: number, 
+  businessId: number
+): Promise<CollectionActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTIONS}/${collectionId}/businesses/${businessId}`, {
+    method: 'DELETE',
+  }, true);
+};
+
+// Follow a collection
+export const followCollection = async (collectionId: number): Promise<CollectionActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTION_FOLLOW}/${collectionId}/follow`, {
+    method: 'POST',
+  }, true);
+};
+
+// Unfollow a collection
+export const unfollowCollection = async (collectionId: number): Promise<CollectionActionResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.COLLECTION_FOLLOW}/${collectionId}/follow`, {
+    method: 'DELETE',
+  }, true);
+};
+
+// Get popular collections
+export const getPopularCollections = async (limit: number = 10): Promise<PopularCollectionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.POPULAR_COLLECTIONS}?limit=${limit}`;
+  return makeApiCall(url, {}, false);
+};
+
+// Search collections
+export const searchCollections = async (query: string, limit: number = 10): Promise<SearchCollectionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.SEARCH_COLLECTIONS}?query=${encodeURIComponent(query)}&limit=${limit}`;
   return makeApiCall(url, {}, false);
 };

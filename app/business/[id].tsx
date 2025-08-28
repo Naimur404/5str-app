@@ -15,7 +15,9 @@ import {
     removeFromFavorites,
     Review,
     getAuthToken,
-    deleteReview
+    deleteReview,
+    getUserCollections,
+    addBusinessToCollection
 } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,6 +44,7 @@ import CustomAlert from '@/components/CustomAlert';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import * as Location from 'expo-location';
 import { useLocation } from '@/contexts/LocationContext';
+import AddToCollectionModal from '@/components/AddToCollectionModal';
 
 const { width } = Dimensions.get('window');
 
@@ -61,6 +64,7 @@ export default function BusinessDetailsScreen() {
   const [offeringFavorites, setOfferingFavorites] = useState<{[key: number]: {isFavorite: boolean, favoriteId: number | null}}>({});
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showCollectionModal, setShowCollectionModal] = useState(false);
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -1071,6 +1075,18 @@ export default function BusinessDetailsScreen() {
           </View>
           <Text style={[styles.actionLabel, { color: colors.text }]}>Review</Text>
         </TouchableOpacity>
+
+        {isUserAuthenticated && (
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => setShowCollectionModal(true)}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#9C27B0' }]}>
+              <Ionicons name="albums" size={16} color="white" />
+            </View>
+            <Text style={[styles.actionLabel, { color: colors.text }]}>Save</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Modern Tab Navigation */}
@@ -1140,6 +1156,26 @@ export default function BusinessDetailsScreen() {
       >
         {renderTabContent()}
       </ScrollView>
+
+      {/* Add to Collection Modal */}
+      <AddToCollectionModal
+        visible={showCollectionModal}
+        onClose={() => setShowCollectionModal(false)}
+        businessId={businessId}
+        businessName={business?.business_name || ''}
+        onSuccess={(message) => {
+          showSuccess(message);
+          setShowCollectionModal(false);
+        }}
+        onError={(message) => {
+          showAlert({
+            type: 'error',
+            title: 'Error',
+            message,
+            buttons: [{ text: 'OK' }]
+          });
+        }}
+      />
 
       <CustomAlert
         visible={alertConfig.visible}

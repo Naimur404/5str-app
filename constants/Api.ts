@@ -31,6 +31,10 @@ export const API_CONFIG = {
     OFFER_DETAILS: '/api/v1/offers',
     NOTIFICATIONS: '/api/v1/notifications',
     LOCATION_RECOMMENDATIONS: '/api/v1/location/recommendations',
+    COLLECTIONS: '/api/v1/collections',
+    COLLECTION_FOLLOW: '/api/v1/collections',
+    POPULAR_COLLECTIONS: '/api/v1/discover/collections/popular',
+    SEARCH_COLLECTIONS: '/api/v1/discover/collections/search',
   }
 };
 
