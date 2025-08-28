@@ -1,6 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getUserReviews, Review, isAuthenticated } from '@/services/api';
+import { getUserReviews, Review, isAuthenticated, deleteReview } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -14,7 +14,12 @@ import {
     Text,
     TouchableOpacity,
     View,
+    Alert,
+    ScrollView,
 } from 'react-native';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import CustomAlert from '@/components/CustomAlert';
+import { useToastGlobal } from '@/contexts/ToastContext';
 
 // Skeleton Loader Component
 const ReviewSkeleton = ({ colors }: { colors: any }) => (
@@ -59,6 +64,8 @@ export default function ReviewsScreen() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { alertConfig, showError, showSuccess, showInfo, hideAlert } = useCustomAlert();
+  const { showSuccess: showToastSuccess, showError: showToastError } = useToastGlobal();
 
   useEffect(() => {
     checkAuthAndLoadReviews();
@@ -151,6 +158,42 @@ export default function ReviewsScreen() {
     return review.business?.category_name || 'Service';
   };
 
+  const handleEditReview = (reviewId: number) => {
+    router.push(`/reviews/edit/${reviewId}` as any);
+  };
+
+  const handleDeleteReview = (reviewId: number) => {
+    Alert.alert(
+      'Delete Review',
+      'Are you sure you want to delete this review? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => confirmDeleteReview(reviewId)
+        }
+      ]
+    );
+  };
+
+  const confirmDeleteReview = async (reviewId: number) => {
+    try {
+      const response = await deleteReview(reviewId);
+      
+      if (response.success) {
+        // Remove review from local state
+        setReviews(prev => prev.filter(review => review.id !== reviewId));
+        showToastSuccess('Review deleted successfully', 3000);
+      } else {
+        showToastError('Failed to delete review. Please try again.', 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      showToastError('Failed to delete review. Please try again.', 3000);
+    }
+  };
+
   const renderReviewItem = ({ item }: { item: Review }) => (
     <View style={[styles.reviewCard, { backgroundColor: colors.card }]}>
       <View style={styles.reviewContent}>
@@ -170,7 +213,7 @@ export default function ReviewsScreen() {
             </View>
           </View>
           
-          <View style={styles.reviewMeta}>
+          <View style={styles.reviewMetaRight}>
             <View style={styles.ratingContainer}>
               {[...Array(5)].map((_, i) => (
                 <Ionicons
@@ -184,6 +227,22 @@ export default function ReviewsScreen() {
             <Text style={[styles.reviewDate, { color: colors.icon }]}>
               {formatDate(item.created_at)}
             </Text>
+            
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.tint + '15' }]}
+                onPress={() => handleEditReview(item.id)}
+              >
+                <Ionicons name="pencil" size={14} color={colors.tint} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: '#ef4444' + '15' }]}
+                onPress={() => handleDeleteReview(item.id)}
+              >
+                <Ionicons name="trash" size={14} color="#ef4444" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
         
@@ -192,6 +251,22 @@ export default function ReviewsScreen() {
             {item.review_text}
           </Text>
         </View>
+
+        {/* Review Images */}
+        {item.images && item.images.length > 0 && (
+          <View style={styles.reviewImagesContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesScroll}>
+              {item.images.map((imageUri, index) => (
+                <TouchableOpacity key={index} activeOpacity={0.8}>
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.reviewImageThumbnail}
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={styles.reviewFooter}>
           <View style={styles.reviewTags}>
@@ -337,6 +412,15 @@ export default function ReviewsScreen() {
       ) : isUserAuthenticated === true ? (
         renderEmptyState()
       ) : null}
+      
+      <CustomAlert 
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttons={alertConfig.buttons}
+        onClose={hideAlert}
+      />
     </View>
   );
 }
@@ -413,6 +497,21 @@ const styles = StyleSheet.create({
   reviewMeta: {
     alignItems: 'flex-end',
   },
+  reviewMetaRight: {
+    alignItems: 'flex-end',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  actionButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   ratingContainer: {
     flexDirection: 'row',
     gap: 2,
@@ -427,6 +526,19 @@ const styles = StyleSheet.create({
   reviewText: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  reviewImagesContainer: {
+    marginBottom: 16,
+  },
+  reviewImagesScroll: {
+    paddingVertical: 4,
+  },
+  reviewImageThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: '#f0f0f0',
   },
   reviewFooter: {
     flexDirection: 'row',

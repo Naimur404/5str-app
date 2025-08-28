@@ -55,6 +55,7 @@ export interface Review {
   not_helpful_count: number;
   status: string;
   created_at: string;
+  images?: string[];
   type: 'business' | 'offering';
   user_vote_status?: {
     has_voted: boolean;
@@ -858,6 +859,110 @@ export const submitReview = async (reviewData: SubmitReviewRequest): Promise<Sub
   return makeApiCall(API_CONFIG.ENDPOINTS.SUBMIT_REVIEW, {
     method: 'POST',
     body: JSON.stringify(reviewData),
+  }, true);
+};
+
+// Get Single Review for Editing
+export interface GetReviewResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    review: {
+      id: number;
+      overall_rating: number;
+      service_rating?: number;
+      quality_rating?: number;
+      value_rating?: number;
+      title?: string;
+      review_text: string;
+      pros?: string[];
+      cons?: string[];
+      visit_date?: string;
+      amount_spent?: number;
+      party_size?: number;
+      is_recommended?: boolean;
+      is_verified_visit?: boolean;
+      helpful_count: number;
+      not_helpful_count: number;
+      status: string;
+      is_favorite: boolean;
+      images: string[];
+      reviewable: {
+        id: number;
+        name: string;
+        type: string;
+      };
+      created_at: string;
+      updated_at: string;
+    };
+  };
+}
+
+export const getReviewForEdit = async (reviewId: number): Promise<GetReviewResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.SUBMIT_REVIEW}/${reviewId}`, {
+    method: 'GET',
+  }, true);
+};
+
+// Update Review
+export interface UpdateReviewRequest {
+  overall_rating: number;
+  service_rating?: number;
+  quality_rating?: number;
+  value_rating?: number;
+  title?: string;
+  review_text: string;
+  pros?: string[];
+  cons?: string[];
+  visit_date?: string;
+  amount_spent?: number;
+  party_size?: number;
+  is_recommended?: boolean;
+  is_verified_visit?: boolean;
+}
+
+export interface UpdateReviewResponse {
+  success: boolean;
+  message: string;
+  data: {
+    review: {
+      id: number;
+      overall_rating: number;
+      service_rating?: number;
+      quality_rating?: number;
+      value_rating?: number;
+      title?: string;
+      review_text: string;
+      pros?: string[];
+      cons?: string[];
+      visit_date?: string;
+      amount_spent?: number;
+      party_size?: number;
+      is_recommended?: boolean;
+      is_verified_visit?: boolean;
+      status: string;
+      is_favorite: boolean;
+      updated_at: string;
+    };
+  };
+}
+
+export const updateReview = async (reviewId: number, reviewData: UpdateReviewRequest): Promise<UpdateReviewResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.SUBMIT_REVIEW}/${reviewId}`, {
+    method: 'PUT',
+    body: JSON.stringify(reviewData),
+  }, true);
+};
+
+// Delete Review
+export interface DeleteReviewResponse {
+  success: boolean;
+  message: string;
+}
+
+export const deleteReview = async (reviewId: number): Promise<DeleteReviewResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.SUBMIT_REVIEW}/${reviewId}`, {
+    method: 'DELETE',
   }, true);
 };
 

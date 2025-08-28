@@ -19,7 +19,7 @@ export const API_CONFIG = {
     UPDATE_PROFILE: '/api/v1/auth/profile',
     USER_REVIEWS: '/api/v1/user/reviews',
     USER_FAVORITES: '/api/v1/user/favorites',
-    SUBMIT_REVIEW: '/api/v1/reviews',
+    SUBMIT_REVIEW: '/api/v1/reviews', // Also used for edit, show and delete with reviewId
     REVIEW_VOTE: '/api/v1/reviews', // Base endpoint for voting, reviewId will be appended
     CATEGORY_BUSINESSES: '/api/v1/categories',
     BUSINESS_DETAILS: '/api/v1/businesses',
