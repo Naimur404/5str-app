@@ -5,11 +5,21 @@ import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
-import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 import { LocationProvider } from '@/contexts/LocationContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/contexts/ToastContext';
-import { Colors } from '@/constants/Colors';
+
+// Automatically disable ALL console logs in production builds
+// No need to change any existing code - this handles everything!
+if (!__DEV__) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
 
 function RootLayoutInner() {
   const { colorScheme } = useTheme();

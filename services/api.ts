@@ -657,6 +657,15 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
       };
     }
     
+    // For review endpoints, return response instead of throwing
+    if (endpoint.includes('/reviews')) {
+      return {
+        success: false,
+        message: responseData?.message || `HTTP error! status: ${response.status}`,
+        status: response.status
+      };
+    }
+    
     // For other errors, throw with more info
     const errorMessage = responseData?.message || `HTTP error! status: ${response.status}`;
     throw new Error(errorMessage);
@@ -664,6 +673,10 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
 
   // Validate successful response structure
   if (responseData.success === false) {
+    // For review-related endpoints, return the response instead of throwing
+    if (endpoint.includes('/reviews/')) {
+      return responseData;
+    }
     throw new Error(responseData.message || 'Request failed');
   }
 

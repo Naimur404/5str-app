@@ -220,6 +220,8 @@ export default function EditReviewScreen() {
 
       const response = await updateReview(reviewId, updateData);
       
+      console.log('Update review response:', response);
+      
       if (response.success) {
         showToastSuccess('Review updated successfully!');
         // Navigate back after showing success
@@ -227,11 +229,25 @@ export default function EditReviewScreen() {
           router.back();
         }, 1000);
       } else {
-        showError('Error', response.message || 'Failed to update review. Please try again.');
+        // Show error message as toast notification
+        console.log('API returned error:', response.message);
+        showToastError(response.message || 'Failed to update review. Please try again.');
       }
     } catch (error) {
-      console.error('Error updating review:', error);
-      showError('Error', 'Failed to update review. Please try again.');
+      console.error('Exception caught while updating review:', error);
+      
+      // Extract error message properly
+      let errorMessage = 'Failed to update review. Please try again.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.log('Error message extracted:', errorMessage);
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      // Show the error message as toast
+      showToastError(errorMessage);
     } finally {
       setUpdateLoading(false);
     }

@@ -14,18 +14,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useToast } from '@/hooks/useToast';
 import { BusinessListSkeleton } from '@/components/SkeletonLoader';
 import SmartImage from '@/components/SmartImage';
-
-interface Business {
-  id: number;
-  name: string;
-  phone: string;
-  address: string;
-  image_url: string | null;
-  rating?: number;
-  category_name?: string;
-}
+import Toast from '@/components/Toast';
+import { API_CONFIG, getApiUrl } from '@/constants/Api';
+import { Business, SearchResponse } from '@/types/api';
+import { fetchWithJsonValidation } from '@/services/api';
+import { addBusinessToCollection } from '@/services/api';
 
 interface ManageBusinessModalProps {
   visible: boolean;
@@ -34,6 +30,7 @@ interface ManageBusinessModalProps {
   collectionName: string;
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
+  onRefresh?: () => void;
 }
 
 const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
@@ -43,13 +40,16 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
   collectionName,
   onSuccess,
   onError,
+  onRefresh,
 }) => {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  const { toastConfig, showSuccess: showToastSuccess, showError: showToastError, hideToast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
+  const [addingBusinesses, setAddingBusinesses] = useState(false);
   const [selectedBusinesses, setSelectedBusinesses] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -70,13 +70,25 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
 
     try {
       setLoading(true);
-      // This would be your actual search API call
-      // const response = await searchBusinesses(query);
-      // For now, we'll simulate with empty results
-      setSearchResults([]);
+      
+      // Use the search API without lat/lon as requested
+      const baseParams = `q=${encodeURIComponent(query)}&type=all&sort=rating&limit=20`;
+      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?${baseParams}`;
+      
+      console.log('Business Search URL:', url);
+      
+      const data: SearchResponse = await fetchWithJsonValidation(url);
+      console.log('Business Search API response:', data);
+
+      if (data.success && data.data && data.data.results) {
+        const businesses = data.data.results.businesses?.data || [];
+        setSearchResults(businesses);
+      } else {
+        setSearchResults([]);
+      }
     } catch (error) {
       console.error('Error searching businesses:', error);
-      onError('❌ Search failed. Please try again.');
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
@@ -99,22 +111,50 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
     }
 
     try {
-      setLoading(true);
-      // Add businesses to collection logic here
-      // const promises = Array.from(selectedBusinesses).map(businessId =>
-      //   addBusinessToCollection(collectionId, { business_id: businessId })
-      // );
-      // await Promise.all(promises);
+      setAddingBusinesses(true);
       
-      onSuccess(
-        `✅ Successfully Added ${selectedBusinesses.size} business${selectedBusinesses.size > 1 ? 'es' : ''} to "${collectionName}" collection!`
-      );
-      onClose();
+      // Add businesses to collection one by one
+      const promises = Array.from(selectedBusinesses).map(async (businessId) => {
+        return addBusinessToCollection(collectionId, { business_id: businessId });
+      });
+      
+      const results = await Promise.all(promises);
+      
+      // Check if all additions were successful
+      const successful = results.filter(result => result.success);
+      const failed = results.filter(result => !result.success);
+      
+      if (successful.length > 0) {
+        // Use the API message from the first successful response
+        const apiMessage = successful[0]?.message || 'Successfully added to collection';
+        const successMessage = successful.length === selectedBusinesses.size
+          ? `✅ ${apiMessage}`
+          : `✅ Added ${successful.length} of ${selectedBusinesses.size} businesses. ${failed.length} failed.`;
+        
+        onSuccess(successMessage);
+        
+        // Reset modal state and close immediately
+        setSelectedBusinesses(new Set());
+        setSearchQuery('');
+        setSearchResults([]);
+        
+        // Close modal immediately - let parent handle refresh
+        onClose();
+      } else {
+        // All failed - show error toast and keep modal open
+        const apiErrorMessage = failed[0]?.message || 'Failed to add businesses to collection';
+        showToastError(apiErrorMessage);
+        
+        // Also notify parent for any additional handling if needed
+        onError(`❌ ${apiErrorMessage}`);
+      }
     } catch (error) {
       console.error('Error adding businesses:', error);
-      onError('❌ Failed to add businesses. Please try again.');
+      const errorMessage = 'Failed to add businesses. Please try again.';
+      showToastError(errorMessage);
+      onError(`❌ ${errorMessage}`);
     } finally {
-      setLoading(false);
+      setAddingBusinesses(false);
     }
   };
 
@@ -126,39 +166,42 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
         style={[
           styles.businessItem,
           { 
-            backgroundColor: colors.card,
-            borderColor: isSelected ? colors.buttonPrimary : colors.border,
-            borderWidth: isSelected ? 2 : 1,
+            backgroundColor: isSelected 
+              ? colors.buttonPrimary + '10' 
+              : 'transparent',
           }
         ]}
         onPress={() => handleBusinessToggle(item.id)}
       >
         <SmartImage
-          source={{ uri: item.image_url }}
+          source={item.logo_image}
+          type="business"
           style={styles.businessImage}
           fallbackIcon="storefront-outline"
+          showInitials={true}
+          initialsText={item.business_name}
         />
         
         <View style={styles.businessInfo}>
           <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
-            {item.name}
+            {item.business_name}
           </Text>
           
-          {item.category_name && (
+          {(item.category_name || item.category?.name) && (
             <Text style={[styles.categoryText, { color: colors.icon }]} numberOfLines={1}>
-              {item.category_name}
+              {item.category_name || item.category?.name}
             </Text>
           )}
           
           <Text style={[styles.addressText, { color: colors.icon }]} numberOfLines={1}>
-            {item.address}
+            {item.full_address || item.landmark || 'Address not available'}
           </Text>
           
-          {item.rating && (
+          {item.overall_rating && (
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={14} color="#FFD700" />
               <Text style={[styles.ratingText, { color: colors.text }]}>
-                {item.rating.toFixed(1)}
+                {parseFloat(item.overall_rating).toFixed(1)}
               </Text>
             </View>
           )}
@@ -187,11 +230,11 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
         color={colors.icon} 
       />
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
-        {searchQuery ? 'No Results Found' : 'Search for Businesses'}
+        {searchQuery ? 'No Businesses Found' : 'Search for Businesses'}
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
         {searchQuery 
-          ? `No businesses found for "${searchQuery}"`
+          ? `No businesses found for "${searchQuery}". Try different keywords or check spelling.`
           : 'Start typing to search for businesses to add to your collection'
         }
       </Text>
@@ -216,7 +259,7 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
           </Text>
           <TouchableOpacity
             onPress={handleAddSelected}
-            disabled={selectedBusinesses.size === 0 || loading}
+            disabled={selectedBusinesses.size === 0 || addingBusinesses}
             style={[
               styles.addButton,
               {
@@ -224,7 +267,7 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
               }
             ]}
           >
-            {loading ? (
+            {addingBusinesses ? (
               <ActivityIndicator size="small" color={colors.buttonText} />
             ) : (
               <Text style={[styles.addButtonText, { color: colors.buttonText }]}>
@@ -254,7 +297,9 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
               onChangeText={handleSearch}
               autoFocus
             />
-            {searchQuery ? (
+            {loading && searchQuery.length >= 2 ? (
+              <ActivityIndicator size="small" color={colors.buttonPrimary} />
+            ) : searchQuery ? (
               <TouchableOpacity onPress={() => handleSearch('')}>
                 <Ionicons name="close-circle" size={20} color={colors.icon} />
               </TouchableOpacity>
@@ -264,7 +309,7 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
 
         {/* Results List */}
         <View style={styles.content}>
-          {loading && searchResults.length === 0 ? (
+          {loading ? (
             <BusinessListSkeleton colors={colors} />
           ) : searchResults.length === 0 ? (
             renderEmptyState()
@@ -279,6 +324,14 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
           )}
         </View>
       </View>
+      
+      {/* Toast */}
+      <Toast
+        visible={toastConfig.visible}
+        message={toastConfig.message}
+        type={toastConfig.type}
+        onHide={hideToast}
+      />
     </Modal>
   );
 };
@@ -352,33 +405,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
-    borderWidth: 1,
   },
   businessImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
+    position: 'relative',
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginRight: 30,
+
   },
   businessInfo: {
     flex: 1,
+    justifyContent: 'space-between',
   },
   businessName: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+    lineHeight: 20,
   },
   categoryText: {
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: 13,
+    marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontWeight: '400',
+    opacity: 0.7,
   },
   addressText: {
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 12,
+    marginBottom: 6,
+    opacity: 0.6,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -386,17 +446,17 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
   checkboxContainer: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
   },
   emptyState: {
     flex: 1,

@@ -192,12 +192,13 @@ export default function CollectionDetailsScreen() {
   };
 
   const handleManageBusinessSuccess = (message: string) => {
-    showSuccess('Success', message);
-    loadCollection(); // Reload to show new businesses
+    showToastSuccess(message);
+    // Don't reload data - removed per user request
   };
 
   const handleManageBusinessError = (message: string) => {
-    showError('Error', message);
+    // Error is already shown in modal, no need for additional toast
+    console.log('Business management error:', message);
   };
 
   const handleRemoveBusiness = (businessId: number) => {

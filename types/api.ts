@@ -41,6 +41,7 @@ export interface Business {
   business_name: string;
   slug: string;
   landmark: string | null;
+  full_address?: string; // For search API results
   overall_rating: string;
   price_range: number;
   distance?: number | string;

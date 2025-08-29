@@ -688,19 +688,14 @@ export default function HomeScreen() {
                 <Text style={styles.changeLocation}>Change</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.headerButtons}>
-              <TouchableOpacity style={styles.recommendationsButton} onPress={handleRecommendationsPress}>
-                <Ionicons name="compass-outline" size={24} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
-                <Ionicons name="notifications-outline" size={24} color="white" />
-                {isUserAuthenticated && unreadCount > 0 && (
-                  <View style={styles.badgeContainer}>
-                    <NotificationBadge count={unreadCount} size="small" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
+              <Ionicons name="notifications-outline" size={24} color="white" />
+              {isUserAuthenticated && unreadCount > 0 && (
+                <View style={styles.badgeContainer}>
+                  <NotificationBadge count={unreadCount} size="small" />
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Search Bar */}

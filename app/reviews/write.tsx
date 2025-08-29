@@ -271,13 +271,13 @@ export default function WriteReviewScreen() {
   };
 
   const showImageOptions = () => {
-    Alert.alert(
+    showInfo(
       'Add Photo',
       'Choose how you want to add a photo',
       [
         { text: 'Camera', onPress: takePhoto },
         { text: 'Photo Library', onPress: pickImages },
-        { text: 'Cancel', style: 'cancel' }
+        { text: 'Cancel', style: 'cancel', onPress: hideAlert }
       ]
     );
   };
