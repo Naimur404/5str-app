@@ -49,8 +49,8 @@ export default function CollectionDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const collectionId = parseInt(params.id as string);
-  const { alertConfig, showSuccess, showError, showConfirm, showAlert, hideAlert } = useCustomAlert();
-  const { toastConfig, showSuccess: showToastSuccess, hideToast } = useToast();
+  const { alertConfig, showSuccess, showError: showAlertError, showConfirm, showAlert, hideAlert } = useCustomAlert();
+  const { toastConfig, showSuccess: showToastSuccess, showError: showToastError, hideToast } = useToast();
 
   useEffect(() => {
     if (collectionId) {
@@ -80,12 +80,12 @@ export default function CollectionDetailsScreen() {
         console.log('Businesses array:', response.data.collection.businesses);
         setCollection(response.data.collection);
       } else {
-        showError('Collection not found', 'This collection may have been deleted or is private.');
+        showToastError('This collection may have been deleted or is private.');
         router.back();
       }
     } catch (error) {
       console.error('Error loading collection:', error);
-      showError('Failed to load collection', 'Please try again.');
+      showToastError('Failed to load collection. Please try again.');
       router.back();
     } finally {
       setLoading(false);
@@ -137,11 +137,11 @@ export default function CollectionDetailsScreen() {
             : `Already following "${collection.name}"`
         );
       } else {
-        showError('❌ Action Failed', response.message || 'Failed to update follow status. Please try again.');
+        showToastError(response.message || 'Failed to update follow status. Please try again.');
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
-      showError('❌ Action Failed', 'Network error. Please check your connection and try again.');
+      showToastError('Network error. Please check your connection and try again.');
     }
   };
 
@@ -166,11 +166,11 @@ export default function CollectionDetailsScreen() {
               router.back();
             }, 2000);
           } else {
-            showError('❌ Delete Failed', response.message || 'Failed to delete collection. Please try again.');
+            showToastError(response.message || 'Failed to delete collection. Please try again.');
           }
         } catch (error) {
           console.error('Error deleting collection:', error);
-          showError('❌ Delete Failed', 'Failed to delete collection. Please try again.');
+          showToastError('Failed to delete collection. Please try again.');
         }
       }
     );
@@ -184,7 +184,7 @@ export default function CollectionDetailsScreen() {
   };
 
   const handleEditError = (message: string) => {
-    showError('Error', message);
+    showToastError(message);
   };
 
   const handleCollectionDeleted = () => {
@@ -209,7 +209,7 @@ export default function CollectionDetailsScreen() {
     
     if (!collection) {
       console.log('🔥 No collection - exiting');
-      showError('Error', 'Collection not found');
+      showToastError('Collection not found');
       return;
     }
     
@@ -219,7 +219,7 @@ export default function CollectionDetailsScreen() {
     
     if (collection.can_edit === false) {
       console.log('🔥 Cannot edit collection - showing error');
-      showError('Permission Denied', 'You do not have permission to edit this collection');
+      showToastError('You do not have permission to edit this collection');
       return;
     }
     
@@ -262,11 +262,11 @@ export default function CollectionDetailsScreen() {
           }, 3000);
         } else {
           console.error('🔥 API returned success: false');
-          showError('❌ Remove Failed', response.message || 'Failed to remove business from collection. Please try again.');
+          showToastError(response.message || 'Failed to remove business from collection. Please try again.');
         }
       } catch (error) {
         console.error('🔥 Error removing business:', error);
-        showError('❌ Remove Failed', 'Failed to remove business. Please check your connection and try again.');
+        showToastError('Failed to remove business. Please check your connection and try again.');
       }
     };
 
@@ -440,11 +440,11 @@ export default function CollectionDetailsScreen() {
                           console.log('✅ Business removed successfully');
                         } else {
                           console.error('❌ API returned success: false');
-                          showError('❌ Remove Failed', response.message || 'Failed to remove business. Please try again.');
+                          showToastError(response.message || 'Failed to remove business. Please try again.');
                         }
                       } catch (error) {
                         console.error('❌ Error removing business:', error);
-                        showError('❌ Remove Failed', 'Failed to remove business. Please check your connection and try again.');
+                        showToastError('Failed to remove business. Please check your connection and try again.');
                       }
                     }
                   }
@@ -506,6 +506,14 @@ export default function CollectionDetailsScreen() {
 
         {/* Loading State */}
         <BusinessDetailsSkeleton colors={colors} />
+        
+        {/* Toast */}
+        <Toast
+          visible={toastConfig.visible}
+          message={toastConfig.message}
+          type={toastConfig.type}
+          onHide={hideToast}
+        />
       </View>
     );
   }

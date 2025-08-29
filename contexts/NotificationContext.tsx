@@ -161,14 +161,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     previousNotificationIds.current.clear();
   };
 
-  // Initial load
+  // Initial load - first call when login
   useEffect(() => {
     refreshNotifications();
   }, []);
 
-  // Refresh notifications every 30 seconds for testing (normally 2 minutes)
+  // Refresh notifications every 10 minutes
   useEffect(() => {
-    const interval = setInterval(refreshNotifications, 30000); // 30 seconds for testing
+    const interval = setInterval(refreshNotifications, 10 * 60 * 1000); // 10 minutes
     return () => clearInterval(interval);
   }, []);
 

@@ -57,7 +57,7 @@ export default function CollectionsScreen() {
   const colors = Colors[colorScheme];
   const router = useRouter();
   const { alertConfig, showError, showSuccess, showConfirm, hideAlert } = useCustomAlert();
-  const { toastConfig, showSuccess: showToastSuccess, hideToast } = useToast();
+  const { toastConfig, showSuccess: showToastSuccess, showError: showToastError, hideToast } = useToast();
 
   useEffect(() => {
     checkAuthAndLoadCollections();
@@ -178,6 +178,12 @@ export default function CollectionsScreen() {
   };
 
   const handleFollowCollection = async (collectionId: number) => {
+    // Check if user is authenticated
+    if (!isUserAuthenticated) {
+      showToastError('Please sign in to follow collections');
+      return;
+    }
+    
     try {
       const response = await followCollection(collectionId);
       
@@ -212,6 +218,12 @@ export default function CollectionsScreen() {
   };
 
   const handleUnfollowCollection = async (collectionId: number) => {
+    // Check if user is authenticated
+    if (!isUserAuthenticated) {
+      showToastError('Please sign in to unfollow collections');
+      return;
+    }
+    
     try {
       const response = await unfollowCollection(collectionId);
       
@@ -246,6 +258,12 @@ export default function CollectionsScreen() {
   };
 
   const handleCollectionPress = (collection: Collection) => {
+    // If this is a popular collection and user is not authenticated, show toast message
+    if (activeTab === 'popular' && !isUserAuthenticated) {
+      showToastError('Please sign in to view collection details');
+      return;
+    }
+    
     router.push(`/collection/${collection.id}` as any);
   };
 
@@ -352,7 +370,7 @@ export default function CollectionsScreen() {
       onFollow={() => handleFollowCollection(item.id)}
       onUnfollow={() => handleUnfollowCollection(item.id)}
       onEdit={() => handleEditCollection(item)}
-      showFollowButton={activeTab === 'popular'}
+      showFollowButton={activeTab === 'popular' && isUserAuthenticated === true}
       showOwner={false}
       showActions={activeTab === 'my'}
     />
