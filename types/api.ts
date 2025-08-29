@@ -498,6 +498,7 @@ export interface CollectionItemResponse {
 export interface CollectionActionResponse {
   success: boolean;
   message: string;
+  status?: number;
 }
 
 export interface PopularCollectionsResponse {

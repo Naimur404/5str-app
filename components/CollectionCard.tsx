@@ -23,8 +23,11 @@ interface CollectionCardProps {
   onPress: () => void;
   onFollow?: () => void;
   onUnfollow?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   showFollowButton?: boolean;
   showOwner?: boolean;
+  showActions?: boolean;
   style?: any;
 }
 
@@ -33,8 +36,11 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
   onPress,
   onFollow,
   onUnfollow,
+  onEdit,
+  onDelete,
   showFollowButton = false,
   showOwner = true,
+  showActions = false,
   style,
 }) => {
   const { colorScheme } = useTheme();
@@ -154,6 +160,21 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
                 color={collection.is_following ? colors.text : colors.buttonText} 
               />
             </TouchableOpacity>
+          ) : showActions ? (
+            <View style={styles.actionButtons}>
+              {onEdit && (
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: colors.buttonPrimary + '20' }]}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="create-outline" size={16} color={colors.buttonPrimary} />
+                </TouchableOpacity>
+              )}
+            </View>
           ) : (
             <View style={[styles.typeBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
               <Text style={[styles.typeBadgeText, { color: colors.buttonPrimary }]}>
@@ -279,6 +300,18 @@ const styles = StyleSheet.create({
   typeBadgeText: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

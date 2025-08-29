@@ -143,8 +143,11 @@ export default function CustomAlert({
       statusBarTranslucent={false}
       onRequestClose={handleOverlayPress}
     >
-      <View style={styles.containerWrapper}>
-        <View
+      <Pressable 
+        style={styles.overlay}
+        onPress={handleOverlayPress}
+      >
+        <Pressable 
           style={[
             styles.alertContainer,
             {
@@ -152,6 +155,7 @@ export default function CustomAlert({
               borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
             },
           ]}
+          onPress={(e) => e.stopPropagation()} // Prevent dismissing when tapping the alert
         >
           <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
             <Ionicons name={icon as any} size={32} color={color} />
@@ -193,25 +197,26 @@ export default function CustomAlert({
               );
             })}
           </View>
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
+  },
   containerWrapper: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
     // No background color - completely transparent
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
   },
   alertContainer: {
     borderRadius: 20,

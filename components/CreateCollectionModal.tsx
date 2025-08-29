@@ -179,7 +179,11 @@ const CreateCollectionModal: React.FC<CreateCollectionModalProps> = ({
       handleClose();
     } catch (error) {
       console.error('Error creating collection:', error);
-      Alert.alert('Error', 'Failed to create collection. Please try again.');
+      Alert.alert(
+        '❌ Creation Failed', 
+        'Failed to create collection. Please check your connection and try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
     } finally {
       setLoading(false);
     }

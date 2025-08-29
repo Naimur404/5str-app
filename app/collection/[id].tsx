@@ -18,6 +18,9 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import CollectionSkeleton from '@/components/CollectionSkeleton';
+import EditCollectionModal from '@/components/EditCollectionModal';
+import ManageBusinessModal from '@/components/ManageBusinessModal';
 import ProfileAvatar from '@/components/ProfileAvatar';
 import SmartImage from '@/components/SmartImage';
 import {
@@ -36,6 +39,8 @@ export default function CollectionDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState<boolean | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showManageBusinessModal, setShowManageBusinessModal] = useState(false);
 
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
@@ -111,20 +116,46 @@ export default function CollectionDetailsScreen() {
         } : null);
         
         showSuccess(
-          collection.is_following ? 'Unfollowed' : 'Following',
+          collection.is_following ? '✅ Successfully Unfollowed' : '🔔 Now Following',
           collection.is_following 
-            ? 'You are no longer following this collection'
-            : 'You will see updates from this collection'
+            ? `You will no longer get updates from "${collection.name}" collection.`
+            : `You will now receive updates from "${collection.name}" collection!`
         );
+        
+        // Auto dismiss success message
+        setTimeout(() => {
+          hideAlert();
+        }, 3000);
+      } else if (response.status === 409) {
+        // Handle 409 responses (already following/unfollowing)
+        const isCurrentlyFollowing = collection.is_following;
+        setCollection(prev => prev ? {
+          ...prev,
+          is_following: !isCurrentlyFollowing
+        } : null);
+        
+        showSuccess(
+          isCurrentlyFollowing ? '✅ Already Unfollowed!' : '✅ Already Following!',
+          response.message || (isCurrentlyFollowing 
+            ? `You are not following "${collection.name}" collection.`
+            : `You are already following "${collection.name}" collection.`)
+        );
+        
+        // Auto dismiss success message
+        setTimeout(() => {
+          hideAlert();
+        }, 3000);
+      } else {
+        showError('❌ Action Failed', response.message || 'Failed to update follow status. Please try again.');
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
-      showError('Action failed', 'Please try again.');
+      showError('❌ Action Failed', 'Network error. Please check your connection and try again.');
     }
   };
 
   const handleDeleteCollection = () => {
-    if (!collection?.can_edit) return;
+    if (!collection || collection?.can_edit === false) return;
 
     showConfirm(
       'Delete Collection',
@@ -133,25 +164,63 @@ export default function CollectionDetailsScreen() {
         try {
           const response = await deleteCollection(collection.id);
           if (response.success) {
-            showSuccess('Collection deleted', 'Your collection has been successfully deleted.');
-            router.back();
+            showSuccess(
+              '🗑️ Collection Deleted Successfully', 
+              'Your collection has been successfully deleted.'
+            );
+            
+            // Auto dismiss and go back
+            setTimeout(() => {
+              hideAlert();
+              router.back();
+            }, 2000);
+          } else {
+            showError('❌ Delete Failed', response.message || 'Failed to delete collection. Please try again.');
           }
         } catch (error) {
           console.error('Error deleting collection:', error);
-          showError('Failed to delete collection', 'Please try again.');
+          showError('❌ Delete Failed', 'Failed to delete collection. Please try again.');
         }
       }
     );
   };
 
+  const handleEditCollection = (message: string, updatedCollection?: Collection) => {
+    if (updatedCollection) {
+      setCollection(updatedCollection);
+    }
+    showSuccess('Success', message);
+  };
+
+  const handleEditError = (message: string) => {
+    showError('Error', message);
+  };
+
+  const handleCollectionDeleted = () => {
+    router.back();
+  };
+
+  const handleManageBusinessSuccess = (message: string) => {
+    showSuccess('Success', message);
+    loadCollection(); // Reload to show new businesses
+  };
+
+  const handleManageBusinessError = (message: string) => {
+    showError('Error', message);
+  };
+
   const handleRemoveBusiness = (businessId: number) => {
-    if (!collection?.can_edit) return;
+    if (!collection || collection?.can_edit === false) return;
+
+    const businessToRemove = collection.businesses?.find(b => b.id === businessId);
+    const businessName = businessToRemove?.name || 'this business';
 
     showConfirm(
       'Remove Business',
-      'Are you sure you want to remove this business from your collection?',
+      `Are you sure you want to remove "${businessName}" from "${collection.name}" collection?`,
       async () => {
         try {
+          const removedBusiness = collection.businesses?.find(b => b.id === businessId);
           const response = await removeBusinessFromCollection(collection.id, businessId);
           if (response.success) {
             setCollection(prev => prev ? {
@@ -159,11 +228,16 @@ export default function CollectionDetailsScreen() {
               businesses: prev.businesses?.filter(b => b.id !== businessId) || [],
               businesses_count: Math.max(0, prev.businesses_count - 1)
             } : null);
-            showSuccess('Business removed', 'Business has been removed from your collection.');
+            showSuccess(
+              '✅ Business Removed Successfully', 
+              `"${removedBusiness?.name || 'Business'}" has been removed from "${collection.name}" collection.`
+            );
+          } else {
+            showError('❌ Remove Failed', 'Failed to remove business from collection. Please try again.');
           }
         } catch (error) {
           console.error('Error removing business:', error);
-          showError('Failed to remove business', 'Please try again.');
+          showError('❌ Remove Failed', 'Failed to remove business. Please check your connection and try again.');
         }
       }
     );
@@ -259,15 +333,17 @@ export default function CollectionDetailsScreen() {
           )}
         </View>
 
-        {collection?.can_edit && (
+        {(collection?.can_edit !== false) && (
           <TouchableOpacity
-            style={styles.removeButton}
+            style={[styles.removeButton, { backgroundColor: '#FF5722' }]}
             onPress={(e) => {
               e.stopPropagation();
               handleRemoveBusiness(item.id);
             }}
+            activeOpacity={0.8}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="close-circle" size={26} color="#FF5722" />
+            <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -281,11 +357,22 @@ export default function CollectionDetailsScreen() {
         No Businesses Yet
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
-        {collection?.can_edit 
+        {collection?.can_edit !== false
           ? 'Start adding businesses to your collection'
           : 'This collection is empty'
         }
       </Text>
+      {collection?.can_edit !== false && (
+        <TouchableOpacity
+          style={[styles.addBusinessButton, { backgroundColor: colors.buttonPrimary }]}
+          onPress={() => setShowManageBusinessModal(true)}
+        >
+          <Ionicons name="add" size={20} color={colors.buttonText} />
+          <Text style={[styles.addBusinessButtonText, { color: colors.buttonText }]}>
+            Add Businesses
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -307,11 +394,7 @@ export default function CollectionDetailsScreen() {
         </LinearGradient>
 
         {/* Loading State */}
-        <View style={styles.content}>
-          <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-          <View style={[styles.loadingSkeleton, { backgroundColor: colors.card, height: 100 }]} />
-          <View style={[styles.loadingSkeleton, { backgroundColor: colors.card, height: 80 }]} />
-        </View>
+        <CollectionSkeleton variant="detail" />
       </View>
     );
   }
@@ -332,13 +415,21 @@ export default function CollectionDetailsScreen() {
           {collection.name}
         </Text>
         <View style={styles.headerRight}>
-          {collection.can_edit && (
-            <TouchableOpacity
-              style={styles.headerButton}
-              onPress={handleDeleteCollection}
-            >
-              <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+          {collection?.can_edit !== false && (
+            <>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={() => setShowEditModal(true)}
+              >
+                <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerButton}
+                onPress={handleDeleteCollection}
+              >
+                <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </>
           )}
         </View>
       </LinearGradient>
@@ -462,6 +553,40 @@ export default function CollectionDetailsScreen() {
         </View>
       </ScrollView>
 
+      {/* Floating Add Button */}
+      {collection?.can_edit !== false && collection.businesses && collection.businesses.length > 0 && (
+        <TouchableOpacity
+          style={[styles.floatingButton, { backgroundColor: colors.buttonPrimary }]}
+          onPress={() => setShowManageBusinessModal(true)}
+        >
+          <Ionicons name="add" size={24} color={colors.buttonText} />
+        </TouchableOpacity>
+      )}
+
+      {/* Edit Collection Modal */}
+      {collection && (
+        <EditCollectionModal
+          visible={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          collection={collection}
+          onSuccess={handleEditCollection}
+          onError={handleEditError}
+          onDelete={handleCollectionDeleted}
+        />
+      )}
+
+      {/* Manage Business Modal */}
+      {collection && (
+        <ManageBusinessModal
+          visible={showManageBusinessModal}
+          onClose={() => setShowManageBusinessModal(false)}
+          collectionId={collection.id}
+          collectionName={collection.name}
+          onSuccess={handleManageBusinessSuccess}
+          onError={handleManageBusinessError}
+        />
+      )}
+
       {/* Alert */}
       <CustomAlert
         visible={alertConfig.visible}
@@ -503,8 +628,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   headerRight: {
-    width: 40,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   headerButton: {
     width: 40,
@@ -704,9 +830,20 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   removeButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 87, 34, 0.1)',
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FF5722',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   emptyState: {
     alignItems: 'center',
@@ -721,5 +858,33 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 24,
+  },
+  addBusinessButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  addBusinessButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 8,
   },
 });

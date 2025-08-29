@@ -17,10 +17,14 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import CollectionCard from '@/components/CollectionCard';
+import CollectionSkeleton from '@/components/CollectionSkeleton';
+import EditCollectionModal from '@/components/EditCollectionModal';
 import CreateCollectionModal from '@/components/CreateCollectionModal';
 import {
   getUserCollections,
   createCollection,
+  updateCollection,
+  deleteCollection,
   followCollection,
   unfollowCollection,
   isAuthenticated,
@@ -44,11 +48,13 @@ export default function CollectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCollections, setFilteredCollections] = useState<Collection[]>([]);
   const [activeTab, setActiveTab] = useState<'my' | 'popular'>('my');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
 
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const { alertConfig, showError, showSuccess, hideAlert } = useCustomAlert();
+  const { alertConfig, showError, showSuccess, showConfirm, hideAlert } = useCustomAlert();
 
   useEffect(() => {
     checkAuthAndLoadCollections();
@@ -84,11 +90,11 @@ export default function CollectionsScreen() {
       if (response.success) {
         setCollections(response.data.collections);
       } else {
-        showError('Failed to load collections', 'Please try again.');
+        showError('❌ Loading Failed', 'Failed to load your collections. Please try again.');
       }
     } catch (error) {
       console.error('Error loading collections:', error);
-      showError('Failed to load collections', 'Please try again.');
+      showError('❌ Network Error', 'Failed to load collections. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -102,11 +108,11 @@ export default function CollectionsScreen() {
       if (response.success) {
         setPopularCollections(response.data.collections);
       } else {
-        showError('Failed to load popular collections', 'Please try again.');
+        showError('❌ Failed to Load Popular Collections', 'Unable to fetch popular collections. Please try again.');
       }
     } catch (error) {
       console.error('Error loading popular collections:', error);
-      showError('Failed to load popular collections', 'Please try again.');
+      showError('❌ Network Error', 'Failed to load popular collections. Please check your connection and try again.');
     } finally {
       setPopularLoading(false);
     }
@@ -149,7 +155,16 @@ export default function CollectionsScreen() {
       
       if (response.success) {
         setCollections(prev => [response.data.collection, ...prev]);
-        showSuccess('Collection created successfully!', 'You can now start adding businesses to your collection.');
+        showSuccess(
+          '🎉 Collection Created Successfully!', 
+          `Your "${response.data.collection.name}" collection is ready. Start adding your favorite businesses!`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        
+        // Auto dismiss after 4 seconds for success messages
+        setTimeout(() => {
+          hideAlert();
+        }, 4000);
       } else {
         throw new Error('Failed to create collection');
       }
@@ -164,17 +179,50 @@ export default function CollectionsScreen() {
       const response = await followCollection(collectionId);
       
       if (response.success) {
-        setCollections(prev => 
+        const updatedCollection = popularCollections.find(c => c.id === collectionId);
+        setPopularCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
               ? { ...collection, is_following: true, followers_count: collection.followers_count + 1 }
               : collection
           )
         );
+        showSuccess(
+          '🔔 Now Following!', 
+          `You will now receive updates from "${updatedCollection?.name || 'this'}" collection.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        
+        // Auto dismiss success message
+        setTimeout(() => {
+          hideAlert();
+        }, 3000);
+      } else if (response.status === 409) {
+        // Already following - show this as success
+        const updatedCollection = popularCollections.find(c => c.id === collectionId);
+        setPopularCollections(prev => 
+          prev.map(collection => 
+            collection.id === collectionId 
+              ? { ...collection, is_following: true }
+              : collection
+          )
+        );
+        showSuccess(
+          '✅ Already Following!', 
+          response.message || `You are already following "${updatedCollection?.name || 'this'}" collection.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        
+        // Auto dismiss success message
+        setTimeout(() => {
+          hideAlert();
+        }, 3000);
+      } else {
+        showError('❌ Follow Failed', response.message || 'Failed to follow collection. Please try again.');
       }
     } catch (error) {
       console.error('Error following collection:', error);
-      showError('Failed to follow collection', 'Please try again.');
+      showError('❌ Follow Failed', 'Failed to follow collection. Please check your connection and try again.');
     }
   };
 
@@ -183,17 +231,50 @@ export default function CollectionsScreen() {
       const response = await unfollowCollection(collectionId);
       
       if (response.success) {
-        setCollections(prev => 
+        const unfollowedCollection = popularCollections.find(c => c.id === collectionId);
+        setPopularCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
               ? { ...collection, is_following: false, followers_count: Math.max(0, collection.followers_count - 1) }
               : collection
           )
         );
+        showSuccess(
+          '✅ Unfollowed Successfully', 
+          `You will no longer receive updates from "${unfollowedCollection?.name || 'this'}" collection.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        
+        // Auto dismiss success message
+        setTimeout(() => {
+          hideAlert();
+        }, 3000);
+      } else if (response.status === 409) {
+        // Already unfollowed - show this as success
+        const unfollowedCollection = popularCollections.find(c => c.id === collectionId);
+        setPopularCollections(prev => 
+          prev.map(collection => 
+            collection.id === collectionId 
+              ? { ...collection, is_following: false }
+              : collection
+          )
+        );
+        showSuccess(
+          '✅ Already Unfollowed!', 
+          response.message || `You are not following "${unfollowedCollection?.name || 'this'}" collection.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        
+        // Auto dismiss success message
+        setTimeout(() => {
+          hideAlert();
+        }, 3000);
+      } else {
+        showError('❌ Unfollow Failed', response.message || 'Failed to unfollow collection. Please try again.');
       }
     } catch (error) {
       console.error('Error unfollowing collection:', error);
-      showError('Failed to unfollow collection', 'Please try again.');
+      showError('❌ Unfollow Failed', 'Failed to unfollow collection. Please check your connection and try again.');
     }
   };
 
@@ -205,14 +286,108 @@ export default function CollectionsScreen() {
     router.push('/auth/login' as any);
   };
 
+  const handleEditCollection = (collection: Collection) => {
+    setSelectedCollection(collection);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteCollection = async (collection: Collection) => {
+    try {
+      showConfirm(
+        'Delete Collection',
+        `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`,
+        async () => {
+          try {
+            console.log('Attempting to delete collection:', collection.id, collection.name);
+            const response = await deleteCollection(collection.id);
+            console.log('Delete response:', response);
+            
+            if (response.success) {
+              // Update the UI immediately
+              setCollections(prev => prev.filter(c => c.id !== collection.id));
+              
+              // Show success message with auto-dismiss
+              showSuccess(
+                '🗑️ Collection Deleted',
+                `"${collection.name}" has been successfully deleted.`,
+                [{ text: 'OK', style: 'default' }]
+              );
+              
+              // Auto dismiss after 3 seconds
+              setTimeout(() => {
+                hideAlert();
+              }, 3000);
+              
+            } else {
+              console.error('Delete failed - API returned success: false');
+              showError(
+                '❌ Delete Failed', 
+                'Failed to delete collection. Please try again.',
+                [{ text: 'OK', style: 'default' }]
+              );
+            }
+          } catch (error) {
+            console.error('Error deleting collection:', error);
+            showError(
+              '❌ Network Error', 
+              'Failed to delete collection. Please check your connection and try again.',
+              [{ text: 'OK', style: 'default' }]
+            );
+          }
+        },
+        () => {
+          console.log('Delete cancelled by user');
+        }
+      );
+    } catch (error) {
+      console.error('Error with delete confirmation:', error);
+    }
+  };
+
+  const handleEditSuccess = (message: string, updatedCollection?: Collection) => {
+    if (updatedCollection) {
+      setCollections(prev => 
+        prev.map(c => c.id === updatedCollection.id ? updatedCollection : c)
+      );
+    }
+    showSuccess(
+      '✅ Success', 
+      message,
+      [{ text: 'OK', style: 'default' }]
+    );
+    
+    // Auto dismiss success message
+    setTimeout(() => {
+      hideAlert();
+    }, 3000);
+  };
+
+  const handleEditError = (message: string) => {
+    showError(
+      '❌ Error', 
+      message,
+      [{ text: 'OK', style: 'default' }]
+    );
+  };
+
+  const handleCollectionDeleted = () => {
+    if (selectedCollection) {
+      setCollections(prev => prev.filter(c => c.id !== selectedCollection.id));
+    }
+    setShowEditModal(false);
+    setSelectedCollection(null);
+  };
+
   const renderCollection = ({ item }: { item: Collection }) => (
     <CollectionCard
       collection={item}
       onPress={() => handleCollectionPress(item)}
       onFollow={() => handleFollowCollection(item.id)}
       onUnfollow={() => handleUnfollowCollection(item.id)}
-      showFollowButton={false}
+      onEdit={() => handleEditCollection(item)}
+      showFollowButton={activeTab === 'popular'}
       showOwner={false}
+      showActions={activeTab === 'my'}
     />
   );
 
@@ -289,11 +464,7 @@ export default function CollectionsScreen() {
         </LinearGradient>
 
         {/* Loading Skeleton */}
-        <View style={styles.content}>
-          <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-          <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-          <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-        </View>
+        <CollectionSkeleton variant="card" count={3} />
       </View>
     );
   }
@@ -412,6 +583,8 @@ export default function CollectionsScreen() {
           // My Collections Tab
           isUserAuthenticated === false ? (
             renderLoginPrompt()
+          ) : loading ? (
+            <CollectionSkeleton variant="card" count={3} />
           ) : filteredCollections.length === 0 ? (
             renderEmptyState()
           ) : (
@@ -433,11 +606,7 @@ export default function CollectionsScreen() {
         ) : (
           // Popular Collections Tab
           popularLoading ? (
-            <View style={styles.loadingContainer}>
-              <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-              <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-              <View style={[styles.loadingSkeleton, { backgroundColor: colors.card }]} />
-            </View>
+            <CollectionSkeleton variant="card" count={4} />
           ) : filteredCollections.length === 0 && searchQuery ? (
             <View style={styles.emptyState}>
               <View style={[styles.emptyIconContainer, { backgroundColor: colors.tint + '20' }]}>
@@ -487,6 +656,21 @@ export default function CollectionsScreen() {
         onClose={() => setShowCreateModal(false)}
         onSubmit={handleCreateCollection}
       />
+
+      {/* Edit Collection Modal */}
+      {selectedCollection && (
+        <EditCollectionModal
+          visible={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedCollection(null);
+          }}
+          collection={selectedCollection}
+          onSuccess={handleEditSuccess}
+          onError={handleEditError}
+          onDelete={handleCollectionDeleted}
+        />
+      )}
 
       {/* Alert */}
       <CustomAlert
@@ -620,12 +804,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
-  },
-  loadingSkeleton: {
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 16,
-    opacity: 0.7,
   },
   tabsContainer: {
     flexDirection: 'row',
