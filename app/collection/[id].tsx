@@ -17,8 +17,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { useToast } from '@/hooks/useToast';
 import CustomAlert from '@/components/CustomAlert';
-import CollectionSkeleton from '@/components/CollectionSkeleton';
+import Toast from '@/components/Toast';
+import { BusinessDetailsSkeleton } from '@/components/SkeletonLoader';
 import EditCollectionModal from '@/components/EditCollectionModal';
 import ManageBusinessModal from '@/components/ManageBusinessModal';
 import ProfileAvatar from '@/components/ProfileAvatar';
@@ -47,7 +49,8 @@ export default function CollectionDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const collectionId = parseInt(params.id as string);
-  const { alertConfig, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
+  const { alertConfig, showSuccess, showError, showConfirm, showAlert, hideAlert } = useCustomAlert();
+  const { toastConfig, showSuccess: showToastSuccess, hideToast } = useToast();
 
   useEffect(() => {
     if (collectionId) {
@@ -102,49 +105,37 @@ export default function CollectionDetailsScreen() {
     if (!collection || !isUserAuthenticated) return;
 
     try {
-      const response = collection.is_following 
+      const response = collection.is_followed_by_user 
         ? await unfollowCollection(collection.id)
         : await followCollection(collection.id);
       
       if (response.success) {
         setCollection(prev => prev ? {
           ...prev,
-          is_following: !prev.is_following,
-          followers_count: prev.is_following 
+          is_followed_by_user: !prev.is_followed_by_user,
+          followers_count: prev.is_followed_by_user 
             ? Math.max(0, prev.followers_count - 1)
             : prev.followers_count + 1
         } : null);
         
-        showSuccess(
-          collection.is_following ? '✅ Successfully Unfollowed' : '🔔 Now Following',
-          collection.is_following 
-            ? `You will no longer get updates from "${collection.name}" collection.`
-            : `You will now receive updates from "${collection.name}" collection!`
+        showToastSuccess(
+          collection.is_followed_by_user 
+            ? `Unfollowed "${collection.name}"`
+            : `Following "${collection.name}"`
         );
-        
-        // Auto dismiss success message
-        setTimeout(() => {
-          hideAlert();
-        }, 3000);
       } else if (response.status === 409) {
         // Handle 409 responses (already following/unfollowing)
-        const isCurrentlyFollowing = collection.is_following;
+        const isCurrentlyFollowing = collection.is_followed_by_user;
         setCollection(prev => prev ? {
           ...prev,
-          is_following: !isCurrentlyFollowing
+          is_followed_by_user: !isCurrentlyFollowing
         } : null);
         
-        showSuccess(
-          isCurrentlyFollowing ? '✅ Already Unfollowed!' : '✅ Already Following!',
-          response.message || (isCurrentlyFollowing 
-            ? `You are not following "${collection.name}" collection.`
-            : `You are already following "${collection.name}" collection.`)
+        showToastSuccess(
+          isCurrentlyFollowing 
+            ? `Already unfollowed "${collection.name}"`
+            : `Already following "${collection.name}"`
         );
-        
-        // Auto dismiss success message
-        setTimeout(() => {
-          hideAlert();
-        }, 3000);
       } else {
         showError('❌ Action Failed', response.message || 'Failed to update follow status. Please try again.');
       }
@@ -210,37 +201,105 @@ export default function CollectionDetailsScreen() {
   };
 
   const handleRemoveBusiness = (businessId: number) => {
-    if (!collection || collection?.can_edit === false) return;
+    console.log('🔥 handleRemoveBusiness START - businessId:', businessId);
+    console.log('🔥 Collection can_edit:', collection?.can_edit);
+    console.log('🔥 Collection ID:', collection?.id);
+    console.log('🔥 Collection name:', collection?.name);
+    
+    if (!collection) {
+      console.log('🔥 No collection - exiting');
+      showError('Error', 'Collection not found');
+      return;
+    }
+    
+    console.log('🔥 Checking edit permissions...');
+    console.log('🔥 collection.can_edit:', collection.can_edit);
+    console.log('🔥 collection.can_edit === false:', collection.can_edit === false);
+    
+    if (collection.can_edit === false) {
+      console.log('🔥 Cannot edit collection - showing error');
+      showError('Permission Denied', 'You do not have permission to edit this collection');
+      return;
+    }
+    
+    console.log('🔥 Permission check passed, proceeding with removal...');
 
     const businessToRemove = collection.businesses?.find(b => b.id === businessId);
-    const businessName = businessToRemove?.name || 'this business';
-
-    showConfirm(
-      'Remove Business',
-      `Are you sure you want to remove "${businessName}" from "${collection.name}" collection?`,
-      async () => {
-        try {
-          const removedBusiness = collection.businesses?.find(b => b.id === businessId);
-          const response = await removeBusinessFromCollection(collection.id, businessId);
-          if (response.success) {
-            setCollection(prev => prev ? {
-              ...prev,
-              businesses: prev.businesses?.filter(b => b.id !== businessId) || [],
-              businesses_count: Math.max(0, prev.businesses_count - 1)
-            } : null);
-            showSuccess(
-              '✅ Business Removed Successfully', 
-              `"${removedBusiness?.name || 'Business'}" has been removed from "${collection.name}" collection.`
-            );
-          } else {
-            showError('❌ Remove Failed', 'Failed to remove business from collection. Please try again.');
-          }
-        } catch (error) {
-          console.error('Error removing business:', error);
-          showError('❌ Remove Failed', 'Failed to remove business. Please check your connection and try again.');
+    // Try to get business name from different possible sources  
+    const businessName = (businessToRemove as any)?.business_name || (businessToRemove as any)?.name || 'this business';
+    console.log('🔥 Business to remove:', businessName);
+    console.log('🔥 businessToRemove object:', businessToRemove);
+    console.log('🔥 About to call showConfirm...');
+    console.log('🔥 confirmCallback function created');
+    
+    // Hide any existing alerts first
+    hideAlert();
+    
+    const confirmCallback = async () => {
+      console.log('🔥🔥🔥 CONFIRMATION CALLBACK TRIGGERED - USER CLICKED CONFIRM 🔥🔥🔥');
+      try {
+        console.log('🔥 API CALL: Starting removeBusinessFromCollection...');
+        console.log('🔥 Parameters:', { collectionId: collection.id, businessId });
+        
+        const response = await removeBusinessFromCollection(collection.id, businessId);
+        console.log('🔥 API RESPONSE:', response);
+        
+        if (response.success) {
+          setCollection(prev => prev ? {
+            ...prev,
+            businesses: prev.businesses?.filter(b => b.id !== businessId) || [],
+            businesses_count: Math.max(0, prev.businesses_count - 1)
+          } : null);
+          showSuccess(
+            '✅ Business Removed Successfully', 
+            `"${businessName}" has been removed from "${collection.name}" collection.`
+          );
+          
+          // Auto dismiss success message
+          setTimeout(() => {
+            hideAlert();
+          }, 3000);
+        } else {
+          console.error('🔥 API returned success: false');
+          showError('❌ Remove Failed', response.message || 'Failed to remove business from collection. Please try again.');
         }
+      } catch (error) {
+        console.error('🔥 Error removing business:', error);
+        showError('❌ Remove Failed', 'Failed to remove business. Please check your connection and try again.');
       }
-    );
+    };
+
+    console.log('🔥 Calling showConfirm with parameters:');
+    console.log('🔥 Title: "Remove Business"');
+    console.log('🔥 Message:', `Are you sure you want to remove "${businessName}" from "${collection.name}" collection?`);
+    console.log('🔥 Callback function:', typeof confirmCallback);
+
+    // Add small delay to ensure any previous alerts are cleared
+    setTimeout(() => {
+      console.log('🔥 About to call showAlert directly with confirmation buttons...');
+      
+      // Use showAlert directly instead of showConfirm to ensure proper button handling
+      showAlert({
+        title: 'Remove Business',
+        message: `Are you sure you want to remove "${businessName}" from "${collection.name}" collection?`,
+        type: 'warning',
+        buttons: [
+          { 
+            text: 'Cancel', 
+            style: 'cancel',
+            onPress: () => {
+              console.log('🔥 User clicked Cancel - no action taken');
+            }
+          },
+          { 
+            text: 'Confirm', 
+            style: 'destructive',
+            onPress: confirmCallback
+          }
+        ]
+      });
+    }, 100);
+    console.log('🔥 showConfirm call completed');
   };
 
   const handleBusinessPress = (business: any) => {
@@ -249,7 +308,8 @@ export default function CollectionDetailsScreen() {
 
   const renderBusiness = ({ item }: { item: any }) => {
     console.log('Rendering business item:', JSON.stringify(item, null, 2));
-    console.log('Address fields - landmark:', item.landmark, 'address:', item.address, 'location:', item.location, 'full_address:', item.full_address);
+    console.log('Collection can_edit for render:', collection?.can_edit);
+    console.log('Should show remove button:', collection?.can_edit !== false);
     
     return (
       <TouchableOpacity
@@ -337,13 +397,63 @@ export default function CollectionDetailsScreen() {
           <TouchableOpacity
             style={[styles.removeButton, { backgroundColor: '#FF5722' }]}
             onPress={(e) => {
+              console.log('🔥 REMOVE BUTTON CLICKED');
               e.stopPropagation();
-              handleRemoveBusiness(item.id);
+              
+              const businessName = (item as any).business_name || (item as any).name;
+              
+              // Use our custom alert with proper button configuration
+              showAlert({
+                title: 'Remove Business',
+                message: `Are you sure you want to remove "${businessName}" from "${collection?.name}" collection?`,
+                type: 'warning',
+                buttons: [
+                  { 
+                    text: 'Cancel', 
+                    style: 'cancel',
+                    onPress: () => {
+                      console.log('🔥 User cancelled removal');
+                    }
+                  },
+                  { 
+                    text: 'Remove', 
+                    style: 'destructive',
+                    onPress: async () => {
+                      console.log('🔥 User confirmed removal');
+                      try {
+                        console.log('🔥 Starting API call to remove business...');
+                        const response = await removeBusinessFromCollection(collection!.id, item.id);
+                        console.log('🔥 API Response:', response);
+                        
+                        if (response.success) {
+                          // Update the collection state to remove the business
+                          setCollection(prev => prev ? {
+                            ...prev,
+                            businesses: prev.businesses?.filter(b => b.id !== item.id) || [],
+                            businesses_count: Math.max(0, prev.businesses_count - 1)
+                          } : null);
+                          
+                          // Show success toast message
+                          showToastSuccess(`"${businessName}" removed from collection`);
+                          
+                          console.log('✅ Business removed successfully');
+                        } else {
+                          console.error('❌ API returned success: false');
+                          showError('❌ Remove Failed', response.message || 'Failed to remove business. Please try again.');
+                        }
+                      } catch (error) {
+                        console.error('❌ Error removing business:', error);
+                        showError('❌ Remove Failed', 'Failed to remove business. Please check your connection and try again.');
+                      }
+                    }
+                  }
+                ]
+              });
             }}
             activeOpacity={0.8}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -394,7 +504,7 @@ export default function CollectionDetailsScreen() {
         </LinearGradient>
 
         {/* Loading State */}
-        <CollectionSkeleton variant="detail" />
+        <BusinessDetailsSkeleton colors={colors} />
       </View>
     );
   }
@@ -416,20 +526,12 @@ export default function CollectionDetailsScreen() {
         </Text>
         <View style={styles.headerRight}>
           {collection?.can_edit !== false && (
-            <>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={() => setShowEditModal(true)}
-              >
-                <Ionicons name="create-outline" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.headerButton}
-                onPress={handleDeleteCollection}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => setShowEditModal(true)}
+            >
+              <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
           )}
         </View>
       </LinearGradient>
@@ -513,7 +615,7 @@ export default function CollectionDetailsScreen() {
                 style={[
                   styles.followButton,
                   {
-                    backgroundColor: collection.is_following ? colors.border : colors.buttonPrimary,
+                    backgroundColor: collection.is_followed_by_user ? colors.border : colors.buttonPrimary,
                   }
                 ]}
                 onPress={handleFollowToggle}
@@ -522,11 +624,11 @@ export default function CollectionDetailsScreen() {
                   style={[
                     styles.followButtonText,
                     {
-                      color: collection.is_following ? colors.text : colors.buttonText,
+                      color: collection.is_followed_by_user ? colors.text : colors.buttonText,
                     }
                   ]}
                 >
-                  {collection.is_following ? 'Following' : 'Follow'}
+                  {collection.is_followed_by_user ? 'Following' : 'Follow'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -593,7 +695,16 @@ export default function CollectionDetailsScreen() {
         type={alertConfig.type}
         title={alertConfig.title}
         message={alertConfig.message}
+        buttons={alertConfig.buttons}
         onClose={hideAlert}
+      />
+      
+      {/* Toast */}
+      <Toast
+        visible={toastConfig.visible}
+        message={toastConfig.message}
+        type={toastConfig.type}
+        onHide={hideToast}
       />
     </View>
   );
@@ -833,17 +944,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FF5722',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 6,
+    zIndex: 10,
   },
   emptyState: {
     alignItems: 'center',

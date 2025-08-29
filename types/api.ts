@@ -429,7 +429,8 @@ export interface Collection {
     profile_image?: string | null;
   };
   businesses?: CollectionBusiness[];
-  is_following?: boolean; // For authenticated users
+  is_following?: boolean; // For authenticated users (legacy)
+  is_followed_by_user?: boolean; // For authenticated users
   can_edit?: boolean; // If current user owns this collection
 }
 

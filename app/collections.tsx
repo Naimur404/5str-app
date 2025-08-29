@@ -113,7 +113,7 @@ export default function CollectionsScreen() {
         setCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
-              ? { ...collection, is_following: true, followers_count: collection.followers_count + 1 }
+              ? { ...collection, is_followed_by_user: true, followers_count: collection.followers_count + 1 }
               : collection
           )
         );
@@ -132,7 +132,7 @@ export default function CollectionsScreen() {
         setCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
-              ? { ...collection, is_following: false, followers_count: Math.max(0, collection.followers_count - 1) }
+              ? { ...collection, is_followed_by_user: false, followers_count: Math.max(0, collection.followers_count - 1) }
               : collection
           )
         );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Modal,
   View,
@@ -8,12 +8,14 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  SafeAreaView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { BusinessListSkeleton } from '@/components/SkeletonLoader';
 import SmartImage from '@/components/SmartImage';
-import CollectionSkeleton from '@/components/CollectionSkeleton';
 
 interface Business {
   id: number;
@@ -263,7 +265,7 @@ const ManageBusinessModal: React.FC<ManageBusinessModalProps> = ({
         {/* Results List */}
         <View style={styles.content}>
           {loading && searchResults.length === 0 ? (
-            <CollectionSkeleton variant="list" count={4} />
+            <BusinessListSkeleton colors={colors} />
           ) : searchResults.length === 0 ? (
             renderEmptyState()
           ) : (

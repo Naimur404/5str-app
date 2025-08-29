@@ -15,9 +15,11 @@ import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { useToast } from '@/hooks/useToast';
 import CustomAlert from '@/components/CustomAlert';
+import Toast from '@/components/Toast';
 import CollectionCard from '@/components/CollectionCard';
-import CollectionSkeleton from '@/components/CollectionSkeleton';
+import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
 import EditCollectionModal from '@/components/EditCollectionModal';
 import CreateCollectionModal from '@/components/CreateCollectionModal';
 import {
@@ -55,6 +57,7 @@ export default function CollectionsScreen() {
   const colors = Colors[colorScheme];
   const router = useRouter();
   const { alertConfig, showError, showSuccess, showConfirm, hideAlert } = useCustomAlert();
+  const { toastConfig, showSuccess: showToastSuccess, hideToast } = useToast();
 
   useEffect(() => {
     checkAuthAndLoadCollections();
@@ -183,40 +186,22 @@ export default function CollectionsScreen() {
         setPopularCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
-              ? { ...collection, is_following: true, followers_count: collection.followers_count + 1 }
+              ? { ...collection, is_followed_by_user: true, followers_count: collection.followers_count + 1 }
               : collection
           )
         );
-        showSuccess(
-          '🔔 Now Following!', 
-          `You will now receive updates from "${updatedCollection?.name || 'this'}" collection.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-        
-        // Auto dismiss success message
-        setTimeout(() => {
-          hideAlert();
-        }, 3000);
+        showToastSuccess(`Following "${updatedCollection?.name || 'collection'}"`);
       } else if (response.status === 409) {
         // Already following - show this as success
         const updatedCollection = popularCollections.find(c => c.id === collectionId);
         setPopularCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
-              ? { ...collection, is_following: true }
+              ? { ...collection, is_followed_by_user: true }
               : collection
           )
         );
-        showSuccess(
-          '✅ Already Following!', 
-          response.message || `You are already following "${updatedCollection?.name || 'this'}" collection.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-        
-        // Auto dismiss success message
-        setTimeout(() => {
-          hideAlert();
-        }, 3000);
+        showToastSuccess(`Already following "${updatedCollection?.name || 'collection'}"`);
       } else {
         showError('❌ Follow Failed', response.message || 'Failed to follow collection. Please try again.');
       }
@@ -235,40 +220,22 @@ export default function CollectionsScreen() {
         setPopularCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
-              ? { ...collection, is_following: false, followers_count: Math.max(0, collection.followers_count - 1) }
+              ? { ...collection, is_followed_by_user: false, followers_count: Math.max(0, collection.followers_count - 1) }
               : collection
           )
         );
-        showSuccess(
-          '✅ Unfollowed Successfully', 
-          `You will no longer receive updates from "${unfollowedCollection?.name || 'this'}" collection.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-        
-        // Auto dismiss success message
-        setTimeout(() => {
-          hideAlert();
-        }, 3000);
+        showToastSuccess(`Unfollowed "${unfollowedCollection?.name || 'collection'}"`);
       } else if (response.status === 409) {
         // Already unfollowed - show this as success
         const unfollowedCollection = popularCollections.find(c => c.id === collectionId);
         setPopularCollections(prev => 
           prev.map(collection => 
             collection.id === collectionId 
-              ? { ...collection, is_following: false }
+              ? { ...collection, is_followed_by_user: false }
               : collection
           )
         );
-        showSuccess(
-          '✅ Already Unfollowed!', 
-          response.message || `You are not following "${unfollowedCollection?.name || 'this'}" collection.`,
-          [{ text: 'OK', style: 'default' }]
-        );
-        
-        // Auto dismiss success message
-        setTimeout(() => {
-          hideAlert();
-        }, 3000);
+        showToastSuccess(`Already unfollowed "${unfollowedCollection?.name || 'collection'}"`);
       } else {
         showError('❌ Unfollow Failed', response.message || 'Failed to unfollow collection. Please try again.');
       }
@@ -464,7 +431,7 @@ export default function CollectionsScreen() {
         </LinearGradient>
 
         {/* Loading Skeleton */}
-        <CollectionSkeleton variant="card" count={3} />
+        <FavouritesPageSkeleton colors={colors} />
       </View>
     );
   }
@@ -584,7 +551,7 @@ export default function CollectionsScreen() {
           isUserAuthenticated === false ? (
             renderLoginPrompt()
           ) : loading ? (
-            <CollectionSkeleton variant="card" count={3} />
+            <FavouritesPageSkeleton colors={colors} />
           ) : filteredCollections.length === 0 ? (
             renderEmptyState()
           ) : (
@@ -606,7 +573,7 @@ export default function CollectionsScreen() {
         ) : (
           // Popular Collections Tab
           popularLoading ? (
-            <CollectionSkeleton variant="card" count={4} />
+            <FavouritesPageSkeleton colors={colors} />
           ) : filteredCollections.length === 0 && searchQuery ? (
             <View style={styles.emptyState}>
               <View style={[styles.emptyIconContainer, { backgroundColor: colors.tint + '20' }]}>
@@ -679,6 +646,14 @@ export default function CollectionsScreen() {
         title={alertConfig.title}
         message={alertConfig.message}
         onClose={hideAlert}
+      />
+
+      {/* Toast */}
+      <Toast 
+        visible={toastConfig.visible}
+        message={toastConfig.message}
+        type={toastConfig.type}
+        onHide={hideToast}
       />
     </View>
   );

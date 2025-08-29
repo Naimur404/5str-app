@@ -41,9 +41,13 @@ export default function CustomAlert({
 
   React.useEffect(() => {
     if (visible) {
+      console.log('🔥 CustomAlert: Alert is now visible');
+      console.log('🔥 CustomAlert: Title:', title);
+      console.log('🔥 CustomAlert: Message:', message);
+      console.log('🔥 CustomAlert: Buttons:', buttons.map(b => ({ text: b.text, hasHandler: !!b.onPress })));
       setIsProcessing(false); // Reset processing state when alert shows
     }
-  }, [visible]);
+  }, [visible, title, message, buttons]);
 
   const getIconAndColor = () => {
     const isDark = colorScheme === 'dark';
@@ -95,21 +99,31 @@ export default function CustomAlert({
   const { icon, color, bgColor } = getIconAndColor();
 
   const handleButtonPress = (button: AlertButton) => {
+    console.log('🔥 CustomAlert: Button pressed:', button.text);
+    console.log('🔥 CustomAlert: Button has onPress handler:', !!button.onPress);
+    console.log('🔥 CustomAlert: isProcessing:', isProcessing);
+    
     // Prevent multiple rapid presses - buttons are always ready now
-    if (isProcessing) return;
+    if (isProcessing) {
+      console.log('🔥 CustomAlert: Ignoring press - already processing');
+      return;
+    }
     
     setIsProcessing(true);
     
     // Execute button action immediately without delay
     if (button.onPress) {
+      console.log('🔥 CustomAlert: Calling button.onPress()...');
       try {
         button.onPress();
+        console.log('🔥 CustomAlert: button.onPress() completed successfully');
       } catch (error) {
-        console.error('Error in button press handler:', error);
+        console.error('🔥 CustomAlert: Error in button press handler:', error);
       }
     }
     
     // Close the alert immediately for better responsiveness
+    console.log('🔥 CustomAlert: Closing alert...');
     if (onClose) {
       onClose();
     }

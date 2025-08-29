@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
 import { Collection } from '@/types/api';
 import {
   getUserCollections,
@@ -280,12 +281,7 @@ const AddToCollectionModal: React.FC<AddToCollectionModalProps> = ({
           </View>
 
           {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.tint} />
-              <Text style={[styles.loadingText, { color: colors.icon }]}>
-                Loading collections...
-              </Text>
-            </View>
+            <FavouritesPageSkeleton colors={colors} />
           ) : collections.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="albums-outline" size={48} color={colors.icon} />

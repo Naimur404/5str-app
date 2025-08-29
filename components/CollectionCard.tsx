@@ -24,7 +24,6 @@ interface CollectionCardProps {
   onFollow?: () => void;
   onUnfollow?: () => void;
   onEdit?: () => void;
-  onDelete?: () => void;
   showFollowButton?: boolean;
   showOwner?: boolean;
   showActions?: boolean;
@@ -37,7 +36,6 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
   onFollow,
   onUnfollow,
   onEdit,
-  onDelete,
   showFollowButton = false,
   showOwner = true,
   showActions = false,
@@ -48,7 +46,7 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
 
   const handleFollowPress = (e: any) => {
     e.stopPropagation();
-    if (collection.is_following && onUnfollow) {
+    if (collection.is_followed_by_user && onUnfollow) {
       onUnfollow();
     } else if (onFollow) {
       onFollow();
@@ -147,17 +145,17 @@ const CollectionCard: React.FC<CollectionCardProps> = ({
               style={[
                 styles.followButton,
                 {
-                  backgroundColor: collection.is_following ? 'transparent' : colors.buttonPrimary,
-                  borderWidth: collection.is_following ? 1 : 0,
-                  borderColor: collection.is_following ? colors.border : 'transparent',
+                  backgroundColor: collection.is_followed_by_user ? 'transparent' : colors.buttonPrimary,
+                  borderWidth: collection.is_followed_by_user ? 1 : 0,
+                  borderColor: collection.is_followed_by_user ? colors.border : 'transparent',
                 }
               ]}
               onPress={handleFollowPress}
             >
               <Ionicons 
-                name={collection.is_following ? "checkmark" : "add"} 
+                name={collection.is_followed_by_user ? "checkmark" : "add"} 
                 size={12} 
-                color={collection.is_following ? colors.text : colors.buttonText} 
+                color={collection.is_followed_by_user ? colors.text : colors.buttonText} 
               />
             </TouchableOpacity>
           ) : showActions ? (

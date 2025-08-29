@@ -23,6 +23,15 @@ export const useCustomAlert = () => {
   });
 
   const showAlert = useCallback((options: AlertOptions) => {
+    console.log('🔥🔥🔥 ALERT BEING SHOWN 🔥🔥🔥');
+    console.log('🔥 useCustomAlert: showAlert called with:', {
+      title: options.title,
+      message: options.message,
+      type: options.type,
+      buttons: options.buttons?.map(b => ({ text: b.text, hasHandler: !!b.onPress }))
+    });
+    console.log('🔥 Stack trace:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
+    
     setAlertConfig({
       ...options,
       visible: true,
@@ -57,14 +66,24 @@ export const useCustomAlert = () => {
     onConfirm?: () => void,
     onCancel?: () => void
   ) => {
+    console.log('🔥 showConfirm called with:');
+    console.log('🔥 - title:', title);
+    console.log('🔥 - message:', message);
+    console.log('🔥 - onConfirm handler:', typeof onConfirm);
+    console.log('🔥 - onCancel handler:', typeof onCancel);
+    
+    const buttons = [
+      { text: 'Cancel', style: 'cancel' as const, onPress: onCancel },
+      { text: 'Confirm', style: 'destructive' as const, onPress: onConfirm },
+    ];
+    
+    console.log('🔥 - buttons created:', buttons.map(b => ({ text: b.text, hasHandler: !!b.onPress })));
+    
     showAlert({
       title,
       message,
       type: 'warning',
-      buttons: [
-        { text: 'Cancel', style: 'cancel', onPress: onCancel },
-        { text: 'Confirm', style: 'destructive', onPress: onConfirm },
-      ],
+      buttons,
     });
   }, [showAlert]);
 
