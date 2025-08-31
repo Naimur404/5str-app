@@ -31,10 +31,18 @@ export const API_CONFIG = {
     OFFER_DETAILS: '/api/v1/offers',
     NOTIFICATIONS: '/api/v1/notifications',
     LOCATION_RECOMMENDATIONS: '/api/v1/location/recommendations',
+    // New Recommendation Endpoints
+    RECOMMENDATIONS: '/api/v1/recommendations',
+    RECOMMENDATIONS_ADVANCED_AI: '/api/v1/recommendations/advanced-ai',
+    RECOMMENDATIONS_PERSONALIZED: '/api/v1/recommendations/personalized',
+    RECOMMENDATIONS_SIMILAR: '/api/v1/recommendations/similar',
     COLLECTIONS: '/api/v1/collections',
     COLLECTION_FOLLOW: '/api/v1/collections',
     POPULAR_COLLECTIONS: '/api/v1/discover/collections/popular',
     SEARCH_COLLECTIONS: '/api/v1/discover/collections/search',
+    // User Interaction Tracking Endpoints
+    TRACK_INTERACTION: '/api/v1/interactions/track',
+    TRACK_BATCH: '/api/v1/interactions/batch',
   }
 };
 

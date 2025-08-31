@@ -5,7 +5,7 @@ import { useLocation } from '@/contexts/LocationContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User } from '@/services/api';
+import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User, getMainRecommendations, MainRecommendationsResponse, RecommendationBusiness } from '@/services/api';
 import cacheService from '@/services/cacheService';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
@@ -32,6 +32,7 @@ import { useToastGlobal } from '@/contexts/ToastContext';
 import { LocationHeader } from '@/components/LocationHeader';
 import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { addTrackingToPress } from '@/hooks/useFlatListTracking';
 
 const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width - 48;
@@ -66,6 +67,15 @@ export default function HomeScreen() {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [loginMessageShown, setLoginMessageShown] = useState(false);
   const [showLoginMessage, setShowLoginMessage] = useState(false);
+  const [recommendations, setRecommendations] = useState<RecommendationBusiness[]>([]);
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('🎯 HOME SCREEN STATE UPDATE:');
+    console.log('- isUserAuthenticated:', isUserAuthenticated);
+    console.log('- recommendations.length:', recommendations.length);
+    console.log('- shouldShowRecommendations:', isUserAuthenticated && recommendations.length > 0);
+  }, [isUserAuthenticated, recommendations]);
 
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
@@ -191,6 +201,8 @@ export default function HomeScreen() {
   // Run main initialization after login check
   useEffect(() => {
     const initializeApp = async () => {
+      console.log('🚀 HOME SCREEN: Initializing app...');
+      
       // First, try to preload cached data for instant display
       const cachedData = await cacheService.preloadCachedData();
       
@@ -206,6 +218,7 @@ export default function HomeScreen() {
         setIsUserAuthenticated(true);
       }
 
+      console.log('🚀 Starting parallel data loading (auth + home data)...');
       // Then fetch fresh data in parallel
       await Promise.all([
         checkAuthAndLoadUser(),
@@ -271,27 +284,35 @@ export default function HomeScreen() {
   };
 
   const checkAuthAndLoadUser = async () => {
+    console.log('🔐 checkAuthAndLoadUser called');
     try {
       const authenticated = await isAuthenticated();
+      console.log('🔐 isAuthenticated result:', authenticated);
       setIsUserAuthenticated(authenticated);
       
       if (authenticated) {
+        console.log('✅ User is authenticated, loading profile and recommendations');
         // Try to get cached user profile first
         const cachedUser = await cacheService.getUserProfile();
         if (cachedUser) {
           console.log('Using cached user profile');
           setUser(cachedUser);
-          return;
+        } else {
+          console.log('Fetching fresh user profile');
+          const userResponse = await getUserProfile();
+          if (userResponse.success && userResponse.data.user) {
+            setUser(userResponse.data.user);
+            // Cache the user profile
+            await cacheService.setUserProfile(userResponse.data.user);
+            console.log('User profile cached until logout/update');
+          }
         }
-
-        console.log('Fetching fresh user profile');
-        const userResponse = await getUserProfile();
-        if (userResponse.success && userResponse.data.user) {
-          setUser(userResponse.data.user);
-          // Cache the user profile
-          await cacheService.setUserProfile(userResponse.data.user);
-          console.log('User profile cached until logout/update');
-        }
+        
+        // Load main recommendations for authenticated users
+        console.log('🎯 About to call loadMainRecommendations');
+        loadMainRecommendations();
+      } else {
+        console.log('❌ User is not authenticated, skipping profile and recommendations');
       }
     } catch (error) {
       console.error('Error checking auth or loading user:', error);
@@ -448,6 +469,48 @@ export default function HomeScreen() {
     }
   };
 
+  // Load Main Recommendations (only for authenticated users)
+  const loadMainRecommendations = async () => {
+    console.log('🎯 loadMainRecommendations called');
+    console.log('🔐 isUserAuthenticated:', isUserAuthenticated);
+    
+    if (!isUserAuthenticated) {
+      console.log('❌ User not authenticated, skipping recommendations');
+      return;
+    }
+
+    try {
+      const coordinates = getCoordinatesForAPI();
+      console.log('📍 Coordinates for API:', coordinates);
+      console.log('🎯 Loading main recommendations for authenticated user');
+      
+      const response = await getMainRecommendations(
+        coordinates.latitude,
+        coordinates.longitude,
+        10 // Load 10 recommendations for home screen
+      );
+
+      console.log('📡 Main recommendations API response:', response);
+      console.log('📡 Response success:', response.success);
+      console.log('📡 Response data:', response.data);
+
+      if (response.success) {
+        console.log('📡 Recommendations:', response.data.recommendations);
+        console.log('📡 Recommendations length:', response.data.recommendations?.length);
+        
+        setRecommendations(response.data.recommendations || []);
+        console.log(`✅ Loaded ${response.data.recommendations?.length || 0} main recommendations`);
+      } else {
+        console.log('❌ Failed to load main recommendations - response not successful');
+        console.log('❌ Response data:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error loading main recommendations:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      // Don't show error alert for recommendations - it's optional content
+    }
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchHomeData();
@@ -549,7 +612,7 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const renderBusinessCard = ({ item }: { item: Business }) => {
+  const renderBusinessCard = ({ item, index, section }: { item: Business, index?: number, section?: string }) => {
     // Handle both old and new image structure
     const getBusinessImage = () => {
       if (item.images?.logo) {
@@ -579,12 +642,20 @@ export default function HomeScreen() {
 
     const distanceText = formatDistance(item.distance);
 
+    // Create the original onPress handler
+    const originalOnPress = () => {
+      router.push(`/business/${item.id}` as any);
+    };
+
+    // Add tracking if section and index are provided
+    const onPressWithTracking = section && typeof index === 'number' 
+      ? addTrackingToPress(originalOnPress, item.id, index, section)
+      : originalOnPress;
+
     return (
       <TouchableOpacity 
         style={[styles.businessCard, { backgroundColor: colors.card }]}
-        onPress={() => {
-          router.push(`/business/${item.id}` as any);
-        }}
+        onPress={onPressWithTracking}
       >
         <Image source={{ uri: getBusinessImage() }} style={styles.businessImage} />
         <View style={styles.businessInfo}>
@@ -610,6 +681,70 @@ export default function HomeScreen() {
               )}
               <Text style={[styles.priceRange, { color: colors.icon }]}>
                 {'$'.repeat(item.price_range)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render recommendation card with trending indicators
+  const renderRecommendationCard = ({ item, index }: { item: RecommendationBusiness, index?: number }) => {
+    const business = item.business; // Extract the business object
+    
+    // Create the original onPress handler
+    const originalOnPress = () => {
+      router.push(`/business/${business.id}` as any);
+    };
+
+    // Add tracking with section for recommendations
+    const onPressWithTracking = typeof index === 'number' 
+      ? addTrackingToPress(originalOnPress, business.id, index, 'main_recommendations')
+      : originalOnPress;
+
+    return (
+      <TouchableOpacity 
+        style={[styles.businessCard, styles.recommendationCard, { backgroundColor: colors.card }]}
+        onPress={onPressWithTracking}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={{ uri: getImageUrl(business.logo_image?.image_url) || getFallbackImageUrl('business') }} 
+          style={styles.businessImage}
+        />
+        
+        {/* Trending Badge - using final_score as indicator */}
+        {item.final_score && item.final_score > 80 && (
+          <View style={[styles.trendingBadge, { backgroundColor: '#FF6B35' }]}>
+            <Ionicons name="trending-up" size={10} color="white" />
+            <Text style={styles.trendingText}>Hot</Text>
+          </View>
+        )}
+        
+        <View style={styles.businessInfo}>
+          <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+            {business.business_name}
+          </Text>
+          <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
+            {business.categories?.[0]?.name || 'Business'} • {business.area}
+          </Text>
+          {business.landmark && (
+            <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
+              {business.landmark}
+            </Text>
+          )}
+          <View style={styles.businessMeta}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={12} color="#FFD700" />
+              <Text style={[styles.rating, { color: colors.text }]}>{business.overall_rating}</Text>
+            </View>
+            <View style={styles.metaRight}>
+              <Text style={[styles.distance, { color: colors.icon }]}>
+                {parseFloat(business.distance).toFixed(1)}km
+              </Text>
+              <Text style={[styles.priceRange, { color: colors.icon }]}>
+                {business.price_range ? `${'$'.repeat(business.price_range)}` : '$'}
               </Text>
             </View>
           </View>
@@ -860,6 +995,62 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* Recommended for You - Only show for authenticated users */}
+        {isUserAuthenticated && recommendations.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.recommendationHeaderMain}>
+                <View style={[styles.aiIcon, { backgroundColor: colors.tint }]}>
+                  <Ionicons name="sparkles" size={16} color="white" />
+                </View>
+                <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                  Recommended for You
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/recommendations' as any)}>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={recommendations.slice(0, 6)} // Show only first 6 recommendations
+              renderItem={({ item, index }) => renderRecommendationCard({ item, index })}
+              keyExtractor={(item) => item.business.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.businessContainer}
+            />
+          </View>
+        )}
+
+        {/* AI Picks Button - Only show for authenticated users */}
+        {isUserAuthenticated && (
+          <View style={styles.section}>
+            <TouchableOpacity 
+              style={[styles.recommendationsBanner, { backgroundColor: colors.card, borderWidth: 2, borderColor: '#8B5CF6' }]}
+              onPress={() => router.push('/ai-recommendations' as any)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.recommendationsBannerContent}>
+                <View style={[styles.recommendationsIcon, { backgroundColor: '#8B5CF6' }]}>
+                  <Ionicons name="bulb" size={24} color="white" />
+                </View>
+                <View style={styles.recommendationsText}>
+                  <Text style={[styles.recommendationsTitle, { color: colors.text }]}>
+                    AI Picks
+                  </Text>
+                  <Text style={[styles.recommendationsSubtitle, { color: colors.icon }]}>
+                    Discover smart recommendations powered by AI
+                  </Text>
+                </View>
+                <View style={[styles.discountBadge, { backgroundColor: '#8B5CF6', position: 'relative', top: 0, right: 0 }]}>
+                  <Ionicons name="sparkles" size={10} color="white" />
+                  <Text style={[styles.discountText, { marginLeft: 2 }]}>NEW</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Trending Businesses */}
         {homeData?.trending_businesses && homeData.trending_businesses.length > 0 && (
           <View style={styles.section}>
@@ -871,7 +1062,7 @@ export default function HomeScreen() {
             </View>
             <FlatList
               data={homeData.trending_businesses}
-              renderItem={renderBusinessCard}
+              renderItem={({ item, index }) => renderBusinessCard({ item, index, section: 'trending_businesses' })}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -891,7 +1082,7 @@ export default function HomeScreen() {
             </View>
             <FlatList
               data={homeData.popular_nearby}
-              renderItem={renderBusinessCard}
+              renderItem={({ item, index }) => renderBusinessCard({ item, index, section: 'popular_nearby' })}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -911,7 +1102,7 @@ export default function HomeScreen() {
             </View>
             <FlatList
               data={section.businesses}
-              renderItem={renderBusinessCard}
+              renderItem={({ item, index }) => renderBusinessCard({ item, index, section: section.section_slug })}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -931,7 +1122,7 @@ export default function HomeScreen() {
             </View>
             <FlatList
               data={homeData.featured_businesses}
-              renderItem={renderBusinessCard}
+              renderItem={({ item, index }) => renderBusinessCard({ item, index, section: 'featured_businesses' })}
               keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -1345,5 +1536,37 @@ const styles = StyleSheet.create({
   paginationDotActive: {
     width: 24,
     borderRadius: 4,
+  },
+  // Recommendation styles
+  recommendationHeaderMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  aiIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recommendationCard: {
+    position: 'relative',
+  },
+  trendingBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  trendingText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: '600',
+    marginLeft: 2,
   },
 });

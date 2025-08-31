@@ -224,6 +224,83 @@ export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
           </View>
         </View>
       ))}
+      
+      {/* Similar Businesses Section Skeleton - Separate Section */}
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        {/* Section title skeleton - consistent with other sections */}
+        <SkeletonBox 
+          width={150} 
+          height={18} 
+          borderRadius={9}
+          backgroundColor={colors.icon + '20'} 
+        />
+        
+        {/* Similar businesses content */}
+        <View style={styles.sectionContent}>
+          {/* Description line */}
+          <SkeletonBox 
+            width="85%" 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+          
+          {/* Horizontal similar businesses cards */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+            {[...Array(3)].map((_, index) => (
+              <View key={index} style={{ 
+                width: 140, 
+                backgroundColor: colors.background, 
+                borderRadius: 12, 
+                padding: 8 
+              }}>
+                <SkeletonBox 
+                  width="100%" 
+                  height={70} 
+                  borderRadius={8}
+                  backgroundColor={colors.icon + '20'} 
+                />
+                <View style={{ marginTop: 8, gap: 4 }}>
+                  <SkeletonBox 
+                    width="90%" 
+                    height={13} 
+                    borderRadius={7}
+                    backgroundColor={colors.icon + '20'} 
+                  />
+                  <SkeletonBox 
+                    width="70%" 
+                    height={11} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '15'} 
+                  />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                      <SkeletonBox 
+                        width={10} 
+                        height={10} 
+                        borderRadius={5}
+                        backgroundColor={colors.icon + '20'} 
+                      />
+                      <SkeletonBox 
+                        width={25} 
+                        height={10} 
+                        borderRadius={5}
+                        backgroundColor={colors.icon + '20'} 
+                      />
+                    </View>
+                    <SkeletonBox 
+                      width={35} 
+                      height={10} 
+                      borderRadius={5}
+                      backgroundColor={colors.icon + '15'} 
+                    />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
     </View>
   </View>
 );
@@ -2283,3 +2360,467 @@ export const ReviewFormSkeleton = React.memo(({ colors }: SkeletonProps) => (
     </View>
   </View>
 ));
+
+// Similar Businesses Skeleton for Business Detail Page
+export const SimilarBusinessesSkeleton = React.memo(({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    <View style={[styles.section, { backgroundColor: colors.card, padding: 16 }]}>
+      {/* Header skeleton */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <SkeletonBox 
+            width={20} 
+            height={20} 
+            borderRadius={10}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width={150} 
+            height={18} 
+            borderRadius={9}
+            backgroundColor={colors.icon + '20'} 
+          />
+        </View>
+      </View>
+      
+      {/* Description skeleton */}
+      <SkeletonBox 
+        width="85%" 
+        height={14} 
+        borderRadius={7}
+        backgroundColor={colors.icon + '15'} 
+      />
+      
+      {/* Business cards skeleton */}
+      {[...Array(4)].map((_, index) => (
+        <View key={index} style={{ marginTop: 16, backgroundColor: colors.background, borderRadius: 12, padding: 12 }}>
+          <View style={{ flexDirection: 'row' }}>
+            {/* Business image skeleton */}
+            <SkeletonBox 
+              width={80} 
+              height={60} 
+              borderRadius={8}
+              backgroundColor={colors.icon + '20'} 
+            />
+            
+            {/* Business info skeleton */}
+            <View style={{ marginLeft: 12, flex: 1, justifyContent: 'space-between' }}>
+              {/* Business name */}
+              <SkeletonBox 
+                width={`${75 + (index * 5)}%`} 
+                height={16} 
+                borderRadius={8}
+                backgroundColor={colors.icon + '20'} 
+              />
+              
+              {/* Category */}
+              <SkeletonBox 
+                width={`${50 + (index * 8)}%`} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+              
+              {/* Rating and distance */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <SkeletonBox 
+                    width={12} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '20'} 
+                  />
+                  <SkeletonBox 
+                    width={35} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '20'} 
+                  />
+                </View>
+                <SkeletonBox 
+                  width={45} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+));
+
+// AI Recommendations Page Skeleton
+export const AIRecommendationsSkeleton = React.memo(({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    {/* Header skeleton */}
+    <View style={[aiRecommendationsStyles.headerSkeleton, { backgroundColor: colors.headerGradientStart }]}>
+      <View style={aiRecommendationsStyles.headerContent}>
+        <View style={aiRecommendationsStyles.headerTitleRow}>
+          <SkeletonBox 
+            width={40} 
+            height={40} 
+            borderRadius={20}
+            backgroundColor="rgba(255,255,255,0.3)" 
+          />
+          <View style={aiRecommendationsStyles.aiIconLarge}>
+            <SkeletonBox 
+              width={40} 
+              height={40} 
+              borderRadius={20}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+          </View>
+          <View style={aiRecommendationsStyles.headerTextContainer}>
+            <SkeletonBox 
+              width={100} 
+              height={28} 
+              borderRadius={14}
+              backgroundColor="rgba(255,255,255,0.4)" 
+            />
+            <SkeletonBox 
+              width={180} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+          </View>
+          <SkeletonBox 
+            width={40} 
+            height={40} 
+            borderRadius={20}
+            backgroundColor="rgba(255,255,255,0.3)" 
+          />
+        </View>
+        <SkeletonBox 
+          width={200} 
+          height={16} 
+          borderRadius={8}
+          backgroundColor="rgba(255,255,255,0.3)" 
+        />
+      </View>
+      
+      {/* Animated particles skeleton */}
+      <View style={aiRecommendationsStyles.particlesContainer}>
+        {[...Array(6)].map((_, i) => (
+          <StaggeredSkeletonBox
+            key={i}
+            width={4}
+            height={4}
+            borderRadius={2}
+            backgroundColor="rgba(255,255,255,0.6)"
+            delay={i * 100}
+          />
+        ))}
+      </View>
+    </View>
+
+    {/* AI Recommendation cards skeleton */}
+    <View style={aiRecommendationsStyles.listContainer}>
+      {[...Array(5)].map((_, index) => (
+        <View key={index} style={[aiRecommendationsStyles.recommendationCard, { backgroundColor: colors.card }]}>
+          {/* Business image skeleton */}
+          <View style={aiRecommendationsStyles.imageContainer}>
+            <SkeletonBox 
+              width="100%" 
+              height={100} 
+              borderRadius={0}
+              backgroundColor={colors.icon + '20'} 
+            />
+            
+            {/* AI Score Badge skeleton */}
+            <View style={aiRecommendationsStyles.aiBadge}>
+              <SkeletonBox 
+                width={12} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor="white" 
+              />
+              <SkeletonBox 
+                width={30} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor="white" 
+              />
+            </View>
+            
+            {/* Algorithm type badge skeleton */}
+            <View style={aiRecommendationsStyles.typeBadge}>
+              <SkeletonBox 
+                width={40} 
+                height={11} 
+                borderRadius={5}
+                backgroundColor="white" 
+              />
+            </View>
+          </View>
+          
+          {/* Card content skeleton */}
+          <View style={[aiRecommendationsStyles.cardContent, { backgroundColor: colors.card }]}>
+            <SkeletonBox 
+              width="85%" 
+              height={16} 
+              borderRadius={8}
+              backgroundColor={colors.icon + '20'} 
+            />
+            <SkeletonBox 
+              width="70%" 
+              height={13} 
+              borderRadius={6}
+              backgroundColor={colors.tint + '40'} 
+            />
+            <SkeletonBox 
+              width="60%" 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={colors.icon + '15'} 
+            />
+            
+            {/* AI Algorithm Analysis skeleton */}
+            <View style={[aiRecommendationsStyles.aiExplanationContainer, { backgroundColor: colors.tint + '10' }]}>
+              <View style={aiRecommendationsStyles.aiHeader}>
+                <View style={[aiRecommendationsStyles.aiIcon, { backgroundColor: colors.tint + '20' }]}>
+                  <SkeletonBox 
+                    width={14} 
+                    height={14} 
+                    borderRadius={7}
+                    backgroundColor={colors.tint} 
+                  />
+                </View>
+                <SkeletonBox 
+                  width={90} 
+                  height={11} 
+                  borderRadius={5}
+                  backgroundColor={colors.tint} 
+                />
+                <View style={aiRecommendationsStyles.neuralIndicator}>
+                  <SkeletonBox 
+                    width={6} 
+                    height={6} 
+                    borderRadius={3}
+                    backgroundColor="#10B981" 
+                  />
+                  <SkeletonBox 
+                    width={35} 
+                    height={9} 
+                    borderRadius={4}
+                    backgroundColor="#10B981" 
+                  />
+                </View>
+              </View>
+              <SkeletonBox 
+                width="95%" 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '20'} 
+              />
+              <SkeletonBox 
+                width="70%" 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+              
+              {/* Algorithm badges skeleton */}
+              <View style={aiRecommendationsStyles.algorithmBadges}>
+                {[...Array(2)].map((_, algorithmIndex) => (
+                  <View 
+                    key={algorithmIndex} 
+                    style={[aiRecommendationsStyles.algorithmChip, { backgroundColor: colors.tint + '20' }]}
+                  >
+                    <SkeletonBox 
+                      width={50} 
+                      height={10} 
+                      borderRadius={5}
+                      backgroundColor={colors.tint} 
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+            
+            {/* Business meta skeleton */}
+            <View style={aiRecommendationsStyles.businessMeta}>
+              <View style={aiRecommendationsStyles.ratingContainer}>
+                <SkeletonBox 
+                  width={14} 
+                  height={14} 
+                  borderRadius={7}
+                  backgroundColor="#FFD700" 
+                />
+                <SkeletonBox 
+                  width={30} 
+                  height={15} 
+                  borderRadius={7}
+                  backgroundColor={colors.icon + '20'} 
+                />
+              </View>
+              <View style={aiRecommendationsStyles.metaRight}>
+                <SkeletonBox 
+                  width={45} 
+                  height={13} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+                <SkeletonBox 
+                  width={25} 
+                  height={15} 
+                  borderRadius={7}
+                  backgroundColor={colors.icon + '20'} 
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+));
+
+// Additional styles for AI Recommendations skeleton
+const aiRecommendationsStyles = StyleSheet.create({
+  headerSkeleton: {
+    paddingTop: 45,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerContent: {
+    zIndex: 10,
+    gap: 8,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  aiIconLarge: {
+    position: 'relative',
+  },
+  headerTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  particlesContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  listContainer: {
+    padding: 16,
+    gap: 12,
+  },
+  recommendationCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.1)',
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 100,
+  },
+  aiBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+    backgroundColor: 'rgba(99, 102, 241, 0.9)',
+  },
+  typeBadge: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    backgroundColor: '#10B981',
+  },
+  cardContent: {
+    padding: 14,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    marginTop: -12,
+    position: 'relative',
+    zIndex: 5,
+    gap: 4,
+  },
+  aiExplanationContainer: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
+    gap: 6,
+  },
+  aiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  aiIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  neuralIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 'auto',
+  },
+  algorithmBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  algorithmChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  businessMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+});

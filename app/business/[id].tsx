@@ -17,7 +17,11 @@ import {
     getAuthToken,
     deleteReview,
     getUserCollections,
-    addBusinessToCollection
+    addBusinessToCollection,
+    getSimilarBusinesses,
+    SimilarBusinessesResponse,
+    RecommendationBusiness,
+    getAdvancedAIRecommendations
 } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,17 +42,18 @@ import {
 } from 'react-native';
 import ReviewCard from '@/components/ReviewCard';
 import ProfileAvatar from '@/components/ProfileAvatar';
-import { BusinessDetailsSkeleton } from '@/components/SkeletonLoader';
+import { BusinessDetailsSkeleton, SimilarBusinessesSkeleton } from '@/components/SkeletonLoader';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import * as Location from 'expo-location';
 import { useLocation } from '@/contexts/LocationContext';
 import AddToCollectionModal from '@/components/AddToCollectionModal';
+import { useBusinessTracking } from '@/hooks/useBusinessTracking';
 
 const { width } = Dimensions.get('window');
 
-type TabType = 'overview' | 'menu' | 'ratings';
+type TabType = 'overview' | 'menu' | 'ratings' | 'similar';
 
 export default function BusinessDetailsScreen() {
   const [business, setBusiness] = useState<DetailedBusiness | null>(null);
@@ -65,6 +70,8 @@ export default function BusinessDetailsScreen() {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [similarBusinesses, setSimilarBusinesses] = useState<any[]>([]);
+  const [similarBusinessesLoading, setSimilarBusinessesLoading] = useState(false);
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -75,12 +82,37 @@ export default function BusinessDetailsScreen() {
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
   const { showSuccess } = useToastGlobal();
   const { getCoordinatesForAPI } = useLocation();
+  
+  // Get tracking functions
+  const tracking = useBusinessTracking(businessId, {
+    autoTrackView: true,
+    viewSource: 'business_detail_screen',
+    viewContext: { 
+      businessName: business?.business_name,
+      category: business?.category?.name,
+      subcategory: business?.subcategory?.name
+    }
+  });
 
   useEffect(() => {
     if (businessId) {
       checkAuthenticationAndLoadData();
     }
   }, [businessId]);
+
+  // Handle tab switching when authentication state changes
+  useEffect(() => {
+    if (!isUserAuthenticated && activeTab === 'similar') {
+      setActiveTab('overview');
+    }
+  }, [isUserAuthenticated, activeTab]);
+
+  // Load similar businesses when user switches to Similar tab
+  useEffect(() => {
+    if (activeTab === 'similar' && isUserAuthenticated && similarBusinesses.length === 0 && !similarBusinessesLoading) {
+      loadSimilarBusinesses();
+    }
+  }, [activeTab, isUserAuthenticated]);
 
   const checkAuthenticationAndLoadData = async () => {
     try {
@@ -134,6 +166,11 @@ export default function BusinessDetailsScreen() {
         // Set favorite status from API response
         setIsFavorite(businessResponse.data.is_favorite || false);
         console.log('Business favorite status from API:', businessResponse.data.is_favorite);
+        
+        // Load similar businesses if user is authenticated
+        if (isUserAuthenticated) {
+          loadSimilarBusinesses();
+        }
       } else {
         setError('Failed to load business details');
       }
@@ -171,6 +208,39 @@ export default function BusinessDetailsScreen() {
     }
   };
 
+  // Load similar businesses (only for authenticated users)
+  const loadSimilarBusinesses = async () => {
+    if (!isUserAuthenticated) {
+      console.log('User not authenticated, skipping similar businesses');
+      return;
+    }
+
+    try {
+      setSimilarBusinessesLoading(true);
+      const coordinates = getCoordinatesForAPI();
+      console.log('🔄 Loading similar businesses for authenticated user');
+      
+      const response = await getSimilarBusinesses(
+        businessId,
+        coordinates.latitude,
+        coordinates.longitude,
+        6 // Load 6 similar businesses
+      );
+
+      if (response.success) {
+        setSimilarBusinesses(response.data.similar_businesses);
+        console.log(`✅ Loaded ${response.data.similar_businesses.length} similar businesses`);
+      } else {
+        console.log('❌ Failed to load similar businesses');
+      }
+    } catch (error) {
+      console.error('❌ Error loading similar businesses:', error);
+      // Don't show error alert for similar businesses - it's optional content
+    } finally {
+      setSimilarBusinessesLoading(false);
+    }
+  };
+
   const toggleFavorite = async () => {
     console.log('toggleFavorite called. isUserAuthenticated:', isUserAuthenticated, 'isFavorite:', isFavorite, 'favoriteId:', favoriteId);
     
@@ -191,6 +261,13 @@ export default function BusinessDetailsScreen() {
       console.log('Already loading, skipping...');
       return;
     }
+    
+    // Track favorite action
+    tracking.trackFavorite(!isFavorite, {
+      businessName: business?.business_name,
+      action: isFavorite ? 'remove_favorite' : 'add_favorite',
+      source: 'favorite_button'
+    });
     
     setFavoriteLoading(true);
     try {
@@ -295,6 +372,14 @@ export default function BusinessDetailsScreen() {
     try {
       const currentFav = offeringFavorites[offeringId];
       
+      // Track offering favorite action
+      tracking.trackFavorite(!currentFav?.isFavorite, {
+        businessName: business?.business_name,
+        offeringId: offeringId,
+        action: currentFav?.isFavorite ? 'remove_offering_favorite' : 'add_offering_favorite',
+        source: 'offering_card'
+      });
+      
       if (currentFav?.isFavorite) {
         // If we have favoriteId, use it; otherwise get it from getUserFavorites
         let favoriteIdToRemove = currentFav.favoriteId;
@@ -380,18 +465,40 @@ export default function BusinessDetailsScreen() {
   };
 
   const handleCall = () => {
+    // Track phone call action
+    tracking.trackPhoneCall({
+      businessName: business?.business_name,
+      phoneNumber: business?.business_phone,
+      source: 'quick_actions_bar'
+    });
+    
     if (business?.business_phone) {
       Linking.openURL(`tel:${business.business_phone}`);
     }
   };
 
   const handleWebsite = () => {
+    // Track website click action
+    tracking.trackWebsiteClick({
+      businessName: business?.business_name,
+      websiteUrl: business?.website_url,
+      source: 'quick_actions_bar'
+    });
+    
     if (business?.website_url) {
       Linking.openURL(business.website_url);
     }
   };
 
   const handleDirections = () => {
+    // Track directions action
+    tracking.trackDirectionRequest({
+      businessName: business?.business_name,
+      latitude: business?.latitude,
+      longitude: business?.longitude,
+      source: 'quick_actions_bar'
+    });
+    
     if (business?.latitude && business?.longitude) {
       const url = `https://maps.google.com/?q=${business.latitude},${business.longitude}`;
       Linking.openURL(url);
@@ -399,6 +506,13 @@ export default function BusinessDetailsScreen() {
   };
 
   const handleWriteReview = async () => {
+    // Track review action
+    tracking.trackReview({
+      businessName: business?.business_name,
+      action: 'write_review',
+      source: 'quick_actions_bar'
+    });
+    
     if (!isUserAuthenticated) {
       showAlert({
         type: 'info',
@@ -518,6 +632,8 @@ export default function BusinessDetailsScreen() {
         return renderMenuTab();
       case 'ratings':
         return renderRatingsTab();
+      case 'similar':
+        return renderSimilarTab();
       default:
         return renderOverviewTab();
     }
@@ -688,7 +804,17 @@ export default function BusinessDetailsScreen() {
     return (
       <TouchableOpacity 
         style={[styles.menuItemCard, { backgroundColor: colors.card }]}
-        onPress={() => router.push(`/offering/${businessId}/${item.id}` as any)}
+        onPress={() => {
+          // Track offering click
+          tracking.trackClick({
+            businessName: business?.business_name,
+            offeringId: item.id,
+            offeringName: item.name,
+            action: 'view_offering_details',
+            source: 'offering_card'
+          });
+          router.push(`/offering/${businessId}/${item.id}` as any);
+        }}
       >
         {item.image_url ? (
           <View style={styles.menuItemCardHeader}>
@@ -775,6 +901,61 @@ export default function BusinessDetailsScreen() {
                 <Text style={styles.cardBadgeText}>Unavailable</Text>
               </View>
             )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render similar business card
+  const renderSimilarBusinessCard = ({ item, index }: { item: any, index?: number }) => {
+    return (
+      <TouchableOpacity 
+        style={[styles.similarBusinessCard, { backgroundColor: colors.card }]}
+        onPress={() => {
+          // Track similar business click
+          tracking.trackClick({
+            businessName: business?.business_name,
+            similarBusinessId: item.id,
+            similarBusinessName: item.name || item.business_name,
+            action: 'view_similar_business',
+            source: 'similar_places_section'
+          });
+          router.push(`/business/${item.id}` as any);
+        }}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={{ uri: getImageUrl(item.logo_image?.image_url || item.image_url) || getFallbackImageUrl('business') }} 
+          style={styles.similarBusinessImage}
+        />
+        
+        {/* Similarity Badge */}
+        {(item as any).similarity_score && (item as any).similarity_score > 85 && (
+          <View style={[styles.similarityBadge, { backgroundColor: colors.tint }]}>
+            <Ionicons name="checkmark-circle" size={10} color="white" />
+            <Text style={styles.similarityText}>Match</Text>
+          </View>
+        )}
+        
+        <View style={styles.similarBusinessInfo}>
+          <Text style={[styles.similarBusinessName, { color: colors.text }]} numberOfLines={1}>
+            {item.name || item.business_name}
+          </Text>
+          <Text style={[styles.similarBusinessCategory, { color: colors.icon }]} numberOfLines={1}>
+            {item.categories?.[0]?.name || item.category_name || 'Category'}
+          </Text>
+          
+          <View style={styles.similarBusinessMeta}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={10} color="#FFD700" />
+              <Text style={[styles.similarRatingText, { color: colors.text }]}>
+                {item.overall_rating}
+              </Text>
+            </View>
+            <Text style={[styles.similarDistanceText, { color: colors.icon }]}>
+              {item.distance ? parseFloat(item.distance).toFixed(1) : '0.0'}km
+            </Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -959,6 +1140,110 @@ export default function BusinessDetailsScreen() {
     </View>
   );
 
+  const renderSimilarTab = () => (
+    <View style={styles.tabInnerContent}>
+      {!isUserAuthenticated ? (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
+            <Ionicons name="compass-outline" size={48} color={colors.icon} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>Sign In Required</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+            Please sign in to discover similar businesses
+          </Text>
+        </View>
+      ) : similarBusinessesLoading ? (
+        <SimilarBusinessesSkeleton colors={colors} />
+      ) : similarBusinesses.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.card }]}>
+            <Ionicons name="compass-outline" size={48} color={colors.icon} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No Similar Businesses</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
+            We couldn't find any similar businesses in your area
+          </Text>
+        </View>
+      ) : (
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.similarHeaderMain}>
+              <Ionicons name="compass" size={20} color={colors.tint} />
+              <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                Similar Places ({similarBusinesses.length})
+              </Text>
+            </View>
+          </View>
+          
+          <Text style={[styles.reviewCount, { color: colors.icon, marginBottom: 16 }]}>
+            Discover businesses similar to {business?.business_name}
+          </Text>
+          
+          {similarBusinesses.map((item, index) => (
+            <TouchableOpacity 
+              key={item.id?.toString() || index}
+              style={[styles.menuItemCard, { backgroundColor: colors.background, marginBottom: 12 }]}
+              onPress={() => {
+                // Track similar business click
+                tracking.trackClick({
+                  businessName: business?.business_name,
+                  similarBusinessId: item.id,
+                  similarBusinessName: item.name || item.business_name,
+                  action: 'view_similar_business',
+                  source: 'similar_businesses_tab'
+                });
+                router.push(`/business/${item.id}` as any);
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemCardHeader}>
+                <Image 
+                  source={{ uri: getImageUrl(item.logo_image?.image_url || item.image_url) || getFallbackImageUrl('business') }} 
+                  style={styles.menuItemCardImage}
+                />
+                
+                {/* Similarity Badge */}
+                {(item as any).similarity_score && (item as any).similarity_score > 85 && (
+                  <View style={[styles.similarityBadge, { backgroundColor: colors.tint }]}>
+                    <Ionicons name="checkmark-circle" size={10} color="white" />
+                    <Text style={styles.similarityText}>Match</Text>
+                  </View>
+                )}
+              </View>
+              
+              <View style={styles.menuItemCardContent}>
+                <Text style={[styles.businessInfoName, { color: colors.text, fontSize: 16 }]} numberOfLines={2}>
+                  {item.name || item.business_name}
+                </Text>
+                <Text style={[styles.businessInfoCategory, { color: colors.icon }]} numberOfLines={1}>
+                  {item.categories?.[0]?.name || item.category_name || 'Category'}
+                </Text>
+                
+                <View style={[styles.similarBusinessMeta, { marginTop: 8 }]}>
+                  <View style={styles.ratingContainer}>
+                    <Ionicons name="star" size={14} color="#FFD700" />
+                    <Text style={[styles.similarRatingText, { color: colors.text }]}>
+                      {item.overall_rating}
+                    </Text>
+                  </View>
+                  <Text style={[styles.similarDistanceText, { color: colors.icon }]}>
+                    {item.distance ? parseFloat(item.distance).toFixed(1) : '0.0'}km away
+                  </Text>
+                </View>
+                
+                {item.description && (
+                  <Text style={[styles.businessInfoCategory, { color: colors.icon, marginTop: 4 }]} numberOfLines={2}>
+                    {item.description}
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -1079,7 +1364,15 @@ export default function BusinessDetailsScreen() {
         {isUserAuthenticated && (
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => setShowCollectionModal(true)}
+            onPress={() => {
+              // Track collection save action
+              tracking.trackClick({
+                businessName: business?.business_name,
+                action: 'save_to_collection',
+                source: 'quick_actions_bar'
+              });
+              setShowCollectionModal(true);
+            }}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#9C27B0' }]}>
               <Ionicons name="albums" size={16} color="white" />
@@ -1110,7 +1403,13 @@ export default function BusinessDetailsScreen() {
               label: 'Ratings', 
               icon: 'star-outline',
               activeIcon: 'star'
-            }
+            },
+            ...(isUserAuthenticated ? [{ 
+              key: 'similar', 
+              label: 'Similar', 
+              icon: 'compass-outline',
+              activeIcon: 'compass'
+            }] : [])
           ].map((tab) => (
             <TouchableOpacity
               key={tab.key}
@@ -2113,5 +2412,84 @@ const styles = StyleSheet.create({
   },
   customHelpfulCount: {
     fontSize: 12,
+  },
+  // Similar Places Section Styles
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  similarHeaderMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAll: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  similarBusinessContainer: {
+    paddingHorizontal: 4,
+    gap: 12,
+  },
+  similarBusinessCard: {
+    width: 140,
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    position: 'relative',
+  },
+  similarBusinessImage: {
+    width: '100%',
+    height: 70,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  similarityBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+    zIndex: 1,
+  },
+  similarityText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: '600',
+    marginLeft: 2,
+  },
+  similarBusinessInfo: {
+    gap: 4,
+  },
+  similarBusinessName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  similarBusinessCategory: {
+    fontSize: 11,
+    opacity: 0.7,
+  },
+  similarBusinessMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  similarRatingText: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginLeft: 2,
+  },
+  similarDistanceText: {
+    fontSize: 10,
+    opacity: 0.8,
   },
 });

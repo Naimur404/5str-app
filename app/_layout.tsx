@@ -10,6 +10,7 @@ import { LocationProvider } from '@/contexts/LocationContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/contexts/ToastContext';
+import { TrackingProvider } from '@/components/TrackingProvider';
 
 // Automatically disable ALL console logs in production builds
 // No need to change any existing code - this handles everything!
@@ -144,7 +145,9 @@ export default function RootLayout() {
       <NotificationProvider>
         <LocationProvider>
           <ToastProvider>
-            <RootLayoutInner />
+            <TrackingProvider>
+              <RootLayoutInner />
+            </TrackingProvider>
           </ToastProvider>
         </LocationProvider>
       </NotificationProvider>

@@ -1448,3 +1448,147 @@ export const searchCollections = async (query: string, limit: number = 10): Prom
   const url = `${API_CONFIG.ENDPOINTS.SEARCH_COLLECTIONS}?query=${encodeURIComponent(query)}&limit=${limit}`;
   return makeApiCall(url, {}, false);
 };
+
+// ==================== NEW RECOMMENDATION ENDPOINTS ====================
+
+export interface RecommendationBusiness {
+  business_id: number;
+  business: {
+    id: number;
+    business_name: string;
+    slug: string;
+    description: string;
+    business_email: string;
+    business_phone: string;
+    website_url: string | null;
+    full_address: string;
+    latitude: string;
+    longitude: string;
+    city: string;
+    area: string;
+    landmark: string | null;
+    opening_hours: any;
+    price_range: number;
+    has_delivery: boolean;
+    has_pickup: boolean;
+    has_parking: boolean;
+    is_verified: boolean;
+    is_featured: boolean;
+    is_active: boolean;
+    overall_rating: string;
+    total_reviews: number;
+    discovery_score: string;
+    distance: string;
+    image_url: string;
+    name: string;
+    categories: any[];
+    images: Array<{
+      id: number;
+      business_id: string;
+      image_url: string;
+      image_type: string;
+    }>;
+    logo_image: {
+      id: number;
+      business_id: string;
+      image_url: string;
+      image_type: string;
+      sort_order: string;
+      is_primary: boolean;
+    };
+  };
+  final_score: number;
+  contributing_algorithms: string[];
+}
+
+export interface MainRecommendationsResponse {
+  success: boolean;
+  data: {
+    recommendations: RecommendationBusiness[];
+    total_count: number;
+    location_used: boolean;
+    categories_filtered: boolean;
+    algorithm: string;
+    personalization_level: string;
+    personalized_results: number;
+    response_time_ms: number;
+  };
+}
+
+export interface AdvancedAIRecommendationsResponse {
+  success: boolean;
+  data: {
+    ai_recommendations: Array<RecommendationBusiness & {
+      ai_explanation: string;
+      confidence_score: number;
+      recommendation_type: string;
+    }>;
+    analysis_summary: string;
+    last_updated: string;
+    total_count: number;
+  };
+}
+
+export interface PersonalizedRecommendationsResponse {
+  success: boolean;
+  data: {
+    personalized_businesses: Array<RecommendationBusiness & {
+      match_score: number;
+      match_reasons: string[];
+      preference_alignment: number;
+    }>;
+    user_profile_summary: string;
+    last_updated: string;
+    total_count: number;
+  };
+}
+
+export interface SimilarBusinessesResponse {
+  success: boolean;
+  data: {
+    business: any; // The main business details
+    similar_businesses: any[]; // Array of similar business objects
+    total_count: number;
+  };
+}
+
+// Main Recommendations - For Home Screen "Recommended for You" Section
+export const getMainRecommendations = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20
+): Promise<MainRecommendationsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.RECOMMENDATIONS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
+// Advanced AI Recommendations - For "AI Picks" Screen with Smart Explanations
+export const getAdvancedAIRecommendations = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 10
+): Promise<AdvancedAIRecommendationsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.RECOMMENDATIONS_ADVANCED_AI}?latitude=${latitude}&longitude=${longitude}&limit=${limit}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
+// Personalized Recommendations - For Profile/Settings "Your Taste" Section
+export const getPersonalizedRecommendations = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 15
+): Promise<PersonalizedRecommendationsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.RECOMMENDATIONS_PERSONALIZED}?latitude=${latitude}&longitude=${longitude}&limit=${limit}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
+// Similar Businesses - For Business Detail Page "Similar Places" Section
+export const getSimilarBusinesses = async (
+  businessId: number,
+  latitude: number,
+  longitude: number,
+  limit: number = 8
+): Promise<SimilarBusinessesResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.RECOMMENDATIONS_SIMILAR}/${businessId}?latitude=${latitude}&longitude=${longitude}&limit=${limit}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
