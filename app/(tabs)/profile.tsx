@@ -8,7 +8,9 @@ import {
     Review,
     User,
     updateProfile,
-    UpdateProfilePayload
+    UpdateProfilePayload,
+    getPersonalizedRecommendations,
+    PersonalizedRecommendationsResponse
 } from '@/services/api';
 import cacheService from '@/services/cacheService';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,12 +27,14 @@ import {
     Text,
     TouchableOpacity,
     View,
+    Image,
 } from 'react-native';
 import EditProfileModal from '@/components/EditProfileModal';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
 import ProfileAvatar from '@/components/ProfileAvatar';
+import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 
 // Guest user data
 const guestUser = {
@@ -79,14 +83,101 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [personalizedRecommendations, setPersonalizedRecommendations] = useState<any[]>([]);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   const router = useRouter();
   const { colorScheme, themePreference, setThemePreference, isDarkMode, isAutoMode } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showConfirm, showAlert, hideAlert } = useCustomAlert();
 
+  // Helper function to render business image with fallback
+  const renderBusinessImage = (business: any) => {
+    const imageKey = `business_${business.id}`;
+    const hasImageError = imageErrors[imageKey];
+    
+    // Get the best available image URL
+    let imageUrl = null;
+    if (business.image_url) {
+      imageUrl = business.image_url;
+    } else if (business.logo_image?.image_url) {
+      imageUrl = business.logo_image.image_url;
+    } else if (business.logo_image) {
+      imageUrl = business.logo_image;
+    }
+
+    const finalImageUrl = getImageUrl(imageUrl);
+    const fallbackUrl = getFallbackImageUrl('business');
+
+    if (hasImageError || !imageUrl) {
+      // Show fallback image or placeholder
+      return (
+        <Image
+          source={{ uri: fallbackUrl }}
+          style={styles.businessImage}
+          onError={() => {
+            // If even fallback fails, show placeholder
+            console.log('Fallback image failed for business:', business.business_name);
+          }}
+        />
+      );
+    }
+
+    return (
+      <Image
+        source={{ uri: finalImageUrl }}
+        style={styles.businessImage}
+        onError={() => {
+          console.log('Primary image failed for business:', business.business_name);
+          setImageErrors(prev => ({ ...prev, [imageKey]: true }));
+        }}
+        onLoad={() => {
+          // Clear any previous error state on successful load
+          if (hasImageError) {
+            setImageErrors(prev => {
+              const newState = { ...prev };
+              delete newState[imageKey];
+              return newState;
+            });
+          }
+        }}
+      />
+    );
+  };
+
   useEffect(() => {
     loadUserData();
   }, []);
+
+  const loadPersonalizedRecommendations = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      setRecommendationsLoading(true);
+      // Use default coordinates for now, you can get user's location from context
+      const response = await getPersonalizedRecommendations(22.3569, 91.7832, 6);
+      
+      if (response.success && response.data) {
+        // Handle both possible response structures
+        let businessesArray: any[] = [];
+        const data = response.data as any; // Cast to handle API response structure
+        
+        if (data.businesses) {
+          // Your API response structure with businesses object
+          businessesArray = Object.values(data.businesses);
+        } else if (data.personalized_businesses) {
+          // Interface structure with personalized_businesses array
+          businessesArray = data.personalized_businesses;
+        }
+        
+        setPersonalizedRecommendations(businessesArray);
+      }
+    } catch (error) {
+      console.error('Error loading personalized recommendations:', error);
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  };
 
   const loadUserData = async () => {
     try {
@@ -127,6 +218,9 @@ export default function ProfileScreen() {
         if (reviewsResponse.success) {
           setReviews(reviewsResponse.data.reviews);
         }
+
+        // Load personalized recommendations for authenticated users
+        await loadPersonalizedRecommendations();
       } else {
         setIsAuthenticated(false);
         setUser(null);
@@ -145,6 +239,10 @@ export default function ProfileScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     await loadUserData();
+    // Also reload recommendations on refresh for authenticated users
+    if (isAuthenticated) {
+      await loadPersonalizedRecommendations();
+    }
     setRefreshing(false);
   };
 
@@ -462,6 +560,71 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
+            </View>
+          )}
+
+          {/* Personalized Recommendations (Only for authenticated users) */}
+          {isAuthenticated && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Taste</Text>
+                <TouchableOpacity onPress={() => router.push('/ai-recommendations' as any)}>
+                  <Text style={[styles.seeAllText, { color: colors.tint }]}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {recommendationsLoading ? (
+                <View style={styles.recommendationsLoading}>
+                  <ActivityIndicator size="small" color={colors.tint} />
+                  <Text style={[styles.loadingText, { color: colors.icon }]}>
+                    Personalizing recommendations...
+                  </Text>
+                </View>
+              ) : personalizedRecommendations.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.recommendationsContainer}>
+                    {personalizedRecommendations.slice(0, 4).map((business: any) => (
+                      <TouchableOpacity 
+                        key={business.id} 
+                        style={[styles.recommendationCard, { backgroundColor: colors.card }]}
+                        onPress={() => router.push(`/business/${business.id}` as any)}
+                      >
+                        <View style={styles.businessImageContainer}>
+                          {renderBusinessImage(business)}
+                        </View>
+                        <View style={styles.businessInfo}>
+                          <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={2}>
+                            {business.business_name || business.name}
+                          </Text>
+                          <View style={styles.businessDetails}>
+                            <View style={styles.ratingContainer}>
+                              <Ionicons name="star" size={14} color="#FFD700" />
+                              <Text style={[styles.ratingText, { color: colors.icon }]}>
+                                {business.overall_rating || 'N/A'}
+                              </Text>
+                            </View>
+                            <Text style={[styles.areaText, { color: colors.icon }]} numberOfLines={1}>
+                              {business.area}
+                            </Text>
+                          </View>
+                          {business.recommendation_reasons && business.recommendation_reasons.length > 0 && (
+                            <Text style={[styles.recommendationReason, { color: colors.tint }]} numberOfLines={1}>
+                              {business.recommendation_reasons[0]}
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={styles.noRecommendations}>
+                  <Ionicons name="bulb-outline" size={48} color={colors.icon} />
+                  <Text style={[styles.noRecommendationsText, { color: colors.icon }]}>
+                    Start reviewing businesses to get personalized recommendations
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -828,5 +991,80 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     textAlign: 'center',
+  },
+  // Personalized Recommendations Styles
+  recommendationsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    gap: 12,
+  },
+  recommendationsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    gap: 16,
+  },
+  recommendationCard: {
+    width: 160,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  businessImageContainer: {
+    height: 100,
+    width: '100%',
+  },
+  businessImage: {
+    width: '100%',
+    height: '100%',
+  },
+  businessImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  businessInfo: {
+    padding: 12,
+  },
+  businessDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  ratingText: {
+    fontSize: 12,
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  areaText: {
+    fontSize: 12,
+    flex: 1,
+    textAlign: 'right',
+  },
+  recommendationReason: {
+    fontSize: 11,
+    fontWeight: '500',
+    fontStyle: 'italic',
+  },
+  noRecommendations: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+  },
+  noRecommendationsText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 20,
   },
 });

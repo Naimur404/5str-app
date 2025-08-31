@@ -24,7 +24,8 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    Animated
 } from 'react-native';
 import { HomePageSkeleton } from '@/components/SkeletonLoader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -34,9 +35,293 @@ import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { addTrackingToPress } from '@/hooks/useFlatListTracking';
 
+// Dynamic Hero Section Component with Time-Based Themes
+const DynamicHeroSection = React.memo(({ 
+  colors, 
+  colorScheme
+}: {
+  colors: any;
+  colorScheme: string;
+}) => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const router = useRouter();
+  
+  // Animation values for different elements
+  const sunAnimation = useRef(new Animated.Value(0)).current;
+  const moonAnimation = useRef(new Animated.Value(0)).current;
+  const starAnimation = useRef(new Animated.Value(0)).current;
+  const birdAnimation = useRef(new Animated.Value(0)).current;
+  const cloudAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Update time every minute
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+
+    // Start animations
+    startAnimations();
+
+    return () => {
+      clearInterval(timeInterval);
+      stopAnimations();
+    };
+  }, []);
+
+  const startAnimations = () => {
+    // Sun/Moon rotation animation
+    Animated.loop(
+      Animated.timing(sunAnimation, {
+        toValue: 1,
+        duration: 20000,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Star twinkling animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(starAnimation, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(starAnimation, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Bird flying animation
+    Animated.loop(
+      Animated.timing(birdAnimation, {
+        toValue: 1,
+        duration: 8000,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Cloud floating animation
+    Animated.loop(
+      Animated.timing(cloudAnimation, {
+        toValue: 1,
+        duration: 15000,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
+  const stopAnimations = () => {
+    sunAnimation.stopAnimation();
+    moonAnimation.stopAnimation();
+    starAnimation.stopAnimation();
+    birdAnimation.stopAnimation();
+    cloudAnimation.stopAnimation();
+  };
+
+  // Get time-based theme
+  const getTimeTheme = () => {
+    const hour = currentTime.getHours();
+    
+    if (hour >= 5 && hour < 12) {
+      // Morning (5 AM - 12 PM)
+      return {
+        type: 'morning',
+        gradientColors: colorScheme === 'dark' 
+          ? ['#FF9A56', '#FF6B35', '#FF4757'] 
+          : ['#FF9A56', '#FFAD56', '#FFC048'],
+        bgGradient: colorScheme === 'dark'
+          ? ['#1a1a2e', '#16213e', '#FF6B35']
+          : ['#87CEEB', '#98D8E8', '#FFE4B5'],
+        textColor: 'white',
+        showSun: true,
+        showBirds: true,
+        showClouds: true,
+        sunColor: '#FFD700',
+        cloudColor: 'rgba(255, 255, 255, 0.8)'
+      };
+    } else if (hour >= 12 && hour < 17) {
+      // Afternoon (12 PM - 5 PM)
+      return {
+        type: 'afternoon',
+        gradientColors: colorScheme === 'dark'
+          ? ['#3B82F6', '#1E40AF', '#1E3A8A']
+          : ['#87CEEB', '#4682B4', '#1E90FF'],
+        bgGradient: colorScheme === 'dark'
+          ? ['#1a1a2e', '#16213e', '#3B82F6']
+          : ['#87CEEB', '#6495ED', '#4169E1'],
+        textColor: 'white',
+        showSun: true,
+        showClouds: true,
+        sunColor: '#FFD700',
+        cloudColor: 'rgba(255, 255, 255, 0.9)'
+      };
+    } else if (hour >= 17 && hour < 20) {
+      // Evening (5 PM - 8 PM)
+      return {
+        type: 'evening',
+        gradientColors: colorScheme === 'dark'
+          ? ['#FF6B35', '#E55100', '#BF360C']
+          : ['#FF8A50', '#FF7043', '#FF5722'],
+        bgGradient: colorScheme === 'dark'
+          ? ['#1a1a2e', '#BF360C', '#FF6B35']
+          : ['#FF8A65', '#FF7043', '#FF5722'],
+        textColor: 'white',
+        showSun: true,
+        showClouds: true,
+        sunColor: '#FF6B35',
+        cloudColor: 'rgba(255, 182, 193, 0.8)'
+      };
+    } else {
+      // Night (8 PM - 5 AM)
+      return {
+        type: 'night',
+        gradientColors: colorScheme === 'dark'
+          ? ['#0F172A', '#1E293B', '#334155']
+          : ['#1E1B4B', '#312E81', '#4C1D95'],
+        bgGradient: colorScheme === 'dark'
+          ? ['#0F172A', '#1E293B', '#334155']
+          : ['#1E1B4B', '#312E81', '#4C1D95'],
+        textColor: 'white',
+        showMoon: true,
+        showStars: true,
+        showClouds: true,
+        moonColor: '#FFF8DC', // Cornsilk - warm, attractive moon color
+        starColor: '#FFFACD',
+        cloudColor: 'rgba(70, 130, 180, 0.3)'
+      };
+    }
+  };
+
+  const theme = getTimeTheme();
+
+  // Animation interpolations
+  const sunRotation = sunAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const sunScale = sunAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.1, 1],
+  });
+
+  const starOpacity = starAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.3, 1, 0.3],
+  });
+
+  const birdTranslateX = birdAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-50, width + 50],
+  });
+
+  const cloudTranslateX = cloudAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-100, width + 100],
+  });
+
+  return (
+    <>
+      {/* Sun Animation */}
+      {theme.showSun && (
+        <Animated.View 
+          style={[
+            dynamicHeroStyles.sun,
+            {
+              backgroundColor: theme.sunColor,
+              transform: [
+                { rotate: sunRotation },
+                { scale: sunScale }
+              ]
+            }
+          ]}
+        >
+          <View style={[dynamicHeroStyles.sunRays, { borderColor: theme.sunColor }]} />
+        </Animated.View>
+      )}
+
+      {/* Moon Animation */}
+      {theme.showMoon && (
+        <Animated.View 
+          style={[
+            dynamicHeroStyles.moon,
+            { backgroundColor: theme.moonColor }
+          ]}
+        >
+          {/* Multiple moon craters for realistic look */}
+          <View style={dynamicHeroStyles.moonCrater1} />
+          <View style={dynamicHeroStyles.moonCrater2} />
+          <View style={dynamicHeroStyles.moonCrater3} />
+          <View style={dynamicHeroStyles.moonCrater4} />
+          <View style={dynamicHeroStyles.moonCrater5} />
+        </Animated.View>
+      )}
+
+      {/* Stars Animation */}
+      {theme.showStars && (
+        <View style={dynamicHeroStyles.starsContainer}>
+          {[...Array(12)].map((_, index) => (
+            <Animated.View
+              key={index}
+              style={[
+                dynamicHeroStyles.star,
+                {
+                  backgroundColor: theme.starColor,
+                  opacity: starOpacity,
+                  left: `${10 + (index * 7)}%`,
+                  top: `${15 + (index % 3) * 20}%`,
+                }
+              ]}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Flying Birds Animation */}
+      {theme.showBirds && (
+        <Animated.View 
+          style={[
+            dynamicHeroStyles.birdContainer,
+            {
+              transform: [{ translateX: birdTranslateX }]
+            }
+          ]}
+        >
+          <Text style={dynamicHeroStyles.bird}>🐦</Text>
+          <Text style={[dynamicHeroStyles.bird, { marginLeft: 20, marginTop: 10 }]}>🐦</Text>
+        </Animated.View>
+      )}
+
+      {/* Floating Clouds Animation */}
+      {theme.showClouds && (
+        <Animated.View 
+          style={[
+            dynamicHeroStyles.cloudContainer,
+            {
+              transform: [{ translateX: cloudTranslateX }]
+            }
+          ]}
+        >
+          <View style={[dynamicHeroStyles.cloud, { backgroundColor: theme.cloudColor }]} />
+          <View style={[dynamicHeroStyles.cloud2, { backgroundColor: theme.cloudColor }]} />
+        </Animated.View>
+      )}
+    </>
+  );
+});
+
 const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width - 48;
 const SERVICE_ITEM_WIDTH = (width - 72) / 4;
+
+// Function to get notification icon color based on time and theme
+const getNotificationIconColor = (colorScheme: string) => {
+  // Always use white with shadow for better visibility
+  return 'white';
+};
 
 // Function to get dynamic greeting based on time
 const getGreeting = () => {
@@ -824,7 +1109,16 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
-              <Ionicons name="notifications-outline" size={24} color="white" />
+              <Ionicons 
+                name="notifications-outline" 
+                size={24} 
+                color={getNotificationIconColor(colorScheme)}
+                style={{ 
+                  textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 3,
+                }}
+              />
               {isUserAuthenticated && unreadCount > 0 && (
                 <View style={styles.badgeContainer}>
                   <NotificationBadge count={unreadCount} size="small" />
@@ -860,11 +1154,17 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="light" />
       
-      {/* Fixed Header */}
+      {/* Fixed Header with Time-Based Animations */}
       <LinearGradient
         colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
+        {/* Time-Based Animation Elements */}
+        <DynamicHeroSection 
+          colors={colors}
+          colorScheme={colorScheme}
+        />
+        
         <View style={styles.headerTop}>
           <View style={styles.welcomeSection}>
             <Text style={styles.greeting}>
@@ -887,7 +1187,16 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationPress}>
-            <Ionicons name="notifications-outline" size={24} color="white" />
+            <Ionicons 
+              name="notifications-outline" 
+              size={24} 
+              color={getNotificationIconColor(colorScheme)}
+              style={{ 
+                textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                textShadowOffset: { width: 1, height: 1 },
+                textShadowRadius: 3,
+              }}
+            />
             {isUserAuthenticated && unreadCount > 0 && (
               <View style={styles.badgeContainer}>
                 <NotificationBadge count={unreadCount} size="small" />
@@ -920,7 +1229,7 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero Banners - Use API Response */}
+        {/* Banners Section */}
         {banners.length > 0 && (
           <View style={styles.heroSection}>
             <FlatList
@@ -1223,6 +1532,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     padding: 8,
     position: 'relative',
+    zIndex: 10, // Higher z-index to be above animated elements
   },
   headerButtons: {
     flexDirection: 'row',
@@ -1568,5 +1878,236 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     marginLeft: 2,
+  },
+});
+
+// Dynamic Hero Styles
+const dynamicHeroStyles = StyleSheet.create({
+  heroContainer: {
+    height: 280,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  heroContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 3,
+    padding: 20,
+  },
+  greetingContainer: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  subGreetingText: {
+    fontSize: 16,
+    textAlign: 'center',
+    opacity: 0.9,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  animatedBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
+  bannerList: {
+    zIndex: 2,
+  },
+  greetingOverlay: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 3,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  greetingText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  // Sun Animation
+  sun: {
+    position: 'absolute',
+    top: 45, // Moved down to avoid status bar
+    right: 30,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    zIndex: 2,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  sunRays: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 3,
+    borderStyle: 'dashed',
+    opacity: 0.6,
+  },
+  // Moon Animation
+  moon: {
+    position: 'absolute',
+    top: 35,
+    right: 60,
+    width: 50, // Slightly larger for full moon
+    height: 50,
+    borderRadius: 25,
+    zIndex: 2,
+    shadowColor: '#F5F5DC',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 20, // Stronger glow
+    elevation: 15,
+    overflow: 'visible', // Show full moon with glow
+  },
+  moonCrescent: {
+    // Remove crescent for full moon
+    display: 'none',
+  },
+  moonCrater1: {
+    position: 'absolute',
+    top: 12,
+    left: 15,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(169, 169, 169, 0.6)',
+    shadowColor: '#000',
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  moonCrater2: {
+    position: 'absolute',
+    top: 25,
+    right: 12,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(169, 169, 169, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 1,
+  },
+  moonCrater3: {
+    position: 'absolute',
+    top: 8,
+    right: 20,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(128, 128, 128, 0.4)',
+  },
+  moonCrater4: {
+    position: 'absolute',
+    top: 30,
+    left: 8,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(169, 169, 169, 0.4)',
+  },
+  moonCrater5: {
+    position: 'absolute',
+    top: 18,
+    left: 28,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: 'rgba(128, 128, 128, 0.5)',
+  },
+  // Stars Animation
+  starsContainer: {
+    position: 'absolute',
+    top: 30, // Moved down to avoid status bar
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 2,
+  },
+  star: {
+    position: 'absolute',
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    shadowColor: '#FFFACD',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  // Birds Animation
+  birdContainer: {
+    position: 'absolute',
+    top: 55, // Moved down to avoid status bar
+    zIndex: 2,
+    flexDirection: 'row',
+  },
+  bird: {
+    fontSize: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  // Clouds Animation
+  cloudContainer: {
+    position: 'absolute',
+    top: 50, // Moved down to avoid status bar
+    zIndex: 2,
+  },
+  cloud: {
+    width: 60,
+    height: 25,
+    borderRadius: 25,
+    opacity: 0.8,
+  },
+  cloud2: {
+    width: 40,
+    height: 20,
+    borderRadius: 20,
+    marginTop: -15,
+    marginLeft: 20,
+    opacity: 0.6,
   },
 });
