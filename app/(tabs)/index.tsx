@@ -215,7 +215,17 @@ const DynamicHeroSection = React.memo(({
 
   const birdTranslateX = birdAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [-50, width + 50],
+    outputRange: [width + 50, -100], // Right to left movement
+  });
+
+  const birdTranslateY = birdAnimation.interpolate({
+    inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
+    outputRange: [0, -12, 8, -8, 12, -5], // More realistic bird flying pattern
+  });
+
+  const birdRotate = birdAnimation.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: ['0deg', '-2deg', '1deg', '-1deg', '0deg'], // Slight wing tilt
   });
 
   const cloudTranslateX = cloudAnimation.interpolate({
@@ -286,12 +296,17 @@ const DynamicHeroSection = React.memo(({
           style={[
             dynamicHeroStyles.birdContainer,
             {
-              transform: [{ translateX: birdTranslateX }]
+              transform: [
+                { translateX: birdTranslateX },
+                { translateY: birdTranslateY },
+                { rotate: birdRotate }
+              ]
             }
           ]}
         >
           <Text style={dynamicHeroStyles.bird}>🐦</Text>
-          <Text style={[dynamicHeroStyles.bird, { marginLeft: 20, marginTop: 10 }]}>🐦</Text>
+          <Text style={[dynamicHeroStyles.bird, { marginLeft: 15, marginTop: 8 }]}>🐦</Text>
+          <Text style={[dynamicHeroStyles.bird, { marginLeft: 25, marginTop: -5 }]}>🐦</Text>
         </Animated.View>
       )}
 
@@ -1961,26 +1976,26 @@ const dynamicHeroStyles = StyleSheet.create({
   // Sun Animation
   sun: {
     position: 'absolute',
-    top: 45, // Moved down to avoid status bar
-    right: 30,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    top: 45, // Moved down from 35
+    right: 70, // Moved left (increased right value)
+    width: 40, // Smaller than moon (50)
+    height: 40, // Smaller than moon (50)
+    borderRadius: 20, // Adjusted for smaller size
     zIndex: 2,
     shadowColor: '#FFD700',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
-    shadowRadius: 20,
+    shadowRadius: 15, // Adjusted glow for smaller size
     elevation: 10,
   },
   sunRays: {
     position: 'absolute',
-    top: -10,
-    left: -10,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 3,
+    top: -5, // Adjusted for smaller sun
+    left: -5, // Adjusted for smaller sun  
+    width: 50, // Smaller to match 40px sun
+    height: 50, // Smaller to match 40px sun
+    borderRadius: 25, // Adjusted for smaller size
+    borderWidth: 2, // Thinner border for smaller size
     borderStyle: 'dashed',
     opacity: 0.6,
   },

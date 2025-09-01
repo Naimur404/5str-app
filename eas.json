@@ -25,6 +25,14 @@
       "ios": {
         "buildConfiguration": "Release"
       }
+    },
+    "release-apk": {
+      "extends": "release",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "distribution": "store"
+      }
     }
   },
   "submit": {

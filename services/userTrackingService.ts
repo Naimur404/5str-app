@@ -103,7 +103,10 @@ class UserInteractionTracker {
     this.initializeSession();
     this.setupBatchTimer();
     this.setupNetworkListeners();
-    this.retryPendingInteractions();
+    // Only retry pending interactions after a delay to allow authentication to be checked
+    setTimeout(() => {
+      this.retryPendingInteractions();
+    }, 3000); // 3 second delay
   }
 
   /**
@@ -193,6 +196,13 @@ class UserInteractionTracker {
     action: InteractionType,
     context: InteractionContext = {}
   ): Promise<void> {
+    // Check if user is authenticated before tracking anything
+    const canTrack = await this.canSendTrackingData();
+    if (!canTrack) {
+      console.log('⏸️ Skipping interaction tracking: User not authenticated or timing restriction');
+      return;
+    }
+
     const interaction: UserInteraction = {
       business_id: businessId,
       action,
@@ -263,6 +273,15 @@ class UserInteractionTracker {
         isOnline: this.isOnline,
         reason: this.batch.length === 0 ? 'empty_batch' : 'offline'
       });
+      return;
+    }
+
+    // Check authentication before attempting to send batch
+    const canSend = await this.canSendTrackingData();
+    if (!canSend) {
+      console.log('⏸️ Skipping batch flush: User not authenticated or timing restriction');
+      // Clear the batch since we can't send it and don't want to accumulate
+      this.batch = [];
       return;
     }
 
@@ -481,6 +500,13 @@ class UserInteractionTracker {
    */
   async retryPendingInteractions(): Promise<void> {
     try {
+      // Check authentication before attempting to retry
+      const canSend = await this.canSendTrackingData();
+      if (!canSend) {
+        console.log('⏸️ Skipping pending interactions retry: User not authenticated or timing restriction');
+        return;
+      }
+
       const pendingKey = 'pending_interactions';
       const existing = await AsyncStorage.getItem(pendingKey);
       if (!existing) return;
@@ -489,7 +515,7 @@ class UserInteractionTracker {
       
       if (pendingInteractions.length === 0) return;
       
-      console.log(`Retrying ${pendingInteractions.length} pending interactions`);
+      console.log(`🔄 Retrying ${pendingInteractions.length} pending interactions`);
       
       // Try to send in batches
       const batchSize = 10;
@@ -498,7 +524,7 @@ class UserInteractionTracker {
         try {
           await this.sendBatchToAPI(batch);
         } catch (error) {
-          console.error('Failed to retry batch:', error);
+          console.error('❌ Failed to retry batch:', error);
           // Keep remaining interactions for next retry
           const remainingInteractions = pendingInteractions.slice(i);
           await AsyncStorage.setItem(pendingKey, JSON.stringify(remainingInteractions));
@@ -508,9 +534,9 @@ class UserInteractionTracker {
       
       // Clear all pending interactions if successful
       await AsyncStorage.removeItem(pendingKey);
-      console.log('Successfully retried all pending interactions');
+      console.log('✅ Successfully retried all pending interactions');
     } catch (error) {
-      console.error('Failed to retry pending interactions:', error);
+      console.error('❌ Failed to retry pending interactions:', error);
     }
   }
 
@@ -525,6 +551,19 @@ class UserInteractionTracker {
     
     // Flush any remaining interactions
     this.flushBatch();
+  }
+
+  /**
+   * Clear all pending interactions (useful when user logs out)
+   */
+  async clearPendingInteractions(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem('pending_interactions');
+      this.batch = []; // Clear current batch as well
+      console.log('🧹 Cleared all pending interactions');
+    } catch (error) {
+      console.error('❌ Failed to clear pending interactions:', error);
+    }
   }
 
   // ==================== High-level tracking methods ====================

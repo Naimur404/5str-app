@@ -17,7 +17,7 @@ export const getImageUrl = (imagePath: any): string => {
       if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
         return cleanPath;
       }
-      return `https://5str.xyz/storage/${cleanPath}`;
+      return `https://api.5str.xyz/storage/${cleanPath}`;
     }
     return 'https://images.unsplash.com/photo-1534307671554-9a6d6e38f7c5?w=300&h=200&fit=crop';
   }
@@ -28,7 +28,7 @@ export const getImageUrl = (imagePath: any): string => {
     if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
       return cleanPath;
     }
-    return `https://5str.xyz/storage/${cleanPath}`;
+    return `https://api.5str.xyz/storage/${cleanPath}`;
   }
 
   // Fallback for any other case
