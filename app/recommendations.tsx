@@ -180,7 +180,8 @@ export default function RecommendationsScreen() {
                 {recommendation.business_name}
               </Text>
               <Text style={[styles.subcategory, { color: colors.icon }]} numberOfLines={1}>
-                {recommendation.category.name} • {recommendation.subcategory.name}
+                {recommendation.category.name}
+                {recommendation.subcategory && ` • ${recommendation.subcategory.name}`}
               </Text>
               {recommendation.landmark && (
                 <Text style={[styles.landmark, { color: colors.icon }]} numberOfLines={1}>
