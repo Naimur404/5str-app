@@ -92,7 +92,7 @@ export interface BatchTrackingResponse {
 class UserInteractionTracker {
   private batch: UserInteraction[] = [];
   private readonly batchSize: number = 10;
-  private readonly flushInterval: number = 5000; // 5 seconds
+  private readonly flushInterval: number = 180000; // 3 minutes
   private batchTimer: any = null;
   private isOnline: boolean = true;
   private sessionId: string = '';
@@ -103,6 +103,8 @@ class UserInteractionTracker {
     this.initializeSession();
     this.setupBatchTimer();
     this.setupNetworkListeners();
+    // Clear old pending interactions on app startup to avoid invalid business IDs
+    this.clearPendingInteractions();
     // Only retry pending interactions after a delay to allow authentication to be checked
     setTimeout(() => {
       this.retryPendingInteractions();
@@ -196,12 +198,29 @@ class UserInteractionTracker {
     action: InteractionType,
     context: InteractionContext = {}
   ): Promise<void> {
+    // Validate business ID
+    if (!businessId || typeof businessId !== 'number' || businessId <= 0) {
+      console.warn('🚨 Invalid business ID for tracking:', {
+        businessId,
+        businessId_type: typeof businessId,
+        action,
+        context
+      });
+      return;
+    }
+
     // Check if user is authenticated before tracking anything
     const canTrack = await this.canSendTrackingData();
     if (!canTrack) {
       console.log('⏸️ Skipping interaction tracking: User not authenticated or timing restriction');
       return;
     }
+
+    console.log('📝 Tracking interaction:', {
+      businessId,
+      action,
+      context: JSON.stringify(context, null, 2)
+    });
 
     const interaction: UserInteraction = {
       business_id: businessId,
@@ -396,6 +415,54 @@ class UserInteractionTracker {
       throw new Error('Cannot send tracking data: Authentication or timing check failed');
     }
 
+    // Validate interactions before sending
+    const validInteractions = interactions.filter(interaction => {
+      const isValid = (
+        interaction.business_id && 
+        typeof interaction.business_id === 'number' &&
+        interaction.business_id > 0 &&
+        interaction.action && 
+        typeof interaction.action === 'string' &&
+        interaction.timestamp && 
+        typeof interaction.timestamp === 'number' &&
+        interaction.timestamp > 0 &&
+        interaction.context &&
+        typeof interaction.context === 'object'
+      );
+
+      if (!isValid) {
+        console.warn('🚨 Invalid interaction filtered out:', {
+          business_id: interaction.business_id,
+          business_id_type: typeof interaction.business_id,
+          action: interaction.action,
+          action_type: typeof interaction.action,
+          timestamp: interaction.timestamp,
+          timestamp_type: typeof interaction.timestamp,
+          context: interaction.context,
+          context_type: typeof interaction.context,
+          full_interaction: interaction
+        });
+      } else {
+        console.log('✅ Valid interaction:', {
+          business_id: interaction.business_id,
+          action: interaction.action,
+          timestamp: new Date(interaction.timestamp).toISOString(),
+          context: interaction.context
+        });
+      }
+
+      return isValid;
+    });
+
+    if (validInteractions.length === 0) {
+      console.warn('🚨 No valid interactions to send');
+      return { success: false, message: 'No valid interactions to send' };
+    }
+
+    if (validInteractions.length !== interactions.length) {
+      console.warn(`🚨 Filtered out ${interactions.length - validInteractions.length} invalid interactions`);
+    }
+
     const token = await getAuthToken();
     const location = await this.getLocationAndSource();
     
@@ -413,8 +480,8 @@ class UserInteractionTracker {
       user_latitude: location.latitude,
       user_longitude: location.longitude,
       source: location.source,
-      interactions: interactions.map(interaction => ({
-        business_id: interaction.business_id,
+      interactions: validInteractions.map(interaction => ({
+        business_id: parseInt(String(interaction.business_id), 10), // Ensure it's an integer
         action: interaction.action,
         context: interaction.context,
         timestamp: interaction.timestamp,
@@ -424,7 +491,22 @@ class UserInteractionTracker {
     console.log('📊 Sending batch interactions to API:');
     console.log('   Endpoint:', getApiUrl(API_CONFIG.ENDPOINTS.TRACK_BATCH));
     console.log('   Has Auth Token:', !!token);
-    console.log('   Interaction Count:', interactions.length);
+    console.log('   Interaction Count:', validInteractions.length);
+    console.log('   Business IDs being tracked:', validInteractions.map(i => i.business_id));
+    console.log('   Business IDs types:', validInteractions.map(i => typeof i.business_id));
+    console.log('   Actions being tracked:', validInteractions.map(i => i.action));
+    
+    // Log each interaction individually for debugging
+    validInteractions.forEach((interaction, index) => {
+      console.log(`   Interaction ${index}:`, {
+        business_id: interaction.business_id,
+        business_id_type: typeof interaction.business_id,
+        action: interaction.action,
+        timestamp: interaction.timestamp,
+        context: interaction.context
+      });
+    });
+    
     console.log('   Complete Payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.TRACK_BATCH), {
@@ -438,15 +520,48 @@ class UserInteractionTracker {
         status: response.status,
         statusText: response.statusText,
         url: response.url,
-        interactionCount: interactions.length
+        interactionCount: validInteractions.length
       });
+
+      // Try to get the error response body for more details
+      try {
+        const errorBody = await response.text();
+        console.error('❌ Error Response Body:', errorBody);
+        
+        // Log the problematic interactions for debugging
+        console.error('❌ Problematic interactions that caused 422:', JSON.stringify(validInteractions, null, 2));
+        
+        // Specifically log the first interaction that's causing the issue
+        if (validInteractions.length > 0) {
+          console.error('❌ FIRST INTERACTION (causing error):', {
+            business_id: validInteractions[0].business_id,
+            business_id_type: typeof validInteractions[0].business_id,
+            business_id_value: JSON.stringify(validInteractions[0].business_id),
+            action: validInteractions[0].action,
+            timestamp: validInteractions[0].timestamp,
+            context: validInteractions[0].context,
+            full_interaction: validInteractions[0]
+          });
+        }
+        
+        // Try to identify which specific interaction is causing the issue
+        const errorObj = JSON.parse(errorBody);
+        if (errorObj.errors) {
+          Object.keys(errorObj.errors).forEach(key => {
+            console.error(`❌ Field error - ${key}:`, errorObj.errors[key]);
+          });
+        }
+      } catch (bodyError) {
+        console.error('❌ Could not read error response body:', bodyError);
+      }
+
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const result = await response.json();
     console.log('✅ Batch interactions API response:');
     console.log('   Status:', response.status);
-    console.log('   Sent Interactions:', interactions.length);
+    console.log('   Sent Interactions:', validInteractions.length);
     console.log('   Response Data:', JSON.stringify(result, null, 2));
     return result;
   }

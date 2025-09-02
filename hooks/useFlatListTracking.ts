@@ -10,6 +10,17 @@ export function useFlatListTracking(
   searchQuery?: string
 ) {
   const trackItemView = useCallback((businessId: number, position: number) => {
+    // Validate business ID before tracking
+    if (!businessId || typeof businessId !== 'number' || businessId <= 0) {
+      console.warn('🚨 Invalid business ID in trackItemView:', {
+        businessId,
+        businessId_type: typeof businessId,
+        position,
+        section
+      });
+      return;
+    }
+
     userTracker.trackView(businessId, {
       section,
       position: position + 1, // Make position 1-based
@@ -19,6 +30,17 @@ export function useFlatListTracking(
   }, [section, searchQuery]);
 
   const trackItemClick = useCallback((businessId: number, position: number) => {
+    // Validate business ID before tracking
+    if (!businessId || typeof businessId !== 'number' || businessId <= 0) {
+      console.warn('🚨 Invalid business ID in trackItemClick:', {
+        businessId,
+        businessId_type: typeof businessId,
+        position,
+        section
+      });
+      return;
+    }
+
     if (searchQuery) {
       userTracker.trackSearchClick(businessId, {
         section,
@@ -53,6 +75,20 @@ export function addTrackingToPress(
   searchQuery?: string
 ) {
   return () => {
+    // Validate business ID before tracking
+    if (!businessId || typeof businessId !== 'number' || businessId <= 0) {
+      console.warn('🚨 Invalid business ID in addTrackingToPress:', {
+        businessId,
+        businessId_type: typeof businessId,
+        position,
+        section,
+        searchQuery
+      });
+      // Still call the original onPress even if tracking fails
+      originalOnPress();
+      return;
+    }
+
     // Track the interaction
     if (searchQuery) {
       userTracker.trackSearchClick(businessId, {
