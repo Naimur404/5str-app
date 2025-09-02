@@ -1000,16 +1000,14 @@ export default function HomeScreen() {
 
   // Render recommendation card with trending indicators
   const renderRecommendationCard = ({ item, index }: { item: RecommendationBusiness, index?: number }) => {
-    const business = item.business; // Extract the business object
-    
-    // Create the original onPress handler
+    // Create the original onPress handler - item is now directly the business
     const originalOnPress = () => {
-      router.push(`/business/${business.id}` as any);
+      router.push(`/business/${item.id}` as any);
     };
 
     // Add tracking with section for recommendations
     const onPressWithTracking = typeof index === 'number' 
-      ? addTrackingToPress(originalOnPress, business.id, index, 'main_recommendations')
+      ? addTrackingToPress(originalOnPress, item.id, index, 'main_recommendations')
       : originalOnPress;
 
     return (
@@ -1019,41 +1017,41 @@ export default function HomeScreen() {
         activeOpacity={0.7}
       >
         <Image 
-          source={{ uri: getImageUrl(business.logo_image?.image_url) || getFallbackImageUrl('business') }} 
+          source={{ uri: getImageUrl(item.images?.logo) || getFallbackImageUrl('business') }} 
           style={styles.businessImage}
         />
         
-        {/* Trending Badge - using final_score as indicator */}
-        {item.final_score && item.final_score > 80 && (
+        {/* Trending Badge - using personalization_score as indicator */}
+        {item.personalization_score && (
           <View style={[styles.trendingBadge, { backgroundColor: '#FF6B35' }]}>
             <Ionicons name="trending-up" size={10} color="white" />
-            <Text style={styles.trendingText}>Hot</Text>
+            <Text style={styles.trendingText}>For You</Text>
           </View>
         )}
         
         <View style={styles.businessInfo}>
           <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
-            {business.business_name}
+            {item.name}
           </Text>
           <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
-            {business.categories?.[0]?.name || 'Business'} • {business.area}
+            {item.category?.name || 'Business'} • {item.address?.area}
           </Text>
-          {business.landmark && (
+          {item.address?.landmark && (
             <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
-              {business.landmark}
+              {item.address.landmark}
             </Text>
           )}
           <View style={styles.businessMeta}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={12} color="#FFD700" />
-              <Text style={[styles.rating, { color: colors.text }]}>{business.overall_rating}</Text>
+              <Text style={[styles.rating, { color: colors.text }]}>{item.rating?.overall_rating}</Text>
             </View>
             <View style={styles.metaRight}>
               <Text style={[styles.distance, { color: colors.icon }]}>
-                {parseFloat(business.distance).toFixed(1)}km
+                {item.distance?.formatted}
               </Text>
               <Text style={[styles.priceRange, { color: colors.icon }]}>
-                {business.price_range ? `${'$'.repeat(business.price_range)}` : '$'}
+                {item.price_range ? `${'$'.repeat(item.price_range)}` : '$'}
               </Text>
             </View>
           </View>
@@ -1347,7 +1345,7 @@ export default function HomeScreen() {
             <FlatList
               data={recommendations.slice(0, 6)} // Show only first 6 recommendations
               renderItem={({ item, index }) => renderRecommendationCard({ item, index })}
-              keyExtractor={(item) => item.business.id.toString()}
+              keyExtractor={(item) => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.businessContainer}

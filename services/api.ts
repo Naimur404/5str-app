@@ -1452,53 +1452,71 @@ export const searchCollections = async (query: string, limit: number = 10): Prom
 // ==================== NEW RECOMMENDATION ENDPOINTS ====================
 
 export interface RecommendationBusiness {
-  business_id: number;
-  business: {
-    id: number;
-    business_name: string;
-    slug: string;
-    description: string;
-    business_email: string;
-    business_phone: string;
-    website_url: string | null;
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  phone: string;
+  email: string;
+  website: string;
+  address: {
     full_address: string;
-    latitude: string;
-    longitude: string;
     city: string;
     area: string;
     landmark: string | null;
-    opening_hours: any;
-    price_range: number;
+  };
+  location: {
+    latitude: string;
+    longitude: string;
+  };
+  rating: {
+    overall_rating: string;
+    total_reviews: number;
+  };
+  price_range: number;
+  features: {
     has_delivery: boolean;
     has_pickup: boolean;
     has_parking: boolean;
     is_verified: boolean;
     is_featured: boolean;
-    is_active: boolean;
-    overall_rating: string;
-    total_reviews: number;
-    discovery_score: string;
-    distance: string;
-    image_url: string;
-    name: string;
-    categories: any[];
-    images: Array<{
-      id: number;
-      business_id: string;
-      image_url: string;
-      image_type: string;
-    }>;
-    logo_image: {
-      id: number;
-      business_id: string;
-      image_url: string;
-      image_type: string;
-      sort_order: string;
-      is_primary: boolean;
-    };
   };
-  final_score: number;
-  contributing_algorithms: string[];
+  opening_hours: {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+  };
+  images: {
+    logo: string | null;
+    cover: string | null;
+    gallery: string[];
+  };
+  category: {
+    id: number;
+    name: string;
+    icon: string;
+  };
+  subcategory: {
+    id: number;
+    name: string;
+  } | null;
+  offers: any[];
+  recent_reviews: Array<{
+    id: number;
+    rating: number;
+    comment: string;
+    created_at: string;
+  }>;
+  personalization_score: boolean;
+  distance: {
+    value: number;
+    unit: string;
+    formatted: string;
+  };
 }
 
 export interface MainRecommendationsResponse {
