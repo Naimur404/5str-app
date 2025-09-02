@@ -212,47 +212,48 @@ const DynamicHeroSection = React.memo(({
       return {
         type: 'morning',
         gradientColors: colorScheme === 'dark' 
-          ? ['#FF9A56', '#FF6B35', '#FF4757'] 
-          : ['#FF9A56', '#FFAD56', '#FFC048'],
+          ? ['#FF9A56', '#FFAD56', '#FFC048'] 
+          : ['#FFE4B5', '#98D8E8', '#87CEEB'],
         bgGradient: colorScheme === 'dark'
-          ? ['#1a1a2e', '#16213e', '#FF6B35']
-          : ['#87CEEB', '#98D8E8', '#FFE4B5'],
+          ? ['#1a1a2e', '#16213e', '#FF9A56']
+          : ['#FFE4B5', '#98D8E8', '#87CEEB'],
         textColor: 'white',
         showSun: true,
         showBirds: true,
-        showClouds: true, // Show clouds by default
+        showClouds: true,
         sunColor: '#FFD700',
         cloudColor: 'rgba(255, 255, 255, 0.8)'
       };
-    } else if (hour >= 12 && hour < 17) {
-      // Afternoon (12 PM - 5 PM)
+    } else if (hour >= 12 && hour < 18) {
+      // Day (12 PM - 6 PM)
       return {
-        type: 'afternoon',
-        gradientColors: colorScheme === 'dark'
-          ? ['#3B82F6', '#1E40AF', '#1E3A8A']
+        type: 'day',
+        gradientColors: colorScheme === 'dark' 
+          ? ['#3B82F6', '#1E40AF', '#1E3A8A'] 
           : ['#87CEEB', '#4682B4', '#1E90FF'],
         bgGradient: colorScheme === 'dark'
           ? ['#1a1a2e', '#16213e', '#3B82F6']
-          : ['#87CEEB', '#6495ED', '#4169E1'],
+          : ['#87CEEB', '#4682B4', '#1E90FF'],
         textColor: 'white',
         showSun: true,
-        showClouds: true, // Show clouds by default
+        showBirds: true,
+        showClouds: true,
         sunColor: '#FFD700',
         cloudColor: 'rgba(255, 255, 255, 0.9)'
       };
-    } else if (hour >= 17 && hour < 20) {
-      // Evening (5 PM - 8 PM)
+    } else if (hour >= 18 && hour < 20) {
+      // Evening (6 PM - 8 PM)
       return {
         type: 'evening',
         gradientColors: colorScheme === 'dark'
           ? ['#FF6B35', '#E55100', '#BF360C']
-          : ['#FF8A50', '#FF7043', '#FF5722'],
+          : ['#FF8A65', '#FF7043', '#FF5722'],
         bgGradient: colorScheme === 'dark'
           ? ['#1a1a2e', '#BF360C', '#FF6B35']
           : ['#FF8A65', '#FF7043', '#FF5722'],
         textColor: 'white',
         showSun: true,
-        showClouds: true, // Show clouds by default
+        showClouds: true,
         sunColor: '#FF6B35',
         cloudColor: 'rgba(255, 182, 193, 0.8)'
       };
@@ -269,8 +270,8 @@ const DynamicHeroSection = React.memo(({
         textColor: 'white',
         showMoon: true,
         showStars: true,
-        showClouds: true, // Show clouds by default
-        moonColor: '#FFF8DC', // Cornsilk - warm, attractive moon color
+        showClouds: true,
+        moonColor: '#FFF8DC',
         starColor: '#FFFACD',
         cloudColor: 'rgba(70, 130, 180, 0.3)'
       };
@@ -343,7 +344,7 @@ const DynamicHeroSection = React.memo(({
 
   const theme = getTimeTheme();
 
-  // Animation interpolations
+  // Animation interpolations with time-based variations
   const sunRotation = sunAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
@@ -351,12 +352,27 @@ const DynamicHeroSection = React.memo(({
 
   const sunScale = sunAnimation.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.1, 1],
+    outputRange: theme.type === 'morning' ? [1, 1.2, 1] : [1, 1.1, 1], // Bigger morning sun
+  });
+
+  const moonRotation = moonAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '30deg'], // Gentle moon rotation
+  });
+
+  const moonGlow = moonAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.8, 1.2, 0.8], // Pulsing moon glow
   });
 
   const starOpacity = starAnimation.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [0.3, 1, 0.3],
+    outputRange: theme.type === 'night' ? [0.2, 1, 0.2] : [0.1, 0.6, 0.1], // Brighter at night
+  });
+
+  const starTwinkle = starAnimation.interpolate({
+    inputRange: [0, 0.25, 0.5, 0.75, 1],
+    outputRange: [1, 1.3, 1, 1.5, 1], // Twinkling effect
   });
 
   const birdTranslateX = birdAnimation.interpolate({
@@ -366,7 +382,9 @@ const DynamicHeroSection = React.memo(({
 
   const birdTranslateY = birdAnimation.interpolate({
     inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
-    outputRange: [0, -12, 8, -8, 12, -5], // More realistic bird flying pattern
+    outputRange: theme.type === 'morning' 
+      ? [0, -20, 15, -15, 20, -10] // More active morning flight
+      : [0, -12, 8, -8, 12, -5], // Standard flight pattern
   });
 
   const birdRotate = birdAnimation.interpolate({
@@ -376,7 +394,16 @@ const DynamicHeroSection = React.memo(({
 
   const cloudTranslateX = cloudAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [-100, width + 100],
+    outputRange: theme.type === 'evening' 
+      ? [-150, width + 150] // Slower evening clouds
+      : [-100, width + 100], // Standard cloud movement
+  });
+
+  const cloudOpacityAnimation = cloudAnimation.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: theme.type === 'morning' 
+      ? [0.6, 0.9, 0.6] // Misty morning clouds
+      : [0.7, 1, 0.7], // Standard clouds
   });
 
   return (
@@ -406,27 +433,92 @@ const DynamicHeroSection = React.memo(({
         </Animated.View>
       )}
 
-      {/* Moon Animation */}
+      {/* Moon Animation with Enhanced Effects */}
       {theme.showMoon && (
-        <Animated.View 
-          style={[
-            dynamicHeroStyles.moon,
-            { backgroundColor: theme.moonColor }
-          ]}
-        >
-          {/* Multiple moon craters for realistic look */}
-          <View style={dynamicHeroStyles.moonCrater1} />
-          <View style={dynamicHeroStyles.moonCrater2} />
-          <View style={dynamicHeroStyles.moonCrater3} />
-          <View style={dynamicHeroStyles.moonCrater4} />
-          <View style={dynamicHeroStyles.moonCrater5} />
-        </Animated.View>
+        <View style={dynamicHeroStyles.moonContainer}>
+          {/* Moon behind clouds */}
+          <Animated.View 
+            style={[
+              dynamicHeroStyles.moon,
+              { 
+                backgroundColor: theme.moonColor,
+                opacity: theme.moonOpacity || 1,
+                transform: [
+                  { rotate: moonRotation },
+                  { scale: moonGlow }
+                ]
+              }
+            ]}
+          >
+            {/* Multiple moon craters for realistic look */}
+            <View style={dynamicHeroStyles.moonCrater1} />
+            <View style={dynamicHeroStyles.moonCrater2} />
+            <View style={dynamicHeroStyles.moonCrater3} />
+            <View style={dynamicHeroStyles.moonCrater4} />
+            <View style={dynamicHeroStyles.moonCrater5} />
+          </Animated.View>
+          
+          {/* Layered clouds covering moon when cloudy */}
+          {theme.showClouds && (
+            <>
+              {/* Front cloud layer */}
+              <Animated.View 
+                style={[
+                  dynamicHeroStyles.moonCloud1,
+                  { 
+                    backgroundColor: theme.cloudColor,
+                    opacity: Animated.multiply(theme.cloudOpacity || 0.8, cloudOpacityAnimation),
+                    transform: [{ translateX: cloudTranslateX }]
+                  }
+                ]} 
+              />
+              {/* Side cloud layer */}
+              <Animated.View 
+                style={[
+                  dynamicHeroStyles.moonCloud2,
+                  { 
+                    backgroundColor: theme.cloudColor,
+                    opacity: Animated.multiply(
+                      Animated.multiply(theme.cloudOpacity || 0.8, 0.7), 
+                      cloudOpacityAnimation
+                    ),
+                    transform: [{ 
+                      translateX: cloudTranslateX.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, -15]
+                      })
+                    }]
+                  }
+                ]} 
+              />
+              {/* Background wispy cloud */}
+              <Animated.View 
+                style={[
+                  dynamicHeroStyles.moonCloud3,
+                  { 
+                    backgroundColor: theme.cloudColor,
+                    opacity: Animated.multiply(
+                      Animated.multiply(theme.cloudOpacity || 0.8, 0.5), 
+                      cloudOpacityAnimation
+                    ),
+                    transform: [{ 
+                      translateX: cloudTranslateX.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-10, 25]
+                      })
+                    }]
+                  }
+                ]} 
+              />
+            </>
+          )}
+        </View>
       )}
 
-      {/* Stars Animation */}
+      {/* Enhanced Stars Animation */}
       {theme.showStars && (
         <View style={dynamicHeroStyles.starsContainer}>
-          {[...Array(12)].map((_, index) => (
+          {[...Array(15)].map((_, index) => (
             <Animated.View
               key={index}
               style={[
@@ -434,8 +526,31 @@ const DynamicHeroSection = React.memo(({
                 {
                   backgroundColor: theme.starColor,
                   opacity: starOpacity,
-                  left: `${10 + (index * 7)}%`,
-                  top: `${15 + (index % 3) * 20}%`,
+                  transform: [{ scale: starTwinkle }],
+                  left: `${8 + (index * 6)}%`,
+                  top: `${10 + (index % 4) * 18}%`,
+                  shadowColor: theme.starColor,
+                  shadowOpacity: starOpacity,
+                  shadowRadius: 4,
+                  elevation: 8,
+                }
+              ]}
+            />
+          ))}
+          {/* Additional smaller stars for more realistic night sky */}
+          {theme.type === 'night' && [...Array(8)].map((_, index) => (
+            <Animated.View
+              key={`small-${index}`}
+              style={[
+                dynamicHeroStyles.star,
+                {
+                  backgroundColor: theme.starColor,
+                  opacity: Animated.multiply(starOpacity, 0.6),
+                  width: 2,
+                  height: 2,
+                  borderRadius: 1,
+                  left: `${20 + (index * 8)}%`,
+                  top: `${25 + (index % 3) * 15}%`,
                 }
               ]}
             />
@@ -2347,18 +2462,24 @@ const dynamicHeroStyles = StyleSheet.create({
     opacity: 0.6,
   },
   // Moon Animation
+  moonContainer: {
+    position: 'absolute',
+    top: 30, // Little bit up (reduced from 35)
+    right: 120, // Even more left (increased from 100)
+    zIndex: 2,
+  },
   moon: {
     position: 'absolute',
-    top: 35,
-    right: 60,
-    width: 50, // Slightly larger for full moon
-    height: 50,
-    borderRadius: 25,
-    zIndex: 2,
+    top: 0,
+    left: 0,
+    width: 60, // Little bit bigger (increased from 55)
+    height: 60, // Little bit bigger (increased from 55)
+    borderRadius: 30, // Adjusted for bigger size
+    zIndex: 3,
     shadowColor: '#F5F5DC',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 20, // Stronger glow
+    shadowRadius: 22, // Adjusted glow for bigger moon
     elevation: 15,
     overflow: 'visible', // Show full moon with glow
   },
@@ -2368,11 +2489,11 @@ const dynamicHeroStyles = StyleSheet.create({
   },
   moonCrater1: {
     position: 'absolute',
-    top: 12,
-    left: 15,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: 14, // Adjusted for bigger moon
+    left: 18, // Adjusted for bigger moon
+    width: 9, // Adjusted crater size
+    height: 9,
+    borderRadius: 4.5,
     backgroundColor: 'rgba(169, 169, 169, 0.6)',
     shadowColor: '#000',
     shadowOffset: { width: 1, height: 1 },
@@ -2381,11 +2502,11 @@ const dynamicHeroStyles = StyleSheet.create({
   },
   moonCrater2: {
     position: 'absolute',
-    top: 25,
-    right: 12,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    top: 30, // Adjusted for bigger moon
+    right: 14, // Adjusted for bigger moon
+    width: 7, // Adjusted crater size
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: 'rgba(169, 169, 169, 0.5)',
     shadowColor: '#000',
     shadowOffset: { width: 1, height: 1 },
@@ -2394,30 +2515,58 @@ const dynamicHeroStyles = StyleSheet.create({
   },
   moonCrater3: {
     position: 'absolute',
-    top: 8,
-    right: 20,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    top: 9, // Adjusted for bigger moon
+    right: 22, // Adjusted for bigger moon
+    width: 5, // Adjusted crater size
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: 'rgba(128, 128, 128, 0.4)',
   },
   moonCrater4: {
     position: 'absolute',
-    top: 30,
-    left: 8,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    top: 35, // Adjusted for bigger moon
+    left: 9, // Adjusted for bigger moon
+    width: 6, // Adjusted crater size
+    height: 6,
+    borderRadius: 3,
     backgroundColor: 'rgba(169, 169, 169, 0.4)',
   },
   moonCrater5: {
     position: 'absolute',
-    top: 18,
-    left: 28,
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
+    top: 20, // Adjusted for bigger moon
+    left: 32, // Adjusted for bigger moon
+    width: 4, // Adjusted crater size
+    height: 4,
+    borderRadius: 2,
     backgroundColor: 'rgba(128, 128, 128, 0.5)',
+  },
+  // Moon Cloud Layers
+  moonCloud1: {
+    position: 'absolute',
+    top: 20,
+    left: 45,
+    width: 70,
+    height: 30,
+    borderRadius: 25,
+    zIndex: 4,
+  },
+  moonCloud2: {
+    position: 'absolute',
+    top: 35,
+    left: 25,
+    width: 55,
+    height: 25,
+    borderRadius: 20,
+    zIndex: 4,
+  },
+  moonCloud3: {
+    position: 'absolute',
+    top: 10,
+    left: 60,
+    width: 45,
+    height: 20,
+    borderRadius: 15,
+    zIndex: 4,
   },
   // Stars Animation
   starsContainer: {
