@@ -20,6 +20,8 @@ import {
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import SmartImage, { BusinessLogo, OfferingImage } from '@/components/SmartImage';
+import { getImageUrl, getOptimizedImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 
 // Skeleton Loader Component
 const ReviewSkeleton = ({ colors }: { colors: any }) => (
@@ -143,8 +145,7 @@ export default function ReviewsScreen() {
 
   const getBusinessImage = (review: Review) => {
     return review.business?.logo_image || 
-           review.offering?.image_url || 
-           'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop';
+           review.offering?.image_url;
   };
 
   const getBusinessName = (review: Review) => {
@@ -199,9 +200,12 @@ export default function ReviewsScreen() {
       <View style={styles.reviewContent}>
         <View style={styles.reviewHeader}>
           <View style={styles.reviewMetaLeft}>
-            <Image 
-              source={{ uri: getBusinessImage(item) }} 
-              style={styles.businessImage}
+            <BusinessLogo
+              source={getBusinessImage(item)}
+              businessName={getBusinessName(item)}
+              width={48}
+              height={48}
+              borderRadius={8}
             />
             <View style={styles.reviewInfo}>
               <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
@@ -258,8 +262,12 @@ export default function ReviewsScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reviewImagesScroll}>
               {item.images.map((imageUri, index) => (
                 <TouchableOpacity key={index} activeOpacity={0.8}>
-                  <Image
-                    source={{ uri: imageUri }}
+                  <SmartImage
+                    source={imageUri}
+                    type="general"
+                    width={80}
+                    height={80}
+                    borderRadius={8}
                     style={styles.reviewImageThumbnail}
                   />
                 </TouchableOpacity>
@@ -359,7 +367,16 @@ export default function ReviewsScreen() {
           colors={[colors.headerGradientStart, colors.headerGradientEnd]}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>My Reviews</Text>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>My Reviews</Text>
+          </View>
+          <View style={styles.headerRight} />
         </LinearGradient>
 
         {/* Skeleton Loading */}
@@ -379,12 +396,21 @@ export default function ReviewsScreen() {
           colors={[colors.headerGradientStart, colors.headerGradientEnd]}
           style={styles.header}
         >
-          <Text style={styles.headerTitle}>My Reviews</Text>
-          {isUserAuthenticated && (
-            <Text style={styles.headerSubtitle}>
-              {reviews.length} review{reviews.length !== 1 ? 's' : ''}
-            </Text>
-          )}
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>My Reviews</Text>
+            {isUserAuthenticated && (
+              <Text style={styles.headerSubtitle}>
+                {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </View>
+          <View style={styles.headerRight} />
         </LinearGradient>
 
       {/* Content based on authentication state */}
@@ -433,6 +459,26 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 24,
     paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerRight: {
+    width: 40,
   },
   headerTitle: {
     fontSize: 20,
@@ -477,14 +523,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  businessImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    marginRight: 12,
-  },
   reviewInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   businessName: {
     fontSize: 16,
@@ -534,11 +575,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   reviewImageThumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
     marginRight: 8,
-    backgroundColor: '#f0f0f0',
   },
   reviewFooter: {
     flexDirection: 'row',
