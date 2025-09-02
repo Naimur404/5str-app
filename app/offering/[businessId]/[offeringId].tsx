@@ -29,7 +29,8 @@ import {
     Text,
     TouchableOpacity,
     View,
-    Alert
+    Alert,
+    Share
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ReviewCard from '@/components/ReviewCard';
@@ -325,6 +326,17 @@ export default function OfferingDetailsScreen() {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message: `Check out this ${offering?.offering_type}: ${offering?.name} from ${offering?.business?.business_name}`,
+        title: offering?.name,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -375,17 +387,7 @@ export default function OfferingDetailsScreen() {
             <Ionicons name="chevron-back" size={24} color="white" />
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={styles.favoriteButton}
-            onPress={toggleFavorite}
-            disabled={favoriteLoading}
-          >
-            <Ionicons 
-              name={isFavorite ? "heart" : "heart-outline"} 
-              size={24} 
-              color={isFavorite ? "#FF6B6B" : "white"} 
-            />
-          </TouchableOpacity>
+
           
           <View style={styles.heroContent}>
             <Text style={styles.offeringName}>{offering.name}</Text>
@@ -425,15 +427,22 @@ export default function OfferingDetailsScreen() {
             />
           </View>
           <Text style={[styles.actionLabel, { color: colors.text }]}>
-            {isFavorite ? 'Favorited' : 'Favorite'}
+            {isFavorite ? 'Saved' : 'Save'}
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.actionButton} onPress={handleWriteReview}>
           <View style={[styles.actionIcon, { backgroundColor: colors.buttonPrimary }]}>
-            <Ionicons name="star" size={20} color="white" />
+            <Ionicons name="create-outline" size={20} color="white" />
           </View>
-          <Text style={[styles.actionLabel, { color: colors.text }]}>Review</Text>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Write Review</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <View style={[styles.actionIcon, { backgroundColor: '#FF9500' }]}>
+            <Ionicons name="share-outline" size={20} color="white" />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Share</Text>
         </TouchableOpacity>
         
         {offering?.business && (
@@ -536,13 +545,6 @@ export default function OfferingDetailsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Reviews ({reviews.length})
             </Text>
-            <TouchableOpacity 
-              style={[styles.writeReviewButton, { backgroundColor: colors.buttonPrimary }]}
-              onPress={handleWriteReview}
-            >
-              <Ionicons name="create-outline" size={16} color={colors.buttonText} />
-              <Text style={[styles.writeReviewText, { color: colors.buttonText }]}>Write Review</Text>
-            </TouchableOpacity>
           </View>
           
           {reviews.length > 0 ? (
@@ -661,14 +663,6 @@ export default function OfferingDetailsScreen() {
               <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
                 Be the first to share your experience with this {offering.offering_type}
               </Text>
-              <TouchableOpacity 
-                style={[styles.writeFirstReviewButton, { backgroundColor: colors.buttonPrimary }]}
-                onPress={handleWriteReview}
-              >
-                <Text style={[styles.writeFirstReviewText, { color: colors.buttonText }]}>
-                  Write the First Review
-                </Text>
-              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -742,17 +736,6 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   heroContent: {
     alignSelf: 'stretch',
@@ -923,18 +906,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  writeReviewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  writeReviewText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 40,
@@ -964,21 +935,11 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     marginBottom: 24,
   },
-  writeFirstReviewButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  writeFirstReviewText: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: 'white',
-    paddingVertical: 20,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -994,18 +955,27 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: 'center',
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   actionLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
   },
