@@ -47,7 +47,7 @@ export interface Business {
   distance?: number | string;
   distance_km?: string;
   category_name: string;
-  subcategory_name: string;
+  subcategory_name: string | null;
   logo_image?: string | { image_url: string } | null; // Legacy field
   images?: {
     logo?: string | null;
@@ -70,6 +70,11 @@ export interface Business {
     slug: string;
   };
   type?: string;
+  // Trending-specific fields
+  trend_score?: string;
+  hybrid_score?: string;
+  view_count?: number;
+  search_count?: number;
 }
 
 // Special Offer types

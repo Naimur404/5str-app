@@ -958,12 +958,21 @@ export default function HomeScreen() {
         onPress={onPressWithTracking}
       >
         <Image source={{ uri: getBusinessImage() }} style={styles.businessImage} />
+        
+        {/* Trending Badge for trending businesses */}
+        {section === 'trending_businesses' && item.trend_score && parseFloat(item.trend_score) > 20 && (
+          <View style={[styles.trendingBadge, { backgroundColor: '#FF6B35' }]}>
+            <Ionicons name="trending-up" size={10} color="white" />
+            <Text style={styles.trendingText}>🔥</Text>
+          </View>
+        )}
+        
         <View style={styles.businessInfo}>
           <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
             {item.business_name}
           </Text>
           <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
-            {item.category_name} • {item.subcategory_name}
+            {item.category_name}{item.subcategory_name ? ` • ${item.subcategory_name}` : ''}
           </Text>
           {item.landmark && (
             <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
