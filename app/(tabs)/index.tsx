@@ -5,9 +5,10 @@ import { useLocation } from '@/contexts/LocationContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User, getMainRecommendations, MainRecommendationsResponse, RecommendationBusiness } from '@/services/api';
+import { fetchWithJsonValidation, getUserProfile, User, getMainRecommendations, MainRecommendationsResponse, RecommendationBusiness } from '@/services/api';
 import { handleApiError } from '@/services/errorHandler';
 import cacheService from '@/services/cacheService';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { weatherService, WeatherData } from '@/services/weatherService';
 import CustomAlert from '@/components/CustomAlert';
@@ -696,8 +697,6 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState('Chittagong, Bangladesh');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [user, setUser] = useState<User | null>(null);
-  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [loginMessageShown, setLoginMessageShown] = useState(false);
   const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationBusiness[]>([]);
@@ -706,6 +705,9 @@ export default function HomeScreen() {
   const handleWeatherUpdate = (weather: WeatherData) => {
     setCurrentWeather(weather);
   };
+
+  // Use AuthContext instead of local authentication state
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const getWeatherIconName = (condition: WeatherData['condition']): string => {
     switch (condition) {
@@ -750,10 +752,10 @@ export default function HomeScreen() {
   // Debug logging for state changes
   useEffect(() => {
     console.log('🎯 HOME SCREEN STATE UPDATE:');
-    console.log('- isUserAuthenticated:', isUserAuthenticated);
+    console.log('- isAuthenticated:', isAuthenticated);
     console.log('- recommendations.length:', recommendations.length);
-    console.log('- shouldShowRecommendations:', isUserAuthenticated && recommendations.length > 0);
-  }, [isUserAuthenticated, recommendations]);
+    console.log('- shouldShowRecommendations:', isAuthenticated && recommendations.length > 0);
+  }, [isAuthenticated, recommendations]);
 
   // Sample banner data for display when no API data is available
   const bannerRef = useRef<FlatList<Banner>>(null);
@@ -870,7 +872,7 @@ export default function HomeScreen() {
       // Fetch fresh data with new location (guaranteed fresh)
       await fetchFreshHomeData();
       // Also reload recommendations with new location if user is authenticated
-      if (isUserAuthenticated) {
+      if (isAuthenticated) {
         console.log('🔄 Location changed: Reloading recommendations...');
         loadMainRecommendations();
       }
@@ -881,8 +883,10 @@ export default function HomeScreen() {
     return cleanup;
   }, []); // Empty dependency array since we only want this to run once
 
-  // Run main initialization after login check
+  // Run main initialization after auth is ready
   useEffect(() => {
+    if (authLoading) return; // Wait for auth to be ready
+    
     const initializeApp = async () => {
       console.log('🚀 HOME SCREEN: Initializing app...');
       
@@ -894,24 +898,23 @@ export default function HomeScreen() {
         setHomeData(cachedData.homeData);
         setLoading(false);
       }
-      
-      if (cachedData.userProfile) {
-        console.log('Displaying cached user profile immediately');
-        setUser(cachedData.userProfile);
-        setIsUserAuthenticated(true);
-      }
 
-      console.log('🚀 Starting parallel data loading (auth + home data)...');
-      // Then fetch fresh data in parallel
+      console.log('🚀 Starting data loading...');
+      // Fetch fresh data
       await Promise.all([
-        checkAuthAndLoadUser(),
         fetchHomeData(),
         clearOldLoginFlags()
       ]);
+      
+      // Load recommendations if user is authenticated
+      if (isAuthenticated) {
+        console.log('🎯 User is authenticated, loading recommendations...');
+        loadMainRecommendations();
+      }
     };
     
     initializeApp();
-  }, []);
+  }, [authLoading, isAuthenticated]); // Depend on auth state
 
   // Clean up any stale login success flags when app loads (except fresh ones)
   const clearOldLoginFlags = async () => {
@@ -966,65 +969,6 @@ export default function HomeScreen() {
     }
   };
 
-  const checkAuthAndLoadUser = async () => {
-    console.log('🔐 checkAuthAndLoadUser called');
-    try {
-      const authenticated = await isAuthenticated();
-      console.log('🔐 isAuthenticated result:', authenticated);
-      setIsUserAuthenticated(authenticated);
-      
-      if (authenticated) {
-        console.log('✅ User is authenticated, loading profile and recommendations');
-        // Try to get cached user profile first
-        const cachedUser = await cacheService.getUserProfile();
-        if (cachedUser) {
-          console.log('Using cached user profile');
-          setUser(cachedUser);
-        } else {
-          console.log('Fetching fresh user profile');
-          const userResponse = await getUserProfile();
-          if (userResponse.success && userResponse.data.user) {
-            setUser(userResponse.data.user);
-            // Cache the user profile
-            await cacheService.setUserProfile(userResponse.data.user);
-            console.log('User profile cached until logout/update');
-          }
-        }
-        
-        // Load main recommendations for authenticated users immediately
-        console.log('🎯 About to call loadMainRecommendations');
-        
-        // Load recommendations directly since we know user is authenticated
-        try {
-          const coordinates = getCoordinatesForAPI();
-          console.log('📍 Direct recommendations call - Coordinates:', coordinates);
-          
-          const response = await getMainRecommendations(
-            coordinates.latitude,
-            coordinates.longitude,
-            10 // Load 10 recommendations for home screen
-          );
-
-          if (response.success) {
-            console.log(`✅ Direct call: Loaded ${response.data.recommendations?.length || 0} main recommendations`);
-            setRecommendations(response.data.recommendations || []);
-          } else {
-            console.log('❌ Direct call: Failed to load main recommendations');
-          }
-        } catch (error) {
-          console.error('❌ Direct call: Error loading recommendations:', error);
-        }
-      } else {
-        console.log('❌ User is not authenticated, skipping profile and recommendations');
-      }
-      
-      return authenticated; // Return authentication status
-    } catch (error) {
-      console.error('Error checking auth or loading user:', error);
-      return false;
-    }
-  };
-
   // Auto-scroll banners every 4 seconds
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -1055,7 +999,7 @@ export default function HomeScreen() {
   // Location is now handled by LocationContext - instant, no permission delays!
 
   const handleNotificationPress = () => {
-    if (!isUserAuthenticated) {
+    if (!isAuthenticated) {
       showAlert({
         type: 'warning',
         title: 'Login Required',
@@ -1169,7 +1113,7 @@ export default function HomeScreen() {
           { text: 'Cancel', style: 'cancel' },
           { text: 'Retry', onPress: () => {
             fetchFreshHomeData();
-            if (isUserAuthenticated) {
+            if (isAuthenticated) {
               loadMainRecommendations();
             }
           }}
@@ -1183,9 +1127,9 @@ export default function HomeScreen() {
   // Load Main Recommendations (only for authenticated users)
   const loadMainRecommendations = async () => {
     console.log('🎯 loadMainRecommendations called');
-    console.log('🔐 isUserAuthenticated:', isUserAuthenticated);
+    console.log('🔐 isAuthenticated:', isAuthenticated);
     
-    if (!isUserAuthenticated) {
+    if (!isAuthenticated) {
       console.log('❌ User not authenticated, skipping recommendations');
       return;
     }
@@ -1227,7 +1171,7 @@ export default function HomeScreen() {
     setRefreshing(true);
     fetchHomeData();
     // Also reload recommendations if user is authenticated
-    if (isUserAuthenticated) {
+    if (isAuthenticated) {
       console.log('🔄 Refreshing: Reloading recommendations...');
       loadMainRecommendations();
     }
@@ -1529,7 +1473,7 @@ export default function HomeScreen() {
           <View style={styles.headerTop}>
             <View style={styles.welcomeSection}>
               <Text style={styles.greeting}>
-                {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
+                {getGreeting()}, {user?.name ? getFirstName(user.name) : (isAuthenticated ? 'User' : 'Guest')}
               </Text>
               <TouchableOpacity 
                 style={styles.locationContainer} 
@@ -1558,7 +1502,7 @@ export default function HomeScreen() {
                   textShadowRadius: 3,
                 }}
               />
-              {isUserAuthenticated && unreadCount > 0 && (
+              {isAuthenticated && unreadCount > 0 && (
                 <View style={styles.badgeContainer}>
                   <NotificationBadge count={unreadCount} size="small" />
                 </View>
@@ -1599,17 +1543,19 @@ export default function HomeScreen() {
         style={styles.header}
       >
         {/* Time-Based Animation Elements */}
-        <DynamicHeroSection 
-          colors={colors}
-          colorScheme={colorScheme}
-          onWeatherUpdate={handleWeatherUpdate}
-        />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1 }} pointerEvents="none">
+          <DynamicHeroSection 
+            colors={colors}
+            colorScheme={colorScheme}
+            onWeatherUpdate={handleWeatherUpdate}
+          />
+        </View>
         
         <View style={styles.headerTop}>
           <View style={styles.welcomeSection}>
             <View style={styles.greetingRow}>
               <Text style={styles.greeting}>
-                {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
+                {getGreeting()}, {user?.name ? getFirstName(user.name) : (isAuthenticated ? 'User' : 'Guest')}
               </Text>
               
               {/* Inline Weather Display */}
@@ -1627,8 +1573,18 @@ export default function HomeScreen() {
             </View>
             
             <TouchableOpacity 
-              style={styles.locationContainer} 
-              onPress={() => router.push('/location-selection')}
+              style={[styles.locationContainer, { position: 'relative', zIndex: 20, minHeight: 24 }]}
+              onPress={() => {
+                console.log('📍 Location container clicked');
+                console.log('📍 About to navigate to location selection...');
+                try {
+                  router.push('/location-selection');
+                  console.log('📍 Navigation successful');
+                } catch (error) {
+                  console.error('📍 Navigation failed:', error);
+                }
+              }}
+              activeOpacity={0.7}
             >
               <Ionicons 
                 name="location" 
@@ -1653,7 +1609,7 @@ export default function HomeScreen() {
                 textShadowRadius: 3,
               }}
             />
-            {isUserAuthenticated && unreadCount > 0 && (
+            {isAuthenticated && unreadCount > 0 && (
               <View style={styles.badgeContainer}>
                 <NotificationBadge count={unreadCount} size="small" />
               </View>
@@ -1663,9 +1619,18 @@ export default function HomeScreen() {
 
         {/* Search Bar */}
         <TouchableOpacity 
-          style={styles.searchContainer}
-          onPress={() => router.push('/search' as any)}
-          activeOpacity={1}
+          style={[styles.searchContainer, { position: 'relative', zIndex: 20 }]}
+          onPress={() => {
+            console.log('🔍 Search bar clicked from home screen');
+            console.log('🔍 About to navigate to search...');
+            try {
+              router.push('/search');
+              console.log('🔍 Navigation successful');
+            } catch (error) {
+              console.error('🔍 Navigation failed:', error);
+            }
+          }}
+          activeOpacity={0.7}
         >
           <View style={styles.searchBar}>
             <Ionicons name="search-outline" size={20} color={colors.icon} />
@@ -1761,7 +1726,7 @@ export default function HomeScreen() {
         )}
 
         {/* Recommended for You - Only show for authenticated users */}
-        {isUserAuthenticated && recommendations.length > 0 && (
+        {isAuthenticated && recommendations.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.recommendationHeaderMain}>
@@ -1788,7 +1753,7 @@ export default function HomeScreen() {
         )}
 
         {/* AI Picks Button - Only show for authenticated users */}
-        {isUserAuthenticated && (
+        {isAuthenticated && (
           <View style={styles.section}>
             <TouchableOpacity 
               style={[styles.recommendationsBanner, { backgroundColor: colors.card, borderWidth: 2, borderColor: '#8B5CF6' }]}
@@ -1961,6 +1926,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 14,
+    zIndex: 15, // Higher than animated elements
   },
   welcomeSection: {
     flex: 1,
@@ -1996,6 +1962,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    zIndex: 15, // Higher than animated elements
   },
   location: {
     color: 'white',
@@ -2056,6 +2023,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 8,
+    zIndex: 15, // Higher than animated elements
   },
   searchBar: {
     flexDirection: 'row',

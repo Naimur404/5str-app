@@ -527,7 +527,7 @@ export const removeAuthToken = async (): Promise<void> => {
   }
 };
 
-// API call helper with JSON validation
+// API call helper with JSON validation and automatic 401 handling
 const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireAuth: boolean = false): Promise<any> => {
   // Always check for token availability - if user is logged in, send token for analytics
   const token = await getAuthToken();
@@ -578,6 +578,29 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     ok: response.ok,
     contentType: response.headers.get('content-type')
   });
+
+  // Handle 401 Unauthorized globally - trigger force logout
+  if (response.status === 401) {
+    console.warn('🔐 401 Unauthorized response detected - triggering force logout');
+    
+    // Import the global event emitter to trigger force logout
+    try {
+      const { globalEventEmitter } = await import('./globalEventEmitter');
+      globalEventEmitter.emitForceLogout('Your session has expired. Please login again.');
+    } catch (importError) {
+      console.error('Could not trigger force logout:', importError);
+    }
+
+    // Clear token locally immediately
+    await removeAuthToken();
+    
+    return {
+      success: false,
+      message: 'Your session has expired. You are now browsing as a guest.',
+      status: 401,
+      forceLogout: true
+    };
+  }
 
   // Get the raw response text first
   let responseText: string;
@@ -642,14 +665,6 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
       return {
         success: false,
         message: responseData?.message || 'This item is already in your favorites',
-        status: response.status
-      };
-    }
-    
-    if (response.status === 401) {
-      return {
-        success: false,
-        message: responseData?.message || 'Authentication required',
         status: response.status
       };
     }

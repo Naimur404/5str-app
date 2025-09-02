@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { LocationProvider } from '@/contexts/LocationContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
@@ -149,9 +150,11 @@ export default function RootLayout() {
       <NotificationProvider>
         <LocationProvider>
           <ToastProvider>
-            <TrackingProvider>
-              <RootLayoutInner />
-            </TrackingProvider>
+            <AuthProvider>
+              <TrackingProvider>
+                <RootLayoutInner />
+              </TrackingProvider>
+            </AuthProvider>
           </ToastProvider>
         </LocationProvider>
       </NotificationProvider>
