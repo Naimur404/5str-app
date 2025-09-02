@@ -1569,7 +1569,10 @@ export default function HomeScreen() {
           {/* Search Bar */}
           <TouchableOpacity 
             style={styles.searchContainer}
-            onPress={() => router.push('/search' as any)}
+            onPress={() => {
+              console.log('🔍 Search bar pressed - navigating to search page');
+              router.push('/search' as any);
+            }}
             activeOpacity={1}
           >
             <View style={styles.searchBar}>
@@ -1599,13 +1602,15 @@ export default function HomeScreen() {
         style={styles.header}
       >
         {/* Time-Based Animation Elements */}
-        <DynamicHeroSection 
-          colors={colors}
-          colorScheme={colorScheme}
-          onWeatherUpdate={handleWeatherUpdate}
-        />
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+          <DynamicHeroSection 
+            colors={colors}
+            colorScheme={colorScheme}
+            onWeatherUpdate={handleWeatherUpdate}
+          />
+        </View>
         
-        <View style={styles.headerTop}>
+        <View style={[styles.headerTop, { zIndex: 20 }]}>
           <View style={styles.welcomeSection}>
             <View style={styles.greetingRow}>
               <Text style={styles.greeting}>
@@ -1628,7 +1633,10 @@ export default function HomeScreen() {
             
             <TouchableOpacity 
               style={styles.locationContainer} 
-              onPress={() => router.push('/location-selection')}
+              onPress={() => {
+                console.log('📍 Location change pressed - navigating to location selection');
+                router.push('/location-selection');
+              }}
             >
               <Ionicons 
                 name="location" 
@@ -1996,6 +2004,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    zIndex: 15,
   },
   location: {
     color: 'white',
@@ -2056,6 +2065,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 8,
+    zIndex: 15,
   },
   searchBar: {
     flexDirection: 'row',

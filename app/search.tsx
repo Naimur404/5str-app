@@ -85,8 +85,7 @@ export default function SearchScreen() {
     }
 
     console.log('Starting API search for:', query, 'Whole Bangladesh:', searchWholeBangladesh);
-    setLoading(true);
-
+    
     try {
       const baseParams = `q=${encodeURIComponent(query)}&type=all&sort=rating&limit=10`;
       let url = `${getApiUrl(API_CONFIG.ENDPOINTS.SEARCH)}?${baseParams}`;
@@ -105,17 +104,17 @@ export default function SearchScreen() {
 
       if (data.success) {
         setSearchResults(data.data);
-        setLoading(false);
       } else {
         Alert.alert('Error', data.message || 'Search failed');
         setSearchResults(null);
-        setLoading(false);
       }
     } catch (error) {
       console.error('Search error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Network error during search';
       Alert.alert('Error', errorMessage);
       setSearchResults(null);
+    } finally {
+      // Always set loading to false in finally block
       setLoading(false);
     }
   };
