@@ -492,6 +492,11 @@ export default function HomeScreen() {
       
       // Fetch fresh data with new location (guaranteed fresh)
       await fetchFreshHomeData();
+      // Also reload recommendations with new location if user is authenticated
+      if (isUserAuthenticated) {
+        console.log('🔄 Location changed: Reloading recommendations...');
+        loadMainRecommendations();
+      }
       showSuccess('Home data updated for new location');
     });
 
@@ -762,7 +767,12 @@ export default function HomeScreen() {
         message: 'Failed to fetch data for new location. Please try again.',
         buttons: [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => fetchFreshHomeData() }
+          { text: 'Retry', onPress: () => {
+            fetchFreshHomeData();
+            if (isUserAuthenticated) {
+              loadMainRecommendations();
+            }
+          }}
         ]
       });
     } finally {
@@ -816,6 +826,11 @@ export default function HomeScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchHomeData();
+    // Also reload recommendations if user is authenticated
+    if (isUserAuthenticated) {
+      console.log('🔄 Refreshing: Reloading recommendations...');
+      loadMainRecommendations();
+    }
   };
 
   const handleBannerPress = (banner: Banner) => {
