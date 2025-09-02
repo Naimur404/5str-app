@@ -12,16 +12,10 @@ import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/Theme
 import { ToastProvider } from '@/contexts/ToastContext';
 import { TrackingProvider } from '@/components/TrackingProvider';
 import { useErrorHandler } from '@/services/errorHandler';
+import disableConsoleInProduction from '@/utils/disableConsole';
 
-// Automatically disable ALL console logs in production builds
-// No need to change any existing code - this handles everything!
-if (!__DEV__) {
-  console.log = () => {};
-  console.warn = () => {};
-  console.error = () => {};
-  console.info = () => {};
-  console.debug = () => {};
-}
+// Disable all console logs in production builds
+disableConsoleInProduction();
 
 function RootLayoutInner() {
   const { colorScheme } = useTheme();
