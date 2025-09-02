@@ -647,10 +647,35 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     }
     
     if (response.status === 401) {
+      // Check if this is a login endpoint - don't redirect for invalid credentials
+      if (endpoint.includes('/login') || endpoint.includes('/register')) {
+        console.log('🔐 401 on login/register - Invalid credentials');
+        return {
+          success: false,
+          message: responseData?.message || 'Invalid credentials',
+          status: response.status
+        };
+      }
+      
+      // For other endpoints, treat 401 as token expired
+      console.log('🔐 401 Unauthorized - Token expired, redirecting to login');
+      
+      // Clear stored authentication data
+      await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('user_data');
+      
+      // Import router and redirect to login
+      const router = require('expo-router').router;
+      if (router) {
+        router.replace('/auth/login');
+      }
+      
+      // Return response indicating redirect to login
       return {
         success: false,
-        message: responseData?.message || 'Authentication required',
-        status: response.status
+        message: 'Session expired. Please log in again.',
+        status: response.status,
+        redirectToLogin: true
       };
     }
     

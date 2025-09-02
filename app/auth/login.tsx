@@ -181,6 +181,19 @@ export default function LoginScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
+            {/* Continue as Guest Button */}
+            <TouchableOpacity
+              style={[styles.guestButton, { 
+                borderColor: colors.icon + '40',
+                backgroundColor: colors.card
+              }]}
+              onPress={() => router.replace('/(tabs)' as any)}
+            >
+              <Text style={[styles.guestButtonText, { color: colors.text }]}>
+                Continue as Guest
+              </Text>
+            </TouchableOpacity>
+
             {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={[styles.divider, { backgroundColor: colors.icon + '30' }]} />
@@ -318,6 +331,18 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  guestButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 30,
+  },
+  guestButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
   dividerContainer: {
     flexDirection: 'row',
