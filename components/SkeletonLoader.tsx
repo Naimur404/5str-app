@@ -168,7 +168,7 @@ export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
     {/* Modern Tab Bar Skeleton */}
     <View style={[styles.modernTabContainer, { backgroundColor: colors.background }]}>
       <View style={[styles.modernTabBar, { backgroundColor: colors.card }]}>
-        {[...Array(3)].map((_, index) => (
+        {[...Array(4)].map((_, index) => (
           <View key={index} style={styles.modernTabItemSkeleton}>
             <View style={[styles.tabIconSkeleton, { backgroundColor: index === 1 ? colors.tint + '20' : colors.icon + '15' }]}>
               <SkeletonBox 
@@ -179,7 +179,7 @@ export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
               />
             </View>
             <SkeletonBox 
-              width={index === 0 ? 65 : index === 1 ? 75 : 55} 
+              width={index === 0 ? 65 : index === 1 ? 75 : index === 2 ? 55 : 70} 
               height={12} 
               borderRadius={6}
               backgroundColor={index === 1 ? colors.tint + '40' : colors.icon + '20'} 
