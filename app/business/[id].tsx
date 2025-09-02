@@ -1167,8 +1167,8 @@ export default function BusinessDetailsScreen() {
       ) : (
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <View style={styles.similarHeaderMain}>
-              <Ionicons name="compass" size={20} color={colors.tint} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="compass" size={20} color={colors.tint} style={{ marginTop: -13 }} />
               <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
                 Similar Places ({similarBusinesses.length})
               </Text>
@@ -1254,7 +1254,7 @@ export default function BusinessDetailsScreen() {
                   {/* Rating, reviews, and distance */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Ionicons name="star" size={14} color="#FFD700" />
+                      <Ionicons name="star" size={12} color="#FFD700" />
                       <Text style={[{ fontSize: 13, fontWeight: '600' }, { color: colors.text }]}>
                         {parseFloat(item.rating?.overall_rating || '0').toFixed(1)}
                       </Text>
@@ -1295,7 +1295,7 @@ export default function BusinessDetailsScreen() {
                           alignItems: 'center',
                           gap: 2
                         }}>
-                          <Ionicons name="checkmark-circle" size={10} color="#4CAF50" />
+                          <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
                           <Text style={{ color: '#4CAF50', fontSize: 9, fontWeight: '600' }}>
                             Verified
                           </Text>
@@ -1313,7 +1313,7 @@ export default function BusinessDetailsScreen() {
                           alignItems: 'center',
                           gap: 2
                         }}>
-                          <Ionicons name="bicycle" size={10} color={colors.icon} />
+                          <Ionicons name="bicycle" size={12} color={colors.icon} />
                           <Text style={{ color: colors.icon, fontSize: 9, fontWeight: '600' }}>
                             Delivery
                           </Text>
@@ -2526,7 +2526,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   similarHeaderMain: {
     flexDirection: 'row',
