@@ -1,5 +1,6 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { errorHandler } from './errorHandler';
 import { 
   TopService, 
   CategoriesResponse, 
@@ -565,7 +566,10 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     });
   } catch (error) {
     console.error('Network error:', error);
-    throw new Error('Network error. Please check your internet connection.');
+    const networkError = new Error('Network error. Please check your internet connection.');
+    // Show popup for network errors
+    errorHandler.handleApiError(networkError);
+    throw networkError;
   }
 
   console.log('API Response:', {
@@ -581,7 +585,9 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
     responseText = await response.text();
   } catch (error) {
     console.error('Failed to read response text:', error);
-    throw new Error('Failed to read response from server.');
+    const readError = new Error('Failed to read response from server.');
+    errorHandler.handleApiError(readError);
+    throw readError;
   }
 
   console.log('Raw response text (first 500 chars):', responseText.substring(0, 500));

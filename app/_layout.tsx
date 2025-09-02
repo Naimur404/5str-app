@@ -11,6 +11,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { TrackingProvider } from '@/components/TrackingProvider';
+import { useErrorHandler } from '@/services/errorHandler';
 
 // Automatically disable ALL console logs in production builds
 // No need to change any existing code - this handles everything!
@@ -25,6 +26,9 @@ if (!__DEV__) {
 function RootLayoutInner() {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
+  
+  // Initialize global error handler
+  useErrorHandler();
   
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),

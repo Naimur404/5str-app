@@ -6,6 +6,7 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/NotificationBadge';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User, getMainRecommendations, MainRecommendationsResponse, RecommendationBusiness } from '@/services/api';
+import { handleApiError } from '@/services/errorHandler';
 import cacheService from '@/services/cacheService';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
@@ -807,7 +808,8 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('❌ Error loading main recommendations:', error);
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
-      // Don't show error alert for recommendations - it's optional content
+      // Use global error handler for non-validation errors
+      handleApiError(error);
     }
   };
 
