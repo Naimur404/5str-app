@@ -9,6 +9,7 @@ import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User, getMain
 import { handleApiError } from '@/services/errorHandler';
 import cacheService from '@/services/cacheService';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { weatherService, WeatherData } from '@/services/weatherService';
 import CustomAlert from '@/components/CustomAlert';
 import { Banner, Business, HomeResponse, SpecialOffer, TopService } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,12 +40,16 @@ import { addTrackingToPress } from '@/hooks/useFlatListTracking';
 // Dynamic Hero Section Component with Time-Based Themes
 const DynamicHeroSection = React.memo(({ 
   colors, 
-  colorScheme
+  colorScheme,
+  onWeatherUpdate
 }: {
   colors: any;
   colorScheme: string;
+  onWeatherUpdate?: (weather: WeatherData) => void;
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+  const { location } = useLocation();
   const router = useRouter();
   
   // Animation values for different elements
@@ -53,6 +58,7 @@ const DynamicHeroSection = React.memo(({
   const starAnimation = useRef(new Animated.Value(0)).current;
   const birdAnimation = useRef(new Animated.Value(0)).current;
   const cloudAnimation = useRef(new Animated.Value(0)).current;
+  const weatherIconAnimation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Update time every minute
@@ -62,12 +68,70 @@ const DynamicHeroSection = React.memo(({
 
     // Start animations
     startAnimations();
+    
+    // Force refresh weather on first load to get real-time data
+    fetchCurrentWeather(true);
+
+    // Update weather every 30 minutes
+    const weatherInterval = setInterval(() => {
+      fetchCurrentWeather();
+    }, 30 * 60 * 1000);
 
     return () => {
       clearInterval(timeInterval);
+      clearInterval(weatherInterval);
       stopAnimations();
     };
-  }, []);
+  }, [location]);
+
+  const fetchCurrentWeather = async (forceRefresh = false) => {
+    try {
+      // Use location coordinates or default to Chittagong, Bangladesh
+      const lat = location?.latitude || 22.3569;
+      const lng = location?.longitude || 91.7832;
+      
+      console.log('🌤️ DynamicHeroSection: Fetching weather...', {
+        lat,
+        lng,
+        forceRefresh,
+        hasLocation: !!location,
+        locationSource: location?.source
+      });
+      
+      let weatherData;
+      if (forceRefresh) {
+        console.log('🌤️ DynamicHeroSection: Force refreshing weather data...');
+        weatherData = await weatherService.forceRefresh(lat, lng);
+      } else {
+        weatherData = await weatherService.getCurrentWeather(lat, lng);
+      }
+      
+      console.log('🌤️ DynamicHeroSection: Weather data received:', weatherData);
+      
+      setCurrentWeather(weatherData);
+      
+      // Notify parent component
+      if (onWeatherUpdate) {
+        onWeatherUpdate(weatherData);
+      }
+      
+      // Animate weather icon
+      Animated.sequence([
+        Animated.timing(weatherIconAnimation, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(weatherIconAnimation, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+    }
+  };
 
   const startAnimations = () => {
     // Sun/Moon rotation animation
@@ -122,10 +186,27 @@ const DynamicHeroSection = React.memo(({
     cloudAnimation.stopAnimation();
   };
 
-  // Get time-based theme
+  // Get combined time and weather-based theme
   const getTimeTheme = () => {
     const hour = currentTime.getHours();
+    const baseTheme = getBaseTimeTheme(hour);
     
+    // Only show sun/moon after weather data is loaded
+    if (!currentWeather) {
+      return {
+        ...baseTheme,
+        showSun: false,
+        showMoon: false,
+        showStars: false,
+        showClouds: false, // Don't show anything until weather loads
+      };
+    }
+    
+    // Enhance theme with weather conditions
+    return enhanceThemeWithWeather(baseTheme, currentWeather);
+  };
+
+  const getBaseTimeTheme = (hour: number) => {
     if (hour >= 5 && hour < 12) {
       // Morning (5 AM - 12 PM)
       return {
@@ -139,7 +220,7 @@ const DynamicHeroSection = React.memo(({
         textColor: 'white',
         showSun: true,
         showBirds: true,
-        showClouds: true,
+        showClouds: true, // Show clouds by default
         sunColor: '#FFD700',
         cloudColor: 'rgba(255, 255, 255, 0.8)'
       };
@@ -155,7 +236,7 @@ const DynamicHeroSection = React.memo(({
           : ['#87CEEB', '#6495ED', '#4169E1'],
         textColor: 'white',
         showSun: true,
-        showClouds: true,
+        showClouds: true, // Show clouds by default
         sunColor: '#FFD700',
         cloudColor: 'rgba(255, 255, 255, 0.9)'
       };
@@ -171,7 +252,7 @@ const DynamicHeroSection = React.memo(({
           : ['#FF8A65', '#FF7043', '#FF5722'],
         textColor: 'white',
         showSun: true,
-        showClouds: true,
+        showClouds: true, // Show clouds by default
         sunColor: '#FF6B35',
         cloudColor: 'rgba(255, 182, 193, 0.8)'
       };
@@ -188,12 +269,76 @@ const DynamicHeroSection = React.memo(({
         textColor: 'white',
         showMoon: true,
         showStars: true,
-        showClouds: true,
+        showClouds: true, // Show clouds by default
         moonColor: '#FFF8DC', // Cornsilk - warm, attractive moon color
         starColor: '#FFFACD',
         cloudColor: 'rgba(70, 130, 180, 0.3)'
       };
     }
+  };
+
+  const enhanceThemeWithWeather = (baseTheme: any, weather: WeatherData) => {
+    const weatherTheme = { ...baseTheme };
+    
+    // Enhance (don't completely override) based on weather conditions
+    switch (weather.condition) {
+      case 'sunny':
+      case 'clear':
+        // Keep time-based animations, just adjust for sunny weather
+        weatherTheme.showClouds = false;
+        weatherTheme.showBirds = true;
+        break;
+      case 'partly-cloudy':
+        // Show both time-based elements and clouds
+        weatherTheme.showClouds = true;
+        weatherTheme.showBirds = true;
+        weatherTheme.cloudOpacity = 0.6;
+        break;
+      case 'cloudy':
+        // Cloudy weather - hide sun completely, show clouds
+        weatherTheme.showClouds = true;
+        weatherTheme.showBirds = false; // Birds don't fly in heavy clouds
+        weatherTheme.cloudOpacity = 0.8;
+        // Hide sun completely when it's cloudy
+        if (baseTheme.type !== 'night') {
+          weatherTheme.showSun = false;
+        }
+        break;
+      case 'rainy':
+        // Rain conditions - hide flying elements but keep time-based lighting
+        weatherTheme.showClouds = true;
+        weatherTheme.showBirds = false;
+        weatherTheme.showRain = true;
+        weatherTheme.cloudColor = 'rgba(105, 105, 105, 0.9)';
+        // Dim sun but don't hide completely
+        if (baseTheme.type !== 'night') {
+          weatherTheme.sunOpacity = 0.3; // Very dim sun
+        }
+        break;
+      case 'stormy':
+        weatherTheme.showClouds = true;
+        weatherTheme.showBirds = false;
+        weatherTheme.showStorm = true;
+        weatherTheme.cloudColor = 'rgba(47, 79, 79, 0.9)';
+        if (baseTheme.type !== 'night') {
+          weatherTheme.showSun = false;
+        }
+        break;
+      case 'snowy':
+        weatherTheme.showClouds = true;
+        weatherTheme.showBirds = false;
+        weatherTheme.showSnow = true;
+        weatherTheme.cloudColor = 'rgba(220, 220, 220, 0.9)';
+        if (baseTheme.type !== 'night') {
+          weatherTheme.sunOpacity = 0.4; // Dim sun for snowy weather
+        }
+        break;
+      default:
+        // If unknown weather, keep all time-based animations
+        break;
+    }
+    
+    return weatherTheme;
   };
 
   const theme = getTimeTheme();
@@ -243,6 +388,7 @@ const DynamicHeroSection = React.memo(({
             dynamicHeroStyles.sun,
             {
               backgroundColor: theme.sunColor,
+              opacity: theme.sunOpacity || 1, // Use sunOpacity if provided
               transform: [
                 { rotate: sunRotation },
                 { scale: sunScale }
@@ -250,7 +396,13 @@ const DynamicHeroSection = React.memo(({
             }
           ]}
         >
-          <View style={[dynamicHeroStyles.sunRays, { borderColor: theme.sunColor }]} />
+          <View style={[
+            dynamicHeroStyles.sunRays, 
+            { 
+              borderColor: theme.sunColor,
+              opacity: theme.sunOpacity || 1 // Apply opacity to rays too
+            }
+          ]} />
         </Animated.View>
       )}
 
@@ -325,6 +477,71 @@ const DynamicHeroSection = React.memo(({
           <View style={[dynamicHeroStyles.cloud2, { backgroundColor: theme.cloudColor }]} />
         </Animated.View>
       )}
+
+      {/* Rain Animation */}
+      {theme.showRain && (
+        <View style={dynamicHeroStyles.weatherOverlay}>
+          {[...Array(15)].map((_, index) => (
+            <Animated.View
+              key={`rain-${index}`}
+              style={[
+                dynamicHeroStyles.rainDrop,
+                {
+                  left: `${(index * 6.7) % 100}%`,
+                  transform: [
+                    {
+                      translateY: birdAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-20, 300],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* Storm Animation */}
+      {theme.showStorm && (
+        <Animated.View
+          style={[
+            dynamicHeroStyles.stormFlash,
+            {
+              opacity: starAnimation.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [0, 0.3, 0],
+              }),
+            },
+          ]}
+        />
+      )}
+
+      {/* Snow Animation */}
+      {theme.showSnow && (
+        <View style={dynamicHeroStyles.weatherOverlay}>
+          {[...Array(20)].map((_, index) => (
+            <Animated.View
+              key={`snow-${index}`}
+              style={[
+                dynamicHeroStyles.snowFlake,
+                {
+                  left: `${(index * 5) % 100}%`,
+                  transform: [
+                    {
+                      translateY: starAnimation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-10, 250],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+          ))}
+        </View>
+      )}
     </>
   );
 });
@@ -369,6 +586,51 @@ export default function HomeScreen() {
   const [loginMessageShown, setLoginMessageShown] = useState(false);
   const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationBusiness[]>([]);
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+
+  const handleWeatherUpdate = (weather: WeatherData) => {
+    setCurrentWeather(weather);
+  };
+
+  const getWeatherIconName = (condition: WeatherData['condition']): string => {
+    switch (condition) {
+      case 'sunny':
+      case 'clear':
+        return 'sunny';
+      case 'partly-cloudy':
+        return 'partly-sunny';
+      case 'cloudy':
+        return 'cloudy';
+      case 'rainy':
+        return 'rainy';
+      case 'stormy':
+        return 'thunderstorm';
+      case 'snowy':
+        return 'snow';
+      default:
+        return 'partly-sunny';
+    }
+  };
+
+  const getWeatherColor = (condition: WeatherData['condition']): string => {
+    switch (condition) {
+      case 'sunny':
+      case 'clear':
+        return '#FFD700'; // Gold
+      case 'partly-cloudy':
+        return '#87CEEB'; // Sky blue
+      case 'cloudy':
+        return '#B0C4DE'; // Light steel blue
+      case 'rainy':
+        return '#4682B4'; // Steel blue
+      case 'stormy':
+        return '#483D8B'; // Dark slate blue
+      case 'snowy':
+        return '#E0E0E0'; // Light gray
+      default:
+        return '#87CEEB';
+    }
+  };
 
   // Debug logging for state changes
   useEffect(() => {
@@ -614,14 +876,37 @@ export default function HomeScreen() {
           }
         }
         
-        // Load main recommendations for authenticated users
+        // Load main recommendations for authenticated users immediately
         console.log('🎯 About to call loadMainRecommendations');
-        loadMainRecommendations();
+        
+        // Load recommendations directly since we know user is authenticated
+        try {
+          const coordinates = getCoordinatesForAPI();
+          console.log('📍 Direct recommendations call - Coordinates:', coordinates);
+          
+          const response = await getMainRecommendations(
+            coordinates.latitude,
+            coordinates.longitude,
+            10 // Load 10 recommendations for home screen
+          );
+
+          if (response.success) {
+            console.log(`✅ Direct call: Loaded ${response.data.recommendations?.length || 0} main recommendations`);
+            setRecommendations(response.data.recommendations || []);
+          } else {
+            console.log('❌ Direct call: Failed to load main recommendations');
+          }
+        } catch (error) {
+          console.error('❌ Direct call: Error loading recommendations:', error);
+        }
       } else {
         console.log('❌ User is not authenticated, skipping profile and recommendations');
       }
+      
+      return authenticated; // Return authentication status
     } catch (error) {
       console.error('Error checking auth or loading user:', error);
+      return false;
     }
   };
 
@@ -1202,13 +1487,30 @@ export default function HomeScreen() {
         <DynamicHeroSection 
           colors={colors}
           colorScheme={colorScheme}
+          onWeatherUpdate={handleWeatherUpdate}
         />
         
         <View style={styles.headerTop}>
           <View style={styles.welcomeSection}>
-            <Text style={styles.greeting}>
-              {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
-            </Text>
+            <View style={styles.greetingRow}>
+              <Text style={styles.greeting}>
+                {getGreeting()}, {user?.name ? getFirstName(user.name) : (isUserAuthenticated ? 'User' : 'Guest')}
+              </Text>
+              
+              {/* Inline Weather Display */}
+              <View style={styles.weatherDisplay}>
+                <Ionicons 
+                  name={currentWeather ? getWeatherIconName(currentWeather.condition) as any : 'partly-sunny'} 
+                  size={14} 
+                  color={currentWeather ? getWeatherColor(currentWeather.condition) : '#87CEEB'}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={styles.weatherText}>
+                  {currentWeather ? currentWeather.temperature : 28}°C
+                </Text>
+              </View>
+            </View>
+            
             <TouchableOpacity 
               style={styles.locationContainer} 
               onPress={() => router.push('/location-selection')}
@@ -1548,11 +1850,32 @@ const styles = StyleSheet.create({
   welcomeSection: {
     flex: 1,
   },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
   greeting: {
     fontSize: 16,
     fontWeight: '600',
     color: 'white',
-    marginBottom: 3,
+  },
+  weatherDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  weatherText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -2148,5 +2471,44 @@ const dynamicHeroStyles = StyleSheet.create({
     marginTop: -15,
     marginLeft: 20,
     opacity: 0.6,
+  },
+  // Weather Animation Overlay
+  weatherOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 3,
+    pointerEvents: 'none',
+  },
+  // Rain Animation
+  rainDrop: {
+    position: 'absolute',
+    width: 2,
+    height: 15,
+    backgroundColor: '#4682B4',
+    borderRadius: 1,
+    opacity: 0.7,
+  },
+  // Storm Flash Animation
+  stormFlash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    opacity: 0,
+    zIndex: 4,
+  },
+  // Snow Animation
+  snowFlake: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+    opacity: 0.8,
   },
 });
