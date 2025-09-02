@@ -1180,64 +1180,172 @@ export default function BusinessDetailsScreen() {
           </Text>
           
           {similarBusinesses.map((item, index) => (
-            <TouchableOpacity 
+            <View 
               key={item.id?.toString() || index}
-              style={[styles.menuItemCard, { backgroundColor: colors.background, marginBottom: 12 }]}
-              onPress={() => {
-                // Track similar business click
-                tracking.trackClick({
-                  businessName: business?.business_name,
-                  similarBusinessId: item.id,
-                  similarBusinessName: item.name || item.business_name,
-                  action: 'view_similar_business',
-                  source: 'similar_businesses_tab'
-                });
-                router.push(`/business/${item.id}` as any);
+              style={{ 
+                marginTop: 16, 
+                backgroundColor: colors.card, 
+                borderRadius: 16, 
+                padding: 16,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: 1,
+                borderColor: colors.border || '#f0f0f0'
               }}
-              activeOpacity={0.7}
             >
-              <View style={styles.menuItemCardHeader}>
-                <Image 
-                  source={{ uri: getImageUrl(item.logo_image?.image_url || item.image_url) || getFallbackImageUrl('business') }} 
-                  style={styles.menuItemCardImage}
-                />
-                
-                {/* Similarity Badge */}
-                {(item as any).similarity_score && (item as any).similarity_score > 85 && (
-                  <View style={[styles.similarityBadge, { backgroundColor: colors.tint }]}>
-                    <Ionicons name="checkmark-circle" size={10} color="white" />
-                    <Text style={styles.similarityText}>Match</Text>
-                  </View>
-                )}
-              </View>
-              
-              <View style={styles.menuItemCardContent}>
-                <Text style={[styles.businessInfoName, { color: colors.text, fontSize: 16 }]} numberOfLines={2}>
-                  {item.name || item.business_name}
-                </Text>
-                <Text style={[styles.businessInfoCategory, { color: colors.icon }]} numberOfLines={1}>
-                  {item.categories?.[0]?.name || item.category_name || 'Category'}
-                </Text>
-                
-                <View style={[styles.similarBusinessMeta, { marginTop: 8 }]}>
-                  <View style={styles.ratingContainer}>
-                    <Ionicons name="star" size={14} color="#FFD700" />
-                    <Text style={[styles.similarRatingText, { color: colors.text }]}>
-                      {item.overall_rating}
-                    </Text>
-                  </View>
-                  <Text style={[styles.similarDistanceText, { color: colors.icon }]}>
-                    {item.distance ? parseFloat(item.distance).toFixed(1) : '0.0'}km away
-                  </Text>
+              <TouchableOpacity 
+                style={{ flexDirection: 'row' }}
+                onPress={() => {
+                  // Track similar business click
+                  tracking.trackClick({
+                    businessName: business?.business_name,
+                    similarBusinessId: item.id,
+                    similarBusinessName: item.name,
+                    action: 'view_similar_business',
+                    source: 'similar_businesses_tab'
+                  });
+                  router.push(`/business/${item.id}` as any);
+                }}
+                activeOpacity={0.7}
+              >
+                {/* Business image with similarity badge */}
+                <View style={{ position: 'relative' }}>
+                  <Image 
+                    source={{ uri: getImageUrl(item.images?.logo) || getFallbackImageUrl('business') }} 
+                    style={{ width: 90, height: 70, borderRadius: 12 }}
+                  />
+                  {/* Similarity Badge */}
+                  {item.similarity_score && item.similarity_score > 0.85 && (
+                    <View style={{ 
+                      position: 'absolute', 
+                      top: 4, 
+                      right: 4, 
+                      backgroundColor: colors.tint,
+                      borderRadius: 8,
+                      paddingHorizontal: 4,
+                      paddingVertical: 2,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 2
+                    }}>
+                      <Ionicons name="checkmark-circle" size={8} color="white" />
+                      <Text style={{ color: 'white', fontSize: 8, fontWeight: '600' }}>
+                        {Math.round(item.similarity_score * 100)}%
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 
-                {item.description && (
-                  <Text style={[styles.businessInfoCategory, { color: colors.icon, marginTop: 4 }]} numberOfLines={2}>
-                    {item.description}
+                {/* Business info */}
+                <View style={{ marginLeft: 16, flex: 1, justifyContent: 'space-between' }}>
+                  {/* Business name */}
+                  <Text style={[{ fontSize: 16, fontWeight: '700', lineHeight: 20 }, { color: colors.text }]} numberOfLines={2}>
+                    {item.name}
                   </Text>
-                )}
-              </View>
-            </TouchableOpacity>
+                  
+                  {/* Category and subcategory */}
+                  <Text style={[{ fontSize: 13, fontWeight: '500', marginTop: 2 }, { color: colors.icon }]} numberOfLines={1}>
+                    {item.category?.name}{item.subcategory ? ` • ${item.subcategory.name}` : ''}
+                  </Text>
+                  
+                  {/* Rating, reviews, and distance */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Ionicons name="star" size={14} color="#FFD700" />
+                      <Text style={[{ fontSize: 13, fontWeight: '600' }, { color: colors.text }]}>
+                        {parseFloat(item.rating?.overall_rating || '0').toFixed(1)}
+                      </Text>
+                      <Text style={[{ fontSize: 11 }, { color: colors.icon }]}>
+                        ({item.rating?.total_reviews || 0} reviews)
+                      </Text>
+                    </View>
+                    {item.distance_km && (
+                      <Text style={[{ fontSize: 12, fontWeight: '500' }, { color: colors.tint }]}>
+                        {parseFloat(item.distance_km).toFixed(1)}km
+                      </Text>
+                    )}
+                  </View>
+                  
+                  {/* Price range and features */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      {/* Price range */}
+                      <View style={{ 
+                        backgroundColor: colors.tint + '15', 
+                        paddingHorizontal: 8, 
+                        paddingVertical: 3, 
+                        borderRadius: 8 
+                      }}>
+                        <Text style={[{ fontSize: 11, fontWeight: '600' }, { color: colors.tint }]}>
+                          {getPriceRangeText(item.price_range)}
+                        </Text>
+                      </View>
+                      
+                      {/* Verified badge */}
+                      {item.features?.is_verified && (
+                        <View style={{ 
+                          backgroundColor: '#4CAF50' + '15', 
+                          paddingHorizontal: 6, 
+                          paddingVertical: 2, 
+                          borderRadius: 6,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 2
+                        }}>
+                          <Ionicons name="checkmark-circle" size={10} color="#4CAF50" />
+                          <Text style={{ color: '#4CAF50', fontSize: 9, fontWeight: '600' }}>
+                            Verified
+                          </Text>
+                        </View>
+                      )}
+                      
+                      {/* Delivery badge */}
+                      {item.features?.has_delivery && (
+                        <View style={{ 
+                          backgroundColor: colors.icon + '15', 
+                          paddingHorizontal: 6, 
+                          paddingVertical: 2, 
+                          borderRadius: 6,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 2
+                        }}>
+                          <Ionicons name="bicycle" size={10} color={colors.icon} />
+                          <Text style={{ color: colors.icon, fontSize: 9, fontWeight: '600' }}>
+                            Delivery
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {/* Open status */}
+                    <View style={{ 
+                      backgroundColor: '#4CAF50' + '15', 
+                      paddingHorizontal: 6, 
+                      paddingVertical: 2, 
+                      borderRadius: 6 
+                    }}>
+                      <Text style={{ color: '#4CAF50', fontSize: 9, fontWeight: '600' }}>
+                        Open Now
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  {/* Address */}
+                  {item.address?.area && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                      <Ionicons name="location" size={12} color={colors.icon} />
+                      <Text style={[{ fontSize: 11 }, { color: colors.icon }]} numberOfLines={1}>
+                        {item.address.area}{item.address.city ? `, ${item.address.city}` : ''}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
           ))}
         </View>
       )}
