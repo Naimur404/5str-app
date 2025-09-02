@@ -19,9 +19,12 @@ import {
     View,
     ActivityIndicator,
     RefreshControl,
-    Alert
+    Alert,
+    Dimensions
 } from 'react-native';
 import { useLocation } from '@/contexts/LocationContext';
+
+const { width } = Dimensions.get('window');
 
 export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,23 +99,43 @@ export default function DiscoverScreen() {
     return iconMap[slug] || 'business';
   };
 
-  const renderCategoryItem = ({ item }: { item: Category }) => (
+  const renderCategoryItem = ({ item, index }: { item: Category; index: number }) => (
     <TouchableOpacity 
-      style={[styles.categoryCard, { backgroundColor: colors.card }]}
+      style={[
+        styles.categoryCard, 
+        { 
+          backgroundColor: colors.card,
+          borderWidth: colorScheme === 'dark' ? 1 : 0,
+          borderColor: colorScheme === 'dark' ? colors.border : 'transparent'
+        }
+      ]}
       onPress={() => handleCategoryPress(item)}
+      activeOpacity={0.8}
     >
       <View style={[styles.categoryIcon, { backgroundColor: item.color_code + '20' }]}>
-        <Ionicons name={getServiceIcon(item.slug)} size={32} color={item.color_code} />
+        <Ionicons name={getServiceIcon(item.slug)} size={24} color={item.color_code} />
       </View>
-      <Text style={[styles.categoryName, { color: colors.text }]}>{item.name}</Text>
-      <Text style={[styles.categoryCount, { color: colors.icon }]}>{item.total_businesses} businesses</Text>
+      <Text style={[styles.categoryName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
+      <View style={styles.categoryMeta}>
+        <View style={[styles.businessCountBadge, { backgroundColor: colors.tint + '15' }]}>
+          <Ionicons name="business-outline" size={12} color={colors.tint} />
+          <Text style={[styles.categoryCount, { color: colors.tint }]}>{item.total_businesses}</Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 
   const renderTrendingBusinessItem = ({ item }: { item: TrendingBusiness }) => (
     <TouchableOpacity 
-      style={styles.trendingCard}
+      style={[
+        styles.trendingCard,
+        {
+          shadowColor: colorScheme === 'dark' ? '#000' : '#000',
+          shadowOpacity: colorScheme === 'dark' ? 0.4 : 0.2,
+        }
+      ]}
       onPress={() => router.push(`/business/${item.id}`)}
+      activeOpacity={0.9}
     >
       <Image 
         source={{ 
@@ -120,12 +143,14 @@ export default function DiscoverScreen() {
         }} 
         style={styles.trendingImage} 
       />
-      <View style={styles.trendingBadge}>
-        <Ionicons name="trending-up" size={12} color={colors.buttonPrimary} />
-        <Text style={[styles.trendingRank, { color: colors.text }]}>#{item.trend_rank}</Text>
+      <View style={[styles.trendingBadge, { backgroundColor: colorScheme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255, 255, 255, 0.95)' }]}>
+        <Ionicons name="trending-up" size={12} color="#FF6B35" />
+        <Text style={[styles.trendingRank, { color: colorScheme === 'dark' ? '#fff' : colors.text }]}>#{item.trend_rank}</Text>
       </View>
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={colorScheme === 'dark' 
+          ? ['transparent', 'rgba(0,0,0,0.9)'] 
+          : ['transparent', 'rgba(0,0,0,0.8)']}
         style={styles.trendingOverlay}
       >
         <Text style={styles.trendingTitle} numberOfLines={1}>{item.business_name}</Text>
@@ -135,7 +160,9 @@ export default function DiscoverScreen() {
             <Ionicons name="star" size={10} color="#FFD700" />
             <Text style={styles.ratingText}>{parseFloat(item.overall_rating).toFixed(1)}</Text>
           </View>
-          <Text style={styles.priceRangeText}>{'$'.repeat(item.price_range)}</Text>
+          <View style={styles.priceRangeBadge}>
+            <Text style={styles.priceRangeText}>{'$'.repeat(item.price_range)}</Text>
+          </View>
         </View>
       </LinearGradient>
     </TouchableOpacity>
@@ -143,8 +170,15 @@ export default function DiscoverScreen() {
 
   const renderTrendingOfferingItem = ({ item }: { item: TrendingOffering }) => (
     <TouchableOpacity 
-      style={styles.trendingCard}
+      style={[
+        styles.trendingCard,
+        {
+          shadowColor: colorScheme === 'dark' ? '#000' : '#000',
+          shadowOpacity: colorScheme === 'dark' ? 0.4 : 0.2,
+        }
+      ]}
       onPress={() => router.push(`/offering/${item.business.id}/${item.id}`)}
+      activeOpacity={0.9}
     >
       <Image 
         source={{ 
@@ -152,18 +186,22 @@ export default function DiscoverScreen() {
         }} 
         style={styles.trendingImage} 
       />
-      <View style={styles.trendingBadge}>
+      <View style={[styles.trendingBadge, { backgroundColor: colorScheme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255, 255, 255, 0.95)' }]}>
         <Ionicons name="flame" size={12} color="#FF6B35" />
-        <Text style={[styles.trendingRank, { color: colors.text }]}>#{item.trend_rank}</Text>
+        <Text style={[styles.trendingRank, { color: colorScheme === 'dark' ? '#fff' : colors.text }]}>#{item.trend_rank}</Text>
       </View>
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.8)']}
+        colors={colorScheme === 'dark' 
+          ? ['transparent', 'rgba(0,0,0,0.9)'] 
+          : ['transparent', 'rgba(0,0,0,0.8)']}
         style={styles.trendingOverlay}
       >
         <Text style={styles.trendingTitle} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.trendingSubtitle} numberOfLines={1}>{item.business.business_name}</Text>
         <View style={styles.trendingMetrics}>
-          <Text style={styles.priceText}>৳{item.price}</Text>
+          <View style={styles.priceBadge}>
+            <Text style={styles.priceText}>৳{item.price}</Text>
+          </View>
         </View>
       </LinearGradient>
     </TouchableOpacity>
@@ -171,29 +209,52 @@ export default function DiscoverScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style="light" />
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       
-      {/* Fixed Header */}
+      {/* Enhanced Header with Gradient */}
       <LinearGradient
-        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+        colors={colorScheme === 'dark' 
+          ? [colors.headerGradientStart, colors.headerGradientEnd]
+          : [colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
-        <Text style={styles.headerTitle}>Discover</Text>
-        <Text style={styles.headerSubtitle}>Explore categories and find what you need</Text>
-        
-        {/* Search Bar */}
-        <TouchableOpacity 
-          style={styles.searchContainer}
-          onPress={() => router.push('/search' as any)}
-          activeOpacity={1}
-        >
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color={colors.icon} />
-            <Text style={[styles.searchPlaceholder, { color: colors.icon }]}>
-              Search categories, businesses...
-            </Text>
+        <View>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Discover</Text>
+            <View style={styles.headerBadge}>
+              <Ionicons name="compass" size={14} color="white" />
+              <Text style={styles.headerBadgeText}>Explore</Text>
+            </View>
           </View>
-        </TouchableOpacity>
+          <Text style={styles.headerSubtitle}>Find amazing places and experiences around you</Text>
+          
+          {/* Enhanced Search Bar */}
+          <TouchableOpacity 
+            style={styles.searchContainer}
+            onPress={() => router.push('/search' as any)}
+            activeOpacity={0.9}
+          >
+            <View style={[
+              styles.searchBar, 
+              { 
+                backgroundColor: colorScheme === 'dark' ? '#2a2a2a' : '#ffffff',
+                borderWidth: colorScheme === 'dark' ? 1 : 0,
+                borderColor: colorScheme === 'dark' ? '#444444' : 'transparent'
+              }
+            ]}>
+              <View style={[styles.searchIconContainer, { backgroundColor: colors.tint + '20' }]}>
+                <Ionicons name="search" size={14} color={colors.tint} />
+              </View>
+              <Text style={[
+                styles.searchPlaceholder, 
+                { color: colorScheme === 'dark' ? '#999999' : colors.icon }
+              ]}>
+                Search categories, businesses...
+              </Text>
+              <Ionicons name="mic-outline" size={16} color={colorScheme === 'dark' ? '#999999' : colors.icon} />
+            </View>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Show skeleton loader while loading */}
@@ -208,19 +269,34 @@ export default function DiscoverScreen() {
               refreshing={refreshing}
               onRefresh={handleRefresh}
               tintColor={colors.tint}
+              progressBackgroundColor={colorScheme === 'dark' ? '#333' : '#fff'}
             />
           }
         >
 
-        {/* Trending Section */}
+        {/* Trending Section with improved design */}
         {(trendingBusinesses.length > 0 || trendingOfferings.length > 0) && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Today</Text>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <Ionicons name="flame" size={20} color="#FF6B35" />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Today</Text>
+              </View>
+              <View style={[styles.trendingIndicator, { backgroundColor: colors.tint + '20' }]}>
+                <Ionicons name="trending-up" size={14} color={colors.tint} />
+                <Text style={[styles.trendingIndicatorText, { color: colors.tint }]}>Hot</Text>
+              </View>
+            </View>
             
             {/* Trending Businesses */}
             {trendingBusinesses.length > 0 && (
               <View style={styles.subsection}>
-                <Text style={[styles.subsectionTitle, { color: colors.icon }]}>Trending Businesses</Text>
+                <View style={styles.subsectionHeader}>
+                  <Text style={[styles.subsectionTitle, { color: colors.icon }]}>🏢 Trending Businesses</Text>
+                  <TouchableOpacity onPress={() => router.push('/trending')}>
+                    <Text style={[styles.viewAllText, { color: colors.tint }]}>View All</Text>
+                  </TouchableOpacity>
+                </View>
                 <FlatList
                   data={trendingBusinesses}
                   renderItem={renderTrendingBusinessItem}
@@ -235,7 +311,12 @@ export default function DiscoverScreen() {
             {/* Trending Offerings */}
             {trendingOfferings.length > 0 && (
               <View style={styles.subsection}>
-                <Text style={[styles.subsectionTitle, { color: colors.icon }]}>Trending Offers</Text>
+                <View style={styles.subsectionHeader}>
+                  <Text style={[styles.subsectionTitle, { color: colors.icon }]}>🎯 Trending Offers</Text>
+                  <TouchableOpacity onPress={() => router.push('/trending')}>
+                    <Text style={[styles.viewAllText, { color: colors.tint }]}>View All</Text>
+                  </TouchableOpacity>
+                </View>
                 <FlatList
                   data={trendingOfferings}
                   renderItem={renderTrendingOfferingItem}
@@ -249,9 +330,14 @@ export default function DiscoverScreen() {
           </View>
         )}
 
-        {/* Categories Section */}
+        {/* Enhanced Categories Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Browse Categories</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <Ionicons name="grid" size={20} color={colors.tint} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Browse Categories</Text>
+            </View>
+          </View>
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.tint} />
@@ -268,6 +354,7 @@ export default function DiscoverScreen() {
             />
           ) : (
             <View style={styles.emptyState}>
+              <Ionicons name="albums-outline" size={48} color={colors.icon} />
               <Text style={[styles.emptyText, { color: colors.icon }]}>
                 No categories available at the moment.
               </Text>
@@ -275,38 +362,40 @@ export default function DiscoverScreen() {
           )}
         </View>
 
-        {/* Quick Actions */}
+        {/* Enhanced Quick Actions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleContainer}>
+              <Ionicons name="flash" size={20} color={colors.tint} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+            </View>
+          </View>
           <View style={styles.quickActions}>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.card }]}
-              onPress={() => router.push('/popular-nearby')}
-            >
-              <Ionicons name="location-outline" size={24} color={colors.tint} />
-              <Text style={[styles.actionText, { color: colors.text }]}>Nearby</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.card }]}
-              onPress={() => router.push('/top-rated')}
-            >
-              <Ionicons name="star-outline" size={24} color={colors.tint} />
-              <Text style={[styles.actionText, { color: colors.text }]}>Top Rated</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.card }]}
-              onPress={() => router.push('/open-now')}
-            >
-              <Ionicons name="time-outline" size={24} color={colors.tint} />
-              <Text style={[styles.actionText, { color: colors.text }]}>Open Now</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: colors.card }]}
-              onPress={() => router.push('/special-offers')}
-            >
-              <Ionicons name="pricetag-outline" size={24} color={colors.tint} />
-              <Text style={[styles.actionText, { color: colors.text }]}>Offers</Text>
-            </TouchableOpacity>
+            {[
+              { icon: 'location', text: 'Nearby', route: '/popular-nearby', color: '#4CAF50' },
+              { icon: 'star', text: 'Top Rated', route: '/top-rated', color: '#FFD700' },
+              { icon: 'time', text: 'Open Now', route: '/open-now', color: '#2196F3' },
+              { icon: 'pricetag', text: 'Offers', route: '/special-offers', color: '#FF6B35' }
+            ].map((action, index) => (
+              <TouchableOpacity 
+                key={index}
+                style={[
+                  styles.actionButton, 
+                  { 
+                    backgroundColor: colors.card,
+                    borderWidth: colorScheme === 'dark' ? 1 : 0,
+                    borderColor: colorScheme === 'dark' ? colors.border : 'transparent'
+                  }
+                ]}
+                onPress={() => router.push(action.route as any)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: action.color + '20' }]}>
+                  <Ionicons name={action.icon as any} size={20} color={action.color} />
+                </View>
+                <Text style={[styles.actionText, { color: colors.text }]}>{action.text}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
         </ScrollView>
@@ -325,74 +414,142 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 45,
-    paddingBottom: 16,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    height: 165,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    height: 160,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: 'white',
-    marginBottom: 2,
+  },
+  headerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    gap: 4,
+  },
+  headerBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'white',
     opacity: 0.9,
-    marginBottom: 12,
+    marginBottom: 14,
+    lineHeight: 16,
   },
   searchContainer: {
-    marginBottom: 6,
+    marginBottom: 0,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
+  searchIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   searchPlaceholder: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
+    fontWeight: '500',
   },
   section: {
-    marginVertical: 20,
+    marginVertical: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  trendingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  trendingIndicatorText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   subsection: {
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+  subsectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 10,
   },
   subsectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    paddingHorizontal: 24,
-    marginBottom: 12,
     opacity: 0.8,
   },
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   trendingContainer: {
-    paddingHorizontal: 24,
-    gap: 16,
-    marginBottom: 8,
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 6,
   },
   trendingCard: {
-    width: 200,
-    height: 120,
+    width: 180,
+    height: 110,
     borderRadius: 12,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   trendingImage: {
     width: '100%',
@@ -403,13 +560,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
@@ -417,31 +573,31 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   trendingRank: {
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 9,
+    fontWeight: '700',
   },
   trendingOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 12,
+    padding: 10,
   },
   trendingTitle: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '700',
     marginBottom: 2,
-    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
   trendingSubtitle: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 11,
     opacity: 0.9,
     marginBottom: 6,
-    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
@@ -453,7 +609,7 @@ const styles = StyleSheet.create({
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -461,35 +617,39 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 9,
+    fontWeight: '700',
   },
-  priceRangeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  priceRangeBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
+  priceRangeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  priceBadge: {
+    backgroundColor: 'rgba(76, 175, 80, 0.9)',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
   priceText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-    backgroundColor: 'rgba(46, 204, 113, 0.8)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    fontSize: 11,
+    fontWeight: '700',
   },
   categoriesContainer: {
-    paddingHorizontal: 24,
-    gap: 16,
-    marginBottom: 32,
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 24,
   },
   categoryCard: {
     flex: 1,
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
     alignItems: 'center',
     marginHorizontal: 4,
@@ -498,45 +658,68 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+    minHeight: 110,
+    justifyContent: 'center',
   },
   categoryIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   categoryName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 16,
+  },
+  categoryMeta: {
+    alignItems: 'center',
+  },
+  businessCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 3,
   },
   categoryCount: {
-    fontSize: 12,
-    textAlign: 'center',
+    fontSize: 10,
+    fontWeight: '600',
   },
   quickActions: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: 20,
+    gap: 10,
   },
   actionButton: {
     flex: 1,
     alignItems: 'center',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  actionIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   actionText: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginTop: 8,
+    fontSize: 11,
+    fontWeight: '600',
     textAlign: 'center',
   },
   loadingContainer: {
@@ -545,15 +728,18 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '500',
   },
   emptyState: {
     paddingVertical: 40,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 20,
   },
 });
