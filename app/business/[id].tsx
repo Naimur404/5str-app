@@ -1008,6 +1008,122 @@ export default function BusinessDetailsScreen() {
     );
   };
 
+  const handleVote = async (reviewId: number, isHelpful: boolean) => {
+    try {
+      // Check if user is authenticated
+      const token = await getAuthToken();
+      if (!token) {
+        showAlert({
+          type: 'info',
+          title: 'Sign Up to Vote',
+          message: 'Create an account to vote on reviews and help others discover great places',
+          buttons: [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign Up', onPress: () => router.push('/welcome' as any) }
+          ]
+        });
+        return;
+      }
+
+      // Find the review
+      const review = reviews.find(r => r.id === reviewId);
+      if (!review) return;
+
+      // Optimistic UI update
+      const currentHasVoted = review.user_vote_status?.has_voted;
+      const currentUserVote = review.user_vote_status?.user_vote;
+      let newHelpfulCount = review.helpful_count;
+      let newNotHelpfulCount = review.not_helpful_count || 0;
+      let newUserVoteStatus = { has_voted: true, user_vote: isHelpful };
+
+      // Calculate the expected count changes
+      if (currentHasVoted && currentUserVote === isHelpful) {
+        // Removing vote
+        if (isHelpful) {
+          newHelpfulCount = Math.max(0, newHelpfulCount - 1);
+        } else {
+          newNotHelpfulCount = Math.max(0, newNotHelpfulCount - 1);
+        }
+        newUserVoteStatus = { has_voted: false, user_vote: false };
+      } else if (currentHasVoted && currentUserVote !== isHelpful) {
+        // Changing vote
+        if (currentUserVote) {
+          newHelpfulCount = Math.max(0, newHelpfulCount - 1);
+        } else {
+          newNotHelpfulCount = Math.max(0, newNotHelpfulCount - 1);
+        }
+        if (isHelpful) {
+          newHelpfulCount += 1;
+        } else {
+          newNotHelpfulCount += 1;
+        }
+      } else {
+        // Adding new vote
+        if (isHelpful) {
+          newHelpfulCount += 1;
+        } else {
+          newNotHelpfulCount += 1;
+        }
+      }
+
+      // Update state immediately for instant feedback
+      handleVoteUpdate(reviewId, newHelpfulCount, newNotHelpfulCount, newUserVoteStatus);
+
+      let response;
+      
+      // API call logic
+      if (review.user_vote_status?.has_voted && review.user_vote_status.user_vote === isHelpful) {
+        const { removeVote } = await import('@/services/api');
+        response = await removeVote(reviewId);
+      } else {
+        const { voteReview } = await import('@/services/api');
+        response = await voteReview(reviewId, isHelpful);
+      }
+
+      if (response.success && response.data) {
+        // Use the optimistic UI state if server response doesn't include user_vote_status
+        const finalUserVoteStatus = response.data.user_vote_status || newUserVoteStatus;
+        
+        // Update with server response, preserving the vote status we calculated
+        handleVoteUpdate(
+          reviewId, 
+          response.data.helpful_count, 
+          response.data.not_helpful_count || 0,
+          finalUserVoteStatus
+        );
+        
+        // Double-check to ensure state persists after a small delay
+        setTimeout(() => {
+          if (response.data) {
+            handleVoteUpdate(
+              reviewId, 
+              response.data.helpful_count, 
+              response.data.not_helpful_count || 0,
+              finalUserVoteStatus
+            );
+          }
+        }, 100);
+      } else {
+        // Revert on error
+        handleVoteUpdate(reviewId, review.helpful_count, review.not_helpful_count || 0, review.user_vote_status);
+        showAlert({
+          type: 'error',
+          title: 'Vote Failed',
+          message: response.message || 'Failed to vote',
+          buttons: [{ text: 'OK' }]
+        });
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+      showAlert({
+        type: 'error',
+        title: 'Vote Failed',
+        message: 'Failed to vote. Please try again.',
+        buttons: [{ text: 'OK' }]
+      });
+    }
+  };
+
   const renderRatingsTab = () => (
     <View style={styles.tabInnerContent}>
       {reviews.length > 0 ? (
@@ -1016,12 +1132,84 @@ export default function BusinessDetailsScreen() {
             Customer Reviews ({reviews.length})
           </Text>
           {reviews.map((item) => (
-            <ReviewCard
-              key={item.id}
-              review={item}
-              onVoteUpdate={handleVoteUpdate}
-              flat={true}
-            />
+            <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.card }]}>
+              {/* Review Header */}
+              <View style={styles.reviewHeader}>
+                <View style={styles.reviewUser}>
+                  <View style={[styles.userAvatar, { backgroundColor: colors.icon + '15' }]}>
+                    <Text style={[styles.userInitial, { color: colors.icon }]}>
+                      {item.user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={[styles.userName, { color: colors.text }]}>{item.user?.name || 'Anonymous'}</Text>
+                    <Text style={[styles.reviewDate, { color: colors.icon }]}>
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
+                
+                {/* Rating Stars */}
+                <View style={styles.reviewRating}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Ionicons
+                      key={star}
+                      name={star <= (item.overall_rating || 0) ? 'star' : 'star-outline'}
+                      size={16}
+                      color={star <= (item.overall_rating || 0) ? '#FFD700' : colors.icon}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              {/* Review Text */}
+              <Text style={[styles.reviewText, { color: colors.text }]}>{item.review_text}</Text>
+
+              {/* Vote Buttons */}
+              <View style={styles.reviewFooter}>
+                <TouchableOpacity
+                  style={[
+                    styles.voteButton,
+                    item.user_vote_status?.has_voted && item.user_vote_status?.user_vote === true && { backgroundColor: '#4CAF50' + '15' },
+                    { borderColor: colors.icon + '30' }
+                  ]}
+                  onPress={() => handleVote(item.id, true)}
+                >
+                  <Ionicons
+                    name="thumbs-up"
+                    size={16}
+                    color={item.user_vote_status?.has_voted && item.user_vote_status?.user_vote === true ? '#4CAF50' : colors.icon}
+                  />
+                  <Text style={[
+                    styles.voteText,
+                    { color: item.user_vote_status?.has_voted && item.user_vote_status?.user_vote === true ? '#4CAF50' : colors.text }
+                  ]}>
+                    Helpful ({item.helpful_count || 0})
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.voteButton,
+                    item.user_vote_status?.has_voted && item.user_vote_status?.user_vote === false && { backgroundColor: '#F44336' + '15' },
+                    { borderColor: colors.icon + '30' }
+                  ]}
+                  onPress={() => handleVote(item.id, false)}
+                >
+                  <Ionicons
+                    name="thumbs-down"
+                    size={16}
+                    color={item.user_vote_status?.has_voted && item.user_vote_status?.user_vote === false ? '#F44336' : colors.icon}
+                  />
+                  <Text style={[
+                    styles.voteText,
+                    { color: item.user_vote_status?.has_voted && item.user_vote_status?.user_vote === false ? '#F44336' : colors.text }
+                  ]}>
+                    Not helpful ({item.not_helpful_count || 0})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ))}
         </View>
       ) : (
@@ -2503,5 +2691,19 @@ const styles = StyleSheet.create({
   similarDistanceText: {
     fontSize: 10,
     opacity: 0.8,
+  },
+  // Vote button styles
+  voteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 6,
+    gap: 4,
+  },
+  voteText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
