@@ -20,7 +20,7 @@ interface ReviewCardProps {
   flat?: boolean; // New prop to control card styling
 }
 
-export default function ReviewCard({ review, onVoteUpdate, flat = false }: ReviewCardProps) {
+const ReviewCard = React.memo(function ReviewCard({ review, onVoteUpdate, flat = false }: ReviewCardProps) {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
@@ -28,10 +28,25 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
   const [isVoting, setIsVoting] = useState(false);
   const [localReview, setLocalReview] = useState(review);
 
-  // Update local state when review prop changes
+  // Update local state when review prop changes, but preserve vote status if it exists locally
   React.useEffect(() => {
-    setLocalReview(review);
-  }, [review]);
+    // If we have a local vote status that's different from the incoming review, keep the local one
+    if (localReview?.user_vote_status && 
+        localReview.id === review.id &&
+        (localReview.user_vote_status.has_voted !== review.user_vote_status?.has_voted ||
+         localReview.user_vote_status.user_vote !== review.user_vote_status?.user_vote)) {
+      // Keep the local vote status but update other fields
+      setLocalReview(prevLocal => ({
+        ...review,
+        helpful_count: prevLocal.helpful_count,
+        not_helpful_count: prevLocal.not_helpful_count,
+        user_vote_status: prevLocal.user_vote_status
+      }));
+    } else {
+      // No local vote status or it matches, use the new review data
+      setLocalReview(review);
+    }
+  }, [review.id, review.helpful_count, review.not_helpful_count, review.user_vote_status?.has_voted, review.user_vote_status?.user_vote]);
 
   const handleVote = async (isHelpful: boolean) => {
     try {
@@ -108,6 +123,15 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
       }
 
       if (response.success && response.data) {
+        // Update local state first with server response to ensure consistency
+        const updatedLocalReview = {
+          ...localReview,
+          helpful_count: response.data.helpful_count,
+          not_helpful_count: response.data.not_helpful_count || 0,
+          user_vote_status: response.data.user_vote_status
+        };
+        setLocalReview(updatedLocalReview);
+        
         // Update parent component with server response
         onVoteUpdate?.(
           review.id, 
@@ -279,7 +303,7 @@ export default function ReviewCard({ review, onVoteUpdate, flat = false }: Revie
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   reviewCard: {
@@ -369,3 +393,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default ReviewCard;

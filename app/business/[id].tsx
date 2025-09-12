@@ -1016,108 +1016,12 @@ export default function BusinessDetailsScreen() {
             Customer Reviews ({reviews.length})
           </Text>
           {reviews.map((item) => (
-            <View key={item.id} style={[styles.customReviewItem, { backgroundColor: colors.background }]}>
-              {/* Review Header */}
-              <View style={styles.customReviewHeader}>
-                <View style={styles.customReviewUserInfo}>
-                  <ProfileAvatar
-                    profileImage={item.user.profile_image}
-                    userName={item.user.name}
-                    size={40}
-                    seed={item.user.id.toString()}
-                  />
-                  <View style={styles.customUserDetails}>
-                    <Text style={[styles.customUserName, { color: colors.text }]}>{item.user.name}</Text>
-                    <View style={styles.customReviewMeta}>
-                      <View style={styles.customStarRating}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Ionicons
-                            key={star}
-                            name={star <= item.overall_rating ? "star" : "star-outline"}
-                            size={14}
-                            color="#FFD700"
-                          />
-                        ))}
-                      </View>
-                      <Text style={[styles.customReviewDate, { color: colors.icon }]}>
-                        {new Date(item.created_at).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                
-                {/* Edit/Delete buttons for user's own reviews */}
-                {isUserAuthenticated && currentUser && item.user.id === currentUser.id && (
-                  <View style={styles.customReviewActions}>
-                    <TouchableOpacity
-                      style={[styles.customReviewActionButton, { backgroundColor: colors.tint + '15' }]}
-                      onPress={() => handleEditReview(item.id)}
-                    >
-                      <Ionicons name="pencil" size={14} color={colors.tint} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.customReviewActionButton, { backgroundColor: '#ef4444' + '15' }]}
-                      onPress={() => handleDeleteReview(item.id)}
-                    >
-                      <Ionicons name="trash" size={14} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-
-              {/* Review Title */}
-              {item.title && (
-                <Text style={[styles.customReviewTitle, { color: colors.text }]}>{item.title}</Text>
-              )}
-
-              {/* Review Text */}
-              <Text style={[styles.customReviewText, { color: colors.text }]}>{item.review_text}</Text>
-
-              {/* Review Images */}
-              {item.images && item.images.length > 0 && (
-                <View style={styles.customReviewImages}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.customImagesScroll}>
-                    {item.images.map((imageUri: string, index: number) => (
-                      <TouchableOpacity key={index} activeOpacity={0.8}>
-                        <Image
-                          source={{ uri: imageUri }}
-                          style={styles.customReviewImage}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-
-              {/* Review Footer */}
-              <View style={styles.customReviewFooter}>
-                <View style={styles.customReviewTags}>
-                  {item.is_recommended && (
-                    <View style={[styles.customRecommendedBadge, { backgroundColor: colors.tint + '20' }]}>
-                      <Ionicons name="thumbs-up" size={12} color={colors.tint} />
-                      <Text style={[styles.customRecommendedText, { color: colors.tint }]}>Recommended</Text>
-                    </View>
-                  )}
-                </View>
-                
-                <View style={styles.customHelpfulStats}>
-                  <View style={styles.customHelpfulItem}>
-                    <Ionicons name="thumbs-up-outline" size={14} color={colors.icon} />
-                    <Text style={[styles.customHelpfulCount, { color: colors.icon }]}>
-                      {item.helpful_count}
-                    </Text>
-                  </View>
-                  {item.not_helpful_count > 0 && (
-                    <View style={styles.customHelpfulItem}>
-                      <Ionicons name="thumbs-down-outline" size={14} color={colors.icon} />
-                      <Text style={[styles.customHelpfulCount, { color: colors.icon }]}>
-                        {item.not_helpful_count}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
+            <ReviewCard
+              key={item.id}
+              review={item}
+              onVoteUpdate={handleVoteUpdate}
+              flat={true}
+            />
           ))}
         </View>
       ) : (
