@@ -489,19 +489,20 @@ export default function OpenNowScreen() {
 }
 
 const styles = StyleSheet.create({
+  // Updated text sizes - should be smaller now
   container: {
     flex: 1,
   },
   header: {
-    paddingTop: 45,
-    paddingBottom: 16,
+    paddingTop: 35,
+    paddingBottom: 12,
     paddingHorizontal: 24,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    height: 165,
+    height: 125,
   },
   headerContent: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   headerTitleContainer: {
     flexDirection: 'row',
@@ -519,13 +520,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
     marginBottom: 2,
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'white',
     opacity: 0.9,
     flex: 1,
@@ -553,12 +554,12 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   currentTimeText: {
-    fontSize: 11,
+    fontSize: 10,
     color: 'white',
     fontWeight: '500',
   },
   searchContainer: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   searchBar: {
     flexDirection: 'row',
@@ -566,7 +567,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -665,13 +666,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   businessName: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     marginBottom: 2,
-    lineHeight: 20,
+    lineHeight: 16,
   },
   categoryName: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '400',
     opacity: 0.7,
   },
@@ -684,17 +685,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   ratingText: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '600',
     marginLeft: 4,
     marginRight: 4,
   },
   reviewCountText: {
-    fontSize: 11,
+    fontSize: 9,
     opacity: 0.6,
   },
   distanceText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   locationContainer: {
@@ -703,7 +704,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   locationText: {
-    fontSize: 12,
+    fontSize: 11,
     flex: 1,
     opacity: 0.6,
   },
@@ -714,7 +715,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   openingStatusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     flex: 1,
   },
@@ -740,7 +741,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   openNowText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
   priceRangeBadge: {
@@ -754,11 +755,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   priceRangeText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
   },
   priceRangeLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '500',
     marginTop: 2,
   },
