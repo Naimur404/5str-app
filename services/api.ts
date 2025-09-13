@@ -1668,3 +1668,123 @@ export const getSimilarBusinesses = async (
   const url = `${API_CONFIG.ENDPOINTS.RECOMMENDATIONS_SIMILAR}/${businessId}?latitude=${latitude}&longitude=${longitude}&limit=${limit}`;
   return makeApiCall(url, {}, true); // Requires authentication
 };
+
+// ==================== NATIONAL BUSINESS ENDPOINTS ====================
+
+export interface NationalBusinessResponse {
+  success: boolean;
+  data: {
+    businesses: Array<{
+      id: number;
+      business_name: string;
+      slug: string;
+      description: string;
+      category_id: number;
+      subcategory_id: number | null;
+      owner_user_id: number | null;
+      business_email: string;
+      business_phone: string;
+      website_url: string | null;
+      full_address: string;
+      latitude: string;
+      longitude: string;
+      city: string;
+      area: string;
+      landmark: string | null;
+      opening_hours: Record<string, string> | any[];
+      price_range: number;
+      has_delivery: boolean;
+      has_pickup: boolean;
+      has_parking: boolean;
+      is_verified: boolean;
+      is_featured: boolean;
+      is_active: boolean;
+      is_national: boolean;
+      service_coverage: string;
+      service_areas: string[] | null;
+      business_model: string;
+      product_tags: string[];
+      business_tags: string[];
+      approval_status: string;
+      rejection_reason: string | null;
+      approved_by: number | null;
+      approved_at: string | null;
+      pending_changes: any;
+      has_pending_changes: boolean;
+      overall_rating: string;
+      total_reviews: number;
+      discovery_score: string;
+      image_url: string | null;
+      name: string;
+      google_maps_url: string;
+      category: {
+        id: number;
+        name: string;
+        slug: string;
+        parent_id: number | null;
+        level: number;
+        icon_image: string;
+        banner_image: string | null;
+        description: string;
+        color_code: string | null;
+        sort_order: number;
+        is_featured: boolean;
+        is_popular: boolean;
+        is_active: boolean;
+        total_businesses: number;
+      };
+      logo_image: {
+        id: number;
+        business_id: number;
+        image_url: string;
+        image_type: string;
+        sort_order: number;
+        is_primary: boolean;
+      } | null;
+      free_maps: {
+        openstreetmap_url: string;
+        leaflet_data: {
+          center: { lat: number; lng: number };
+          zoom: number;
+          marker: {
+            lat: number;
+            lng: number;
+            popup: string;
+          };
+          tile_url: string;
+          attribution: string;
+        };
+        mapbox_url: string | null;
+      };
+    }>;
+    pagination: {
+      current_page: number;
+      last_page: number;
+      per_page: number;
+      total: number;
+      has_more: boolean;
+    };
+    available_filters: {
+      item_types: Record<string, string>;
+      business_models: string[];
+      sort_options: string[];
+    };
+  };
+}
+
+// Get National Businesses with category filtering
+export const getNationalBusinesses = async (
+  itemType?: 'ice_cream' | 'biscuits_snacks' | 'beverages' | 'food_processing',
+  page: number = 1,
+  limit: number = 20,
+  sort: 'rating' | 'popular' | 'name' | 'featured' = 'featured'
+): Promise<NationalBusinessResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.BUSINESS_NATIONAL}?page=${page}&per_page=${limit}&sort=${sort}`;
+  
+  if (itemType) {
+    url += `&item_type=${itemType}`;
+  }
+  
+  // Send token if available for analytics and user-specific data
+  return makeApiCall(url, {}, false);
+};

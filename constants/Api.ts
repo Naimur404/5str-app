@@ -43,6 +43,7 @@ export const API_CONFIG = {
     // User Interaction Tracking Endpoints
     TRACK_INTERACTION: '/api/v1/interactions/track',
     TRACK_BATCH: '/api/v1/interactions/batch',
+    BUSINESS_NATIONAL: '/api/v1/businesses/national',
   }
 };
 

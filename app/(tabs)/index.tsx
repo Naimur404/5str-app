@@ -1494,37 +1494,66 @@ export default function HomeScreen() {
 
     const hasValidImage = item.logo_image && item.logo_image.trim() !== '';
 
+    // Get category color for enhanced theming
+    const categoryColor = colors.tint;
+
     return (
       <TouchableOpacity 
-        style={[styles.nationalBrandCard, { backgroundColor: colors.card }]}
+        style={[
+          styles.nationalBrandCard, 
+          { 
+            backgroundColor: colors.card,
+            borderColor: categoryColor + '20',
+            borderWidth: 1,
+            shadowColor: categoryColor + '30',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 4,
+          }
+        ]}
         onPress={onPressWithTracking}
         activeOpacity={0.7}
       >
-        {hasValidImage ? (
-          <Image 
-            source={{ uri: getImageUrl(item.logo_image) }} 
-            style={styles.nationalBrandImage}
-          />
-        ) : (
-          <View style={[styles.nationalBrandImagePlaceholder, { backgroundColor: colors.background }]}>
-            <Ionicons name="business-outline" size={40} color={colors.text + '40'} />
-            <Text style={[styles.noImageText, { color: colors.text + '60' }]}>No Image</Text>
+        {/* Enhanced Image Container */}
+        <View style={nationalBrandsStyles.nationalBrandImageContainer}>
+          {hasValidImage ? (
+            <Image 
+              source={{ uri: getImageUrl(item.logo_image) }} 
+              style={styles.nationalBrandImage}
+            />
+          ) : (
+            <View style={[styles.nationalBrandImagePlaceholder, { backgroundColor: colors.background }]}>
+              <Ionicons name="business-outline" size={40} color={colors.text + '40'} />
+              <Text style={[styles.noImageText, { color: colors.text + '60' }]}>No Image</Text>
+            </View>
+          )}
+          
+          {/* Enhanced National Badge */}
+          <View style={[nationalBrandsStyles.enhancedNationalBadge, { backgroundColor: categoryColor }]}>
+            <Ionicons name="flag" size={8} color="white" />
+            <Text style={nationalBrandsStyles.enhancedNationalBadgeText}>National</Text>
           </View>
-        )}
-        
-        {/* National Badge */}
-        <View style={[styles.nationalBadge, { backgroundColor: colors.tint }]}>
-          <Ionicons name="flag" size={10} color="white" />
-          <Text style={styles.nationalBadgeText}>National</Text>
+          
+          {/* Featured Ribbon */}
+          <View style={[nationalBrandsStyles.featuredRibbon, { backgroundColor: '#FFD700' }]}>
+            <Ionicons name="star" size={10} color="white" />
+          </View>
         </View>
         
         <View style={styles.nationalBrandInfo}>
-          <Text style={[styles.nationalBrandName, { color: colors.text }]} numberOfLines={1}>
-            {item.business_name}
-          </Text>
-          <Text style={[styles.nationalBrandCategory, { color: colors.icon }]} numberOfLines={1}>
+          {/* Enhanced Brand Name */}
+          <View style={nationalBrandsStyles.brandNameContainer}>
+            <Text style={[styles.nationalBrandName, { color: colors.text }]} numberOfLines={1}>
+              {item.business_name}
+            </Text>
+            <View style={[nationalBrandsStyles.categoryAccent, { backgroundColor: categoryColor }]} />
+          </View>
+          
+          <Text style={[styles.nationalBrandCategory, { color: categoryColor }]} numberOfLines={1}>
             {item.category.name}
           </Text>
+          
           <Text style={[styles.nationalBrandDescription, { color: colors.icon }]} numberOfLines={2}>
             {item.description}
           </Text>
@@ -1535,10 +1564,29 @@ export default function HomeScreen() {
               <Text style={[styles.rating, { color: colors.text }]}>{item.overall_rating}</Text>
               <Text style={[styles.nationalBrandReviews, { color: colors.icon }]}>({item.total_reviews})</Text>
             </View>
-            <View style={[styles.coverageBadge, { backgroundColor: colors.tint + '15' }]}>
-              <Text style={[styles.coverageBadgeText, { color: colors.tint }]}>
+            
+            {/* Enhanced Coverage Badge */}
+            <View style={[nationalBrandsStyles.enhancedCoverageBadge, { backgroundColor: categoryColor + '15' }]}>
+              <Ionicons name="globe-outline" size={10} color={categoryColor} />
+              <Text style={[nationalBrandsStyles.enhancedCoverageBadgeText, { color: categoryColor }]}>
                 {item.service_coverage === 'national' ? 'Nationwide' : item.service_coverage}
               </Text>
+            </View>
+          </View>
+          
+          {/* Trust Score Bar */}
+          <View style={nationalBrandsStyles.trustScoreContainer}>
+            <Text style={[nationalBrandsStyles.trustScoreLabel, { color: colors.icon }]}>Trust Score</Text>
+            <View style={[nationalBrandsStyles.trustScoreBar, { backgroundColor: colors.background }]}>
+              <View 
+                style={[
+                  nationalBrandsStyles.trustScoreFill, 
+                  { 
+                    backgroundColor: categoryColor,
+                    width: `${Math.min(parseFloat(item.overall_rating) * 20, 100)}%`
+                  }
+                ]} 
+              />
             </View>
           </View>
         </View>
@@ -1945,38 +1993,59 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Top National Brands */}
+        {/* Top National Brands - Enhanced Section */}
         {homeData?.top_national_brands && homeData.top_national_brands.length > 0 && (
-          <>
-            {homeData.top_national_brands.map((brandSection, sectionIndex) => (
-              <View key={`brand-section-${sectionIndex}`} style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <View style={styles.nationalSectionTitleContainer}>
-                    <Ionicons name="flag" size={16} color={colors.tint} />
-                    <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+          <View style={styles.section}>
+            {/* Enhanced Header */}
+            <View style={nationalBrandsStyles.nationalBrandsHeader}>
+              <View style={nationalBrandsStyles.nationalBrandsHeaderContent}>
+                <View style={[nationalBrandsStyles.nationalHeaderIcon, { backgroundColor: colors.tint }]}>
+                  <Ionicons name="flag" size={20} color="white" />
+                </View>
+                <View style={nationalBrandsStyles.nationalHeaderText}>
+                  <Text style={[nationalBrandsStyles.nationalBrandsTitle, { color: colors.text }]}>
+                    Top National Brands
+                  </Text>
+                  <Text style={[nationalBrandsStyles.nationalBrandsSubtitle, { color: colors.icon }]}>
+                    Leading brands across Bangladesh
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={[nationalBrandsStyles.viewAllNationalButton, { backgroundColor: colors.tint }]}
+                onPress={handleViewAllNationalBrands}
+              >
+                <Text style={nationalBrandsStyles.viewAllNationalButtonText}>View All</Text>
+                <Ionicons name="chevron-forward" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+
+
+            {/* Featured Brands Showcase */}
+            <>
+              {homeData.top_national_brands.map((brandSection, sectionIndex) => (
+                <View key={`brand-section-${sectionIndex}`} style={nationalBrandsStyles.brandSection}>
+                  <View style={nationalBrandsStyles.brandSectionHeader}>
+                    <Text style={[nationalBrandsStyles.brandSectionTitle, { color: colors.text }]}>
                       {brandSection.section_title}
                     </Text>
+                    <Text style={[nationalBrandsStyles.brandSectionDescription, { color: colors.icon }]}>
+                      {brandSection.section_description}
+                    </Text>
                   </View>
-                  <TouchableOpacity onPress={handleViewAllNationalBrands}>
-                    <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
-                  </TouchableOpacity>
+                  
+                  <FlatList
+                    data={brandSection.businesses}
+                    renderItem={({ item, index }) => renderNationalBrandCard({ item, index })}
+                    keyExtractor={(item) => `brand-${item.id}`}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.businessContainer}
+                  />
                 </View>
-                
-                <Text style={[styles.sectionDescription, { color: colors.icon, paddingHorizontal: 24, marginBottom: 10 }]}>
-                  {brandSection.section_description}
-                </Text>
-                
-                <FlatList
-                  data={brandSection.businesses}
-                  renderItem={({ item, index }) => renderNationalBrandCard({ item, index })}
-                  keyExtractor={(item) => `brand-${item.id}`}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.businessContainer}
-                />
-              </View>
-            ))}
-          </>
+              ))}
+            </>
+          </View>
         )}
 
         {/* Special Offers */}
@@ -2448,16 +2517,19 @@ const styles = StyleSheet.create({
   },
   // National Brand Styles
   nationalBrandCard: {
-    width: 180,
-    borderRadius: 16,
+    width: 190,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 2,
-    marginRight: 16,
+    marginRight: 10,
+    marginBottom: 12,
     backgroundColor: '#ffffff',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   nationalBrandHeader: {
     alignItems: 'center',
@@ -2517,14 +2589,15 @@ const styles = StyleSheet.create({
   },
   nationalBrandImage: {
     width: '100%',
-    height: 100,
+    height: 110,
+    resizeMode: 'cover',
   },
   nationalBrandImagePlaceholder: {
     width: '100%',
-    height: 100,
+    height: 110,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fafafa',
+    backgroundColor: '#f8f9fa',
   },
   noImageText: {
     fontSize: 10,
@@ -2558,25 +2631,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   nationalBrandInfo: {
-    padding: 12,
+    padding: 20,
+    flex: 1,
   },
   nationalBrandName: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 3,
-    lineHeight: 16,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
+    lineHeight: 18,
   },
   nationalBrandCategory: {
-    fontSize: 11,
-    marginBottom: 4,
-    opacity: 0.7,
+    fontSize: 12,
+    marginBottom: 6,
+    opacity: 0.8,
     fontWeight: '500',
   },
   nationalBrandDescription: {
     fontSize: 11,
-    marginBottom: 8,
-    opacity: 0.8,
-    lineHeight: 14,
+    marginBottom: 10,
+    opacity: 0.7,
+    lineHeight: 16,
   },
   nationalBrandMeta: {
     flexDirection: 'row',
@@ -2605,6 +2679,189 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+});
+
+// National Brands Styles
+const nationalBrandsStyles = StyleSheet.create({
+  nationalBrandsHeader: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  nationalBrandsHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  nationalHeaderIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  nationalHeaderText: {
+    flex: 1,
+  },
+  nationalBrandsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  nationalBrandsSubtitle: {
+    fontSize: 13,
+    opacity: 0.6,
+  },
+  viewAllNationalButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  viewAllNationalButtonText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  nationalCategoriesPreview: {
+    marginBottom: 16,
+  },
+  categoryTabsContainer: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  categoryTab: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
+    minWidth: 70,
+    marginHorizontal: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  categoryTabIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  categoryTabText: {
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  brandSection: {
+    marginTop: 12,
+    marginBottom: 20,
+  },
+  brandSectionHeader: {
+    paddingHorizontal: 24,
+    marginBottom: 12,
+  },
+  brandSectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 4,
+    color: '#1a1a1a',
+  },
+  brandSectionDescription: {
+    fontSize: 12,
+    lineHeight: 16,
+    opacity: 0.6,
+  },
+  nationalBrandImageContainer: {
+    position: 'relative',
+    height: 100,
+    backgroundColor: '#f8f8f8',
+  },
+  enhancedNationalBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  enhancedNationalBadgeText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: 'bold',
+    marginLeft: 2,
+  },
+  featuredRibbon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  categoryAccent: {
+    width: 3,
+    height: 12,
+    borderRadius: 1.5,
+    marginLeft: 6,
+  },
+  enhancedCoverageBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  enhancedCoverageBadgeText: {
+    fontSize: 8,
+    fontWeight: '600',
+    marginLeft: 2,
+  },
+  trustScoreContainer: {
+    marginTop: 10,
+    paddingTop: 6,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0,0,0,0.04)',
+  },
+  trustScoreLabel: {
+    fontSize: 9,
+    marginBottom: 4,
+    fontWeight: '600',
+    opacity: 0.7,
+  },
+  trustScoreBar: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,0,0,0.06)',
+  },
+  trustScoreFill: {
+    height: '100%',
+    borderRadius: 2,
   },
 });
 
@@ -2900,5 +3157,115 @@ const dynamicHeroStyles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 2,
     opacity: 0.8,
+  },
+  
+  // Enhanced National Brands Section Styles
+  nationalBrandsHeader: {
+    paddingHorizontal: 24,
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  nationalBrandsHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  nationalHeaderIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  nationalHeaderText: {
+    flex: 1,
+  },
+  nationalBrandsTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  nationalBrandsSubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+    lineHeight: 20,
+  },
+  viewAllNationalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  viewAllNationalButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+    marginRight: 6,
+  },
+  nationalCategoriesPreview: {
+    marginBottom: 20,
+  },
+  categoryTabsContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+  },
+  categoryTab: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginRight: 12,
+    borderRadius: 16,
+    minWidth: 80,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  categoryTabIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  categoryTabText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  brandSection: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  brandSectionHeader: {
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  brandSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 6,
+    color: '#1a1a1a',
+  },
+  brandSectionDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.7,
   },
 });
