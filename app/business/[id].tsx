@@ -50,6 +50,8 @@ import * as Location from 'expo-location';
 import { useLocation } from '@/contexts/LocationContext';
 import AddToCollectionModal from '@/components/AddToCollectionModal';
 import { useBusinessTracking } from '@/hooks/useBusinessTracking';
+import BusinessImageGallery from '@/components/BusinessImageGallery';
+import BusinessMapView from '@/components/BusinessMapView';
 
 const { width } = Dimensions.get('window');
 
@@ -499,9 +501,15 @@ export default function BusinessDetailsScreen() {
       source: 'quick_actions_bar'
     });
     
-    if (business?.latitude && business?.longitude) {
-      const url = `https://maps.google.com/?q=${business.latitude},${business.longitude}`;
+    // Use google_maps directions URL if available, otherwise fallback
+    if (business?.google_maps?.directions_url) {
+      Linking.openURL(business.google_maps.directions_url);
+    } else if (business?.latitude && business?.longitude) {
+      // Fallback to standard Google Maps directions URL
+      const url = `https://maps.google.com/maps?daddr=${business.latitude},${business.longitude}`;
       Linking.openURL(url);
+    } else {
+      Alert.alert('Error', 'Unable to open directions');
     }
   };
 
@@ -714,6 +722,20 @@ export default function BusinessDetailsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={16} color={colors.icon} />
           </TouchableOpacity>
+        )}
+
+        {/* Map Section */}
+        {(business?.google_maps || business?.free_maps || (business?.latitude && business?.longitude)) && (
+          <BusinessMapView
+            googleMaps={business?.google_maps}
+            freeMaps={business?.free_maps}
+            businessName={business?.business_name || ''}
+            fullAddress={business?.full_address || ''}
+            latitude={business?.latitude}
+            longitude={business?.longitude}
+            colors={colors}
+            style={{ marginTop: 16 }}
+          />
         )}
 
         <View style={styles.socialLinks}>
@@ -1477,11 +1499,12 @@ export default function BusinessDetailsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="light" />
       
-      {/* Header with Hero Image */}
+      {/* Header with Hero Image Gallery */}
       <View style={styles.heroSection}>
-        <Image 
-          source={{ uri: getImageUrl(business?.logo_image?.image_url) || getFallbackImageUrl('business') }} 
-          style={styles.heroImage} 
+        <BusinessImageGallery
+          images={business?.images || []}
+          businessName={business?.business_name}
+          style={styles.heroImageGallery}
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.9)']}
@@ -1730,6 +1753,9 @@ const styles = StyleSheet.create({
   heroSection: {
     height: 320,
     position: 'relative',
+  },
+  heroImageGallery: {
+    height: 320,
   },
   heroImage: {
     width: '100%',

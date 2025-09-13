@@ -245,6 +245,32 @@ export interface BusinessImage {
   is_primary: boolean;
 }
 
+export interface GoogleMaps {
+  view_url: string;
+  place_url: string;
+  directions_url: string;
+  embed_url: string;
+  simple_url: string;
+}
+
+export interface FreeMaps {
+  openstreetmap_url: string;
+  leaflet_data: {
+    center: {
+      lat: number;
+      lng: number;
+    };
+    zoom: number;
+    marker: {
+      lat: number;
+      lng: number;
+      popup: string;
+    };
+    tile_url: string;
+    attribution: string;
+  };
+}
+
 export interface BusinessOwner {
   id: number;
   name: string;
@@ -303,6 +329,8 @@ export interface DetailedBusiness {
   logo_image: BusinessImage | null;
   cover_image: BusinessImage | null;
   gallery_images: BusinessImage[];
+  google_maps?: GoogleMaps;
+  free_maps?: FreeMaps;
 }
 
 export interface Offering {
