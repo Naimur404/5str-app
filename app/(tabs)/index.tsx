@@ -1,41 +1,39 @@
+import CustomAlert from '@/components/CustomAlert';
+import { NotificationBadge } from '@/components/NotificationBadge';
+import { HomePageSkeleton } from '@/components/SkeletonLoader';
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { NotificationBadge } from '@/components/NotificationBadge';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { fetchWithJsonValidation, getUserProfile, isAuthenticated, User, getMainRecommendations, MainRecommendationsResponse, RecommendationBusiness } from '@/services/api';
-import { handleApiError } from '@/services/errorHandler';
-import cacheService from '@/services/cacheService';
-import { useCustomAlert } from '@/hooks/useCustomAlert';
-import { weatherService, WeatherData } from '@/services/weatherService';
-import CustomAlert from '@/components/CustomAlert';
-import { Banner, Business, HomeResponse, SpecialOffer, TopService, TopNationalBrandSection, NationalBrand } from '@/types/api';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
-import {
-    Dimensions,
-    FlatList,
-    Image,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Animated
-} from 'react-native';
-import { HomePageSkeleton } from '@/components/SkeletonLoader';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
-import { LocationHeader } from '@/components/LocationHeader';
-import { useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { addTrackingToPress } from '@/hooks/useFlatListTracking';
+import { fetchWithJsonValidation, getMainRecommendations, getUserProfile, isAuthenticated, RecommendationBusiness, User } from '@/services/api';
+import cacheService from '@/services/cacheService';
+import { handleApiError } from '@/services/errorHandler';
+import { WeatherData, weatherService } from '@/services/weatherService';
+import { Banner, Business, HomeResponse, NationalBrand, SpecialOffer, TopService } from '@/types/api';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 // Dynamic Hero Section Component with Time-Based Themes
 const DynamicHeroSection = React.memo(({ 
