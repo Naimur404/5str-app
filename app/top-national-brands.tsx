@@ -6,7 +6,9 @@ import { getNationalBusinesses } from '@/services/api';
 import { handleApiError } from '@/services/errorHandler';
 import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -19,8 +21,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
 
 const { width } = Dimensions.get('window');
 
