@@ -19,6 +19,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 
 const { width } = Dimensions.get('window');
 
@@ -120,6 +122,9 @@ export default function TopNationalBrandsScreen() {
     sort_options: string[];
   } | null>(null);
 
+  // Animation for skeleton shimmer effect
+  const shimmerAnimation = useRef(new Animated.Value(0)).current;
+
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
@@ -129,6 +134,28 @@ export default function TopNationalBrandsScreen() {
   useEffect(() => {
     fetchBusinesses();
   }, [activeTab]);
+
+  // Start shimmer animation for skeleton
+  useEffect(() => {
+    const startShimmer = () => {
+      Animated.loop(
+        Animated.timing(shimmerAnimation, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        { iterations: -1 }
+      ).start();
+    };
+
+    if (loading && businesses.length === 0) {
+      startShimmer();
+    }
+
+    return () => {
+      shimmerAnimation.stopAnimation();
+    };
+  }, [loading, businesses.length, shimmerAnimation]);
 
   const fetchBusinesses = async (page: number = 1, isRefresh: boolean = false) => {
     if (isRefresh) {
@@ -306,95 +333,37 @@ export default function TopNationalBrandsScreen() {
   };
 
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      {/* Enhanced Hero Section */}
-      <View style={[styles.heroSection, { backgroundColor: colors.tint + '08' }]}>
-        <View style={styles.heroBackground}>
-          {/* Decorative Elements */}
-          <View style={[styles.decorativeCircle1, { backgroundColor: colors.tint + '10' }]} />
-          <View style={[styles.decorativeCircle2, { backgroundColor: getActiveCategory().color + '15' }]} />
-          <View style={[styles.decorativeCircle3, { backgroundColor: colors.tint + '05' }]} />
+    <View style={{ paddingBottom: 16, paddingHorizontal: 16 }}>
+      {getActiveCategory().description && (
+        <View style={[
+          {
+            backgroundColor: colors.card,
+            padding: 16,
+            borderRadius: 12,
+            marginBottom: 8,
+          }
+        ]}>
+          <Text style={[
+            {
+              fontSize: 14,
+              lineHeight: 20,
+              marginBottom: 8,
+              color: colors.text
+            }
+          ]}>
+            {getActiveCategory().description}
+          </Text>
+          <Text style={[
+            {
+              fontSize: 12,
+              fontWeight: '600',
+              color: colors.tint
+            }
+          ]}>
+            {businesses.length} national brands
+          </Text>
         </View>
-        
-        <View style={styles.heroContent}>
-          <View style={styles.heroTitleSection}>
-            <View style={[styles.heroIconContainer, { backgroundColor: colors.tint }]}>
-              <Ionicons name="flag" size={24} color="white" />
-              <View style={[styles.iconGlow, { backgroundColor: colors.tint + '20' }]} />
-            </View>
-              <View style={styles.heroTextContainer}>
-                <Text style={[styles.heroTitle, { color: colors.text }]}>
-                  Top National Brands
-                </Text>
-                <Text style={[styles.heroSubtitle, { color: colors.icon }]}>
-                  Discover Bangladesh's leading companies in {getActiveCategory().displayName}
-                </Text>
-                <View style={styles.heroBadgeContainer}>
-                  <View style={[styles.heroBadge, { backgroundColor: getActiveCategory().color + '15' }]}>
-                    <Ionicons name={getActiveCategory().icon} size={12} color={getActiveCategory().color} />
-                    <Text style={[styles.heroBadgeText, { color: getActiveCategory().color }]}>
-                      {getActiveCategory().displayName}
-                    </Text>
-                  </View>
-                  {pagination.total > 0 && (
-                    <View style={[styles.heroBadge, { backgroundColor: colors.tint + '15' }]}>
-                      <Ionicons name="business" size={12} color={colors.tint} />
-                      <Text style={[styles.heroBadgeText, { color: colors.tint }]}>
-                        {pagination.total} brands
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-          </View>
-          
-          {/* Interactive Category Selection Stats */}
-          <View style={styles.statsContainer}>
-            {CATEGORY_TABS.map((tab, index) => (
-              <TouchableOpacity 
-                key={tab.id}
-                style={[
-                  styles.statItem, 
-                  { backgroundColor: colors.card + '50' },
-                  activeTab === tab.id && { 
-                    backgroundColor: tab.color + '20',
-                    borderColor: tab.color + '40',
-                    borderWidth: 1,
-                    transform: [{ scale: 1.05 }]
-                  }
-                ]}
-                onPress={() => handleTabPress(tab.id)}
-                activeOpacity={0.7}
-              >
-                <View style={[
-                  styles.statIcon, 
-                  { 
-                    backgroundColor: activeTab === tab.id ? tab.color : (tab.color + '20'),
-                  }
-                ]}>
-                  <Ionicons 
-                    name={tab.icon} 
-                    size={16} 
-                    color={activeTab === tab.id ? 'white' : tab.color} 
-                  />
-                </View>
-                <Text style={[
-                  styles.statLabel, 
-                  { 
-                    color: activeTab === tab.id ? tab.color : colors.text,
-                    fontWeight: activeTab === tab.id ? '700' : '600'
-                  }
-                ]} numberOfLines={2}>
-                  {tab.displayName}
-                </Text>
-                {activeTab === tab.id && (
-                  <View style={[styles.activeIndicator, { backgroundColor: tab.color }]} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </View>
+      )}
     </View>
   );
 
@@ -433,34 +402,380 @@ export default function TopNationalBrandsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header with Back Button */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border + '20' }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.screenTitle, { color: colors.text }]}>
-          National Brands
-        </Text>
-        <View style={styles.headerPlaceholder} />
-      </View>
+      <StatusBar style="light" />
+      
+      {/* Enhanced LinearGradient Header with Hero Section */}
+      <LinearGradient
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+        style={styles.enhancedGradientHeader}
+      >
+        {/* Decorative Background Elements */}
+        <View style={styles.heroBackground}>
+          <View style={[styles.decorativeCircle1, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+          <View style={[styles.decorativeCircle2, { backgroundColor: getActiveCategory().color + '20' }]} />
+          <View style={[styles.decorativeCircle3, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]} />
+        </View>
 
-      <FlatList
-        data={businesses}
-        renderItem={renderBusinessCard}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={!loading && businesses.length === 0 ? renderEmptyState : null}
-        ListFooterComponent={renderFooter}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.3}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      />
+        <View style={styles.headerContent}>
+          {/* Top Header Row */}
+          <View style={styles.headerTitleContainer}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <View style={[styles.heroIconContainer, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Ionicons name="flag" size={20} color="white" />
+              <View style={[styles.iconGlow, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+            </View>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Top National Brands</Text>
+              <Text style={styles.headerSubtitle}>
+                Discover Bangladesh's leading companies in {getActiveCategory().displayName}
+              </Text>
+            </View>
+          </View>
+
+          {/* Hero Badges */}
+          <View style={styles.heroBadgeContainer}>
+            <View style={[styles.heroBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+              <Ionicons name={getActiveCategory().icon} size={10} color="white" />
+              <Text style={[styles.heroBadgeText, { color: 'white' }]}>
+                {getActiveCategory().displayName}
+              </Text>
+            </View>
+            {pagination.total > 0 && (
+              <View style={[styles.heroBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+                <Ionicons name="business" size={10} color="white" />
+                <Text style={[styles.heroBadgeText, { color: 'white' }]}>
+                  {pagination.total} brands
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Interactive Category Selection */}
+          <View style={styles.categorySelectionContainer}>
+            {CATEGORY_TABS.map((tab, index) => (
+              <TouchableOpacity 
+                key={tab.id}
+                style={[
+                  styles.categorySelectionTab, 
+                  { backgroundColor: 'rgba(255, 255, 255, 0.15)' },
+                  activeTab === tab.id && { 
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                    borderWidth: 1,
+                    transform: [{ scale: 1.02 }]
+                  }
+                ]}
+                onPress={() => handleTabPress(tab.id)}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.categorySelectionIcon, 
+                  { 
+                    backgroundColor: activeTab === tab.id ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)',
+                  }
+                ]}>
+                  <Ionicons 
+                    name={tab.icon} 
+                    size={16} 
+                    color="white"
+                  />
+                </View>
+                <Text style={[
+                  styles.categorySelectionLabel, 
+                  { 
+                    color: 'white',
+                    fontWeight: activeTab === tab.id ? '700' : '600',
+                    opacity: activeTab === tab.id ? 1 : 0.85
+                  }
+                ]} numberOfLines={2}>
+                  {tab.displayName}
+                </Text>
+                {activeTab === tab.id && (
+                  <View style={[styles.activeCategoryIndicator, { backgroundColor: 'white' }]} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Show skeleton when loading and no businesses yet */}
+      {loading && businesses.length === 0 ? (
+        <View style={styles.listContainer}>
+          {/* Category description skeleton */}
+          <View style={{ paddingBottom: 16, paddingHorizontal: 16 }}>
+            <View style={[
+              {
+                backgroundColor: colors.card,
+                padding: 16,
+                borderRadius: 12,
+                marginBottom: 8,
+              }
+            ]}>
+              <Animated.View style={{
+                height: 14,
+                backgroundColor: colors.icon + '20',
+                borderRadius: 7,
+                marginBottom: 8,
+                width: '85%',
+                opacity: shimmerAnimation.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0.3, 0.7, 0.3],
+                }),
+              }} />
+              <Animated.View style={{
+                height: 12,
+                backgroundColor: colors.tint + '40',
+                borderRadius: 6,
+                width: '40%',
+                opacity: shimmerAnimation.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [0.3, 0.7, 0.3],
+                }),
+              }} />
+            </View>
+          </View>
+          
+          {/* Create skeleton data and render using FlatList structure */}
+          <FlatList
+            data={[1, 2, 3, 4, 5, 6]} // 6 skeleton items
+            renderItem={({ item, index }) => (
+              <Animated.View 
+                style={[
+                  styles.businessCard,
+                  { 
+                    backgroundColor: colors.card,
+                    borderColor: colors.border + '20',
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.4, 0.8, 0.4],
+                    }),
+                  }
+                ]}
+              >
+                {/* Image skeleton */}
+                <View style={[
+                  styles.imageContainer,
+                  { backgroundColor: colors.icon + '15' }
+                ]}>
+                  <Animated.View style={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    backgroundColor: colors.tint + '60',
+                    paddingHorizontal: 5,
+                    paddingVertical: 3,
+                    borderRadius: 6,
+                    width: 45,
+                    height: 18,
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.5, 0.9, 0.5],
+                    }),
+                  }} />
+                  <Animated.View style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    backgroundColor: '#4CAF50',
+                    width: 18,
+                    height: 18,
+                    borderRadius: 9,
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.5, 0.9, 0.5],
+                    }),
+                  }} />
+                </View>
+                
+                {/* Content skeleton */}
+                <View style={styles.businessInfo}>
+                  {/* Business name */}
+                  <Animated.View style={{
+                    height: 14,
+                    backgroundColor: colors.icon + '25',
+                    borderRadius: 7,
+                    marginBottom: 4,
+                    width: '80%',
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.3, 0.7, 0.3],
+                    }),
+                  }} />
+                  
+                  {/* Category */}
+                  <Animated.View style={{
+                    height: 11,
+                    backgroundColor: colors.icon + '20',
+                    borderRadius: 5,
+                    marginBottom: 5,
+                    width: '60%',
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.3, 0.7, 0.3],
+                    }),
+                  }} />
+                  
+                  {/* Description lines */}
+                  <Animated.View style={{
+                    height: 10,
+                    backgroundColor: colors.icon + '15',
+                    borderRadius: 5,
+                    marginBottom: 2,
+                    width: '90%',
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.3, 0.7, 0.3],
+                    }),
+                  }} />
+                  <Animated.View style={{
+                    height: 10,
+                    backgroundColor: colors.icon + '15',
+                    borderRadius: 5,
+                    marginBottom: 7,
+                    width: '70%',
+                    opacity: shimmerAnimation.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.3, 0.7, 0.3],
+                    }),
+                  }} />
+                  
+                  {/* Tags */}
+                  <View style={styles.tagsContainer}>
+                    <Animated.View style={{
+                      backgroundColor: colors.tint + '20',
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                      marginRight: 4,
+                      width: 30,
+                      height: 16,
+                      opacity: shimmerAnimation.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0.4, 0.8, 0.4],
+                      }),
+                    }} />
+                    <Animated.View style={{
+                      backgroundColor: colors.icon + '20',
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                      width: 25,
+                      height: 16,
+                      opacity: shimmerAnimation.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0.4, 0.8, 0.4],
+                      }),
+                    }} />
+                  </View>
+                  
+                  {/* Meta info */}
+                  <View style={styles.businessMeta}>
+                    <View style={styles.ratingContainer}>
+                      <Animated.View style={{
+                        width: 11,
+                        height: 11,
+                        backgroundColor: '#FFD700',
+                        borderRadius: 5,
+                        marginRight: 2,
+                        opacity: shimmerAnimation.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [0.5, 0.9, 0.5],
+                        }),
+                      }} />
+                      <Animated.View style={{
+                        width: 30,
+                        height: 11,
+                        backgroundColor: colors.icon + '25',
+                        borderRadius: 5,
+                        marginLeft: 2,
+                        opacity: shimmerAnimation.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [0.3, 0.7, 0.3],
+                        }),
+                      }} />
+                      <Animated.View style={{
+                        width: 25,
+                        height: 9,
+                        backgroundColor: colors.icon + '20',
+                        borderRadius: 4,
+                        marginLeft: 2,
+                        opacity: shimmerAnimation.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [0.3, 0.7, 0.3],
+                        }),
+                      }} />
+                    </View>
+                    <Animated.View style={{
+                      backgroundColor: colors.tint + '30',
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 6,
+                      width: 35,
+                      height: 16,
+                      opacity: shimmerAnimation.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0.4, 0.8, 0.4],
+                      }),
+                    }} />
+                  </View>
+                  
+                  {/* Business model */}
+                  <View style={styles.businessModel}>
+                    <Animated.View style={{
+                      width: 12,
+                      height: 12,
+                      backgroundColor: colors.icon + '30',
+                      borderRadius: 6,
+                      marginRight: 3,
+                      opacity: shimmerAnimation.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0.4, 0.8, 0.4],
+                      }),
+                    }} />
+                    <Animated.View style={{
+                      width: 40,
+                      height: 9,
+                      backgroundColor: colors.icon + '20',
+                      borderRadius: 4,
+                      opacity: shimmerAnimation.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [0.3, 0.7, 0.3],
+                      }),
+                    }} />
+                  </View>
+                </View>
+              </Animated.View>
+            )}
+            keyExtractor={(item, index) => `skeleton-${index}`}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={{ paddingHorizontal: 0 }}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+          />
+        </View>
+      ) : (
+        <FlatList
+          data={businesses}
+          renderItem={renderBusinessCard}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.listContainer}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={!loading && businesses.length === 0 ? renderEmptyState : null}
+          ListFooterComponent={renderFooter}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.3}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 }
@@ -469,43 +784,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 50,
+
+  // Enhanced LinearGradient Header with Hero Section
+  enhancedGradientHeader: {
+    paddingTop: 45,
     paddingBottom: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    padding: 8,
-    marginRight: 8,
-  },
-  screenTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerPlaceholder: {
-    width: 40,
-  },
-  listContainer: {
-    paddingBottom: 24,
-  },
-  headerContainer: {
-    paddingBottom: 16,
-  },
-  
-  // Enhanced Hero Section Styles
-  heroSection: {
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    minHeight: 160,
     position: 'relative',
-    padding: 24,
-    marginBottom: 20,
-    borderRadius: 20,
-    marginHorizontal: 16,
     overflow: 'hidden',
   },
+
+  // Decorative Background Elements
   heroBackground: {
     position: 'absolute',
     top: 0,
@@ -515,123 +807,136 @@ const styles = StyleSheet.create({
   },
   decorativeCircle1: {
     position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    top: -50,
-    right: -50,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    top: -40,
+    right: -40,
     opacity: 0.6,
   },
   decorativeCircle2: {
     position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    bottom: -30,
-    left: -30,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    bottom: -20,
+    left: -20,
     opacity: 0.4,
   },
   decorativeCircle3: {
     position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    top: 10,
-    left: 10,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    top: 5,
+    left: 5,
     opacity: 0.3,
   },
-  heroContent: {
+
+  headerContent: {
+    marginBottom: 16,
     position: 'relative',
     zIndex: 1,
   },
-  heroTitleSection: {
+  headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 4,
+    marginLeft: -4,
   },
   heroIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
     position: 'relative',
   },
   iconGlow: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    top: -7,
-    left: -7,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    top: -5,
+    left: -5,
     zIndex: -1,
   },
-  heroTextContainer: {
+  headerTextContainer: {
     flex: 1,
   },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 4,
-    letterSpacing: -0.5,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 2,
   },
-  heroSubtitle: {
-    fontSize: 16,
-    marginBottom: 12,
-    opacity: 0.8,
+  headerSubtitle: {
+    fontSize: 12,
+    color: 'white',
+    opacity: 0.9,
   },
+
+  // Hero Badges
   heroBadgeContainer: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
     flexWrap: 'wrap',
     alignItems: 'center',
+    marginBottom: 20,
   },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
   },
   heroBadgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginLeft: 4,
   },
-  statsContainer: {
+
+  // Category Selection in Header
+  categorySelectionContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 4,
+    marginBottom: 4,
   },
-  statItem: {
+  categorySelectionTab: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 8,
     flex: 1,
-    minWidth: 70,
-    maxWidth: 90,
+    minWidth: 80,
+    maxWidth: 120,
+    position: 'relative',
+    minHeight: 44,
   },
-  statIcon: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  categorySelectionIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 4,
+    marginRight: 6,
   },
-  statLabel: {
-    fontSize: 8,
+  categorySelectionLabel: {
+    fontSize: 10,
     fontWeight: '600',
     flex: 1,
-    lineHeight: 10,
+    lineHeight: 12,
+    textAlign: 'center',
   },
-  activeIndicator: {
+  activeCategoryIndicator: {
     position: 'absolute',
     bottom: 2,
     left: 2,
@@ -640,86 +945,21 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
 
-  titleSection: {
-    marginBottom: 20,
+  listContainer: {
+    paddingBottom: 24,
+    paddingTop: 20,
   },
-  titleWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    opacity: 0.8,
-  },
-  tabsContainer: {
-    marginBottom: 16,
-  },
-  tab: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 4,
-    borderRadius: 16,
-    minWidth: 80,
-    position: 'relative',
-  },
-  tabIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  activeTabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: '50%',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    transform: [{ translateX: -2 }],
-  },
-  categoryDescription: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  categoryDescriptionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  resultCount: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  
+  // Smaller Business Cards
   row: {
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
   },
   businessCard: {
-    width: (width - 48) / 2,
-    marginBottom: 16,
-    borderRadius: 16,
+    width: (width - 36) / 2,
+    marginBottom: 18,
+    borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -730,7 +970,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    height: 120,
+    height: 110,
     backgroundColor: '#f5f5f5',
   },
   businessImage: {
@@ -746,13 +986,13 @@ const styles = StyleSheet.create({
   },
   nationalBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: 6,
+    left: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   nationalBadgeText: {
     color: 'white',
@@ -762,16 +1002,16 @@ const styles = StyleSheet.create({
   },
   verifiedBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: 6,
+    right: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
   businessInfo: {
-    padding: 12,
+    padding: 10,
   },
   businessName: {
     fontSize: 14,
@@ -779,54 +1019,54 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   businessCategory: {
-    fontSize: 12,
-    marginBottom: 6,
+    fontSize: 11,
+    marginBottom: 5,
   },
   businessDescription: {
-    fontSize: 11,
-    lineHeight: 16,
-    marginBottom: 8,
+    fontSize: 10,
+    lineHeight: 14,
+    marginBottom: 7,
   },
   tagsContainer: {
     flexDirection: 'row',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   tag: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
     marginRight: 4,
   },
   tagText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '600',
   },
   businessMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   rating: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginLeft: 2,
   },
   reviewCount: {
-    fontSize: 10,
+    fontSize: 9,
     marginLeft: 2,
   },
   coverageBadge: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   coverageBadgeText: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '600',
   },
   businessModel: {
@@ -834,8 +1074,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   businessModelText: {
-    fontSize: 10,
-    marginLeft: 4,
+    fontSize: 9,
+    marginLeft: 3,
   },
   emptyContainer: {
     alignItems: 'center',
