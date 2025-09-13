@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +32,8 @@ export default function BusinessImageGallery({
   onImagePress,
 }: BusinessImageGalleryProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   if (!images || images.length === 0) {
     return (
@@ -52,6 +55,30 @@ export default function BusinessImageGallery({
     }
   };
 
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(scrollPosition / width);
+    setCurrentImageIndex(currentIndex);
+  };
+
+  const renderPaginationDots = () => {
+    if (!images || images.length <= 1) return null;
+    
+    return (
+      <View style={styles.paginationContainer}>
+        {images.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.paginationDot,
+              index === currentImageIndex ? styles.paginationDotActive : null,
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
   const renderImageItem = ({ item, index }: { item: BusinessImage; index: number }) => (
     <TouchableOpacity
       style={styles.imageContainer}
@@ -63,11 +90,6 @@ export default function BusinessImageGallery({
         style={styles.image}
         resizeMode="cover"
       />
-      {item.is_primary && (
-        <View style={styles.primaryBadge}>
-          <Text style={styles.primaryBadgeText}>Primary</Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 
@@ -152,7 +174,12 @@ export default function BusinessImageGallery({
         snapToInterval={width}
         snapToAlignment="start"
         contentContainerStyle={styles.scrollContainer}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
+      
+      {/* Pagination Dots */}
+      {renderPaginationDots()}
       
       {showImageCount && images.length > 1 && (
         <View style={styles.imageCountBadge}>
@@ -169,15 +196,16 @@ export default function BusinessImageGallery({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 300,
+    height: 320,
     position: 'relative',
+    marginTop: 0,
   },
   scrollContainer: {
     alignItems: 'center',
   },
   imageContainer: {
     width: width,
-    height: 300,
+    height: 320,
     position: 'relative',
   },
   image: {
@@ -188,19 +216,46 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  primaryBadge: {
+  paginationContainer: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    backgroundColor: 'rgba(76, 175, 80, 0.9)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    // backgroundColor: 'rgba(254, 254, 254, 0.6)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'center',
+    borderRadius: 20,
+    shadowColor: '#f7f2f2ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  primaryBadgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  paginationDotActive: {
+    backgroundColor: '#FFFFFF',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderColor: '#FFFFFF',
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
   },
   imageCountBadge: {
     position: 'absolute',

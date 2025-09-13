@@ -184,7 +184,7 @@ export default function BusinessMapView({
           
           {/* Overlay to make entire area clickable */}
           <View style={styles.mapOverlay}>
-            <View style={styles.mapInfo}>
+            <View style={[styles.mapInfo, { backgroundColor: colors.card }]}>
               <View style={[styles.mapIconContainer, { backgroundColor: colors.buttonPrimary }]}>
                 <Ionicons name="location" size={20} color="white" />
               </View>
@@ -294,9 +294,16 @@ const styles = StyleSheet.create({
   mapInfo: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 8,
     padding: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   mapIconContainer: {
     width: 36,
