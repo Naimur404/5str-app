@@ -130,7 +130,7 @@ export default function WriteReviewScreen() {
           >
             <Ionicons
               name={star <= currentRating ? 'star' : 'star-outline'}
-              size={18}
+              size={16}
               color={star <= currentRating ? '#FFD700' : colors.icon}
             />
           </TouchableOpacity>
@@ -885,31 +885,36 @@ const styles = StyleSheet.create({
   additionalRatings: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 6,
     marginTop: 16,
   },
   compactRatingSection: {
     flex: 1,
     alignItems: 'center',
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     borderRadius: 12,
     backgroundColor: 'rgba(99, 102, 241, 0.05)',
     borderWidth: 1,
     borderColor: 'rgba(99, 102, 241, 0.1)',
+    minWidth: 0, // Allow shrinking
   },
   compactRatingHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: 4,
+    marginBottom: 6,
+    justifyContent: 'center',
   },
   compactRatingLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+    textAlign: 'center',
   },
   compactStarsContainer: {
     flexDirection: 'row',
-    gap: 2,
+    gap: 1,
+    justifyContent: 'center',
   },
   compactStarButton: {
     padding: 1,
