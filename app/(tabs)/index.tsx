@@ -304,10 +304,9 @@ const DynamicHeroSection = React.memo(({
         }
         break;
       case 'rainy':
-        // Rain conditions - hide flying elements but keep time-based lighting
+        // Rainy conditions - just show clouds, no rain animation
         weatherTheme.showClouds = true;
         weatherTheme.showBirds = false;
-        weatherTheme.showRain = true;
         weatherTheme.cloudColor = 'rgba(105, 105, 105, 0.9)';
         // Dim sun but don't hide completely
         if (baseTheme.type !== 'night') {
@@ -589,31 +588,6 @@ const DynamicHeroSection = React.memo(({
           <View style={[dynamicHeroStyles.cloud, { backgroundColor: theme.cloudColor }]} />
           <View style={[dynamicHeroStyles.cloud2, { backgroundColor: theme.cloudColor }]} />
         </Animated.View>
-      )}
-
-      {/* Rain Animation */}
-      {theme.showRain && (
-        <View style={dynamicHeroStyles.weatherOverlay}>
-          {[...Array(15)].map((_, index) => (
-            <Animated.View
-              key={`rain-${index}`}
-              style={[
-                dynamicHeroStyles.rainDrop,
-                {
-                  left: `${(index * 6.7) % 100}%`,
-                  transform: [
-                    {
-                      translateY: birdAnimation.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-20, 300],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-          ))}
-        </View>
       )}
 
       {/* Storm Animation */}
@@ -1539,7 +1513,7 @@ export default function HomeScreen() {
         )}
         
         {/* National Badge */}
-        <View style={styles.nationalBadge}>
+        <View style={[styles.nationalBadge, { backgroundColor: colors.tint }]}>
           <Ionicons name="flag" size={10} color="white" />
           <Text style={styles.nationalBadgeText}>National</Text>
         </View>
@@ -1971,44 +1945,17 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Special Offers */}
-        {homeData?.special_offers && homeData.special_offers.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Special Offers</Text>
-              <TouchableOpacity onPress={handleViewAllSpecialOffers}>
-                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
-              </TouchableOpacity>
-            </View>
-            <FlatList
-              data={homeData.special_offers}
-              renderItem={renderOfferCard}
-              keyExtractor={(item) => item.id.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.businessContainer}
-            />
-          </View>
-        )}
-
         {/* Top National Brands */}
         {homeData?.top_national_brands && homeData.top_national_brands.length > 0 && (
           <>
             {homeData.top_national_brands.map((brandSection, sectionIndex) => (
               <View key={`brand-section-${sectionIndex}`} style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <View style={styles.nationalBrandHeaderContainer}>
-                    <View style={[styles.breakingNewsHeader, { backgroundColor: colors.card }]}>
-                      <View style={styles.breakingNewsLabel}>
-                        <Text style={styles.breakingText}>LIVE</Text>
-                      </View>
-                      <View style={styles.nationalBrandTitleContainer}>
-                        <Ionicons name="flag" size={14} color="#FF4444" />
-                        <Text style={[styles.nationalBrandTitle, { color: colors.text }]}>
-                          {brandSection.section_title}
-                        </Text>
-                      </View>
-                    </View>
+                  <View style={styles.nationalSectionTitleContainer}>
+                    <Ionicons name="flag" size={16} color={colors.tint} />
+                    <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                      {brandSection.section_title}
+                    </Text>
                   </View>
                   <TouchableOpacity onPress={handleViewAllNationalBrands}>
                     <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
@@ -2030,6 +1977,26 @@ export default function HomeScreen() {
               </View>
             ))}
           </>
+        )}
+
+        {/* Special Offers */}
+        {homeData?.special_offers && homeData.special_offers.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Special Offers</Text>
+              <TouchableOpacity onPress={handleViewAllSpecialOffers}>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={homeData.special_offers}
+              renderItem={renderOfferCard}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.businessContainer}
+            />
+          </View>
         )}
       </ScrollView>
 
@@ -2539,6 +2506,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  nationalSectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   nationalBrandTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -2553,8 +2524,6 @@ const styles = StyleSheet.create({
     height: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5f5f5',
     backgroundColor: '#fafafa',
   },
   noImageText: {
@@ -2568,7 +2537,6 @@ const styles = StyleSheet.create({
     left: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF4444',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -2621,23 +2589,21 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   coverageBadge: {
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    shadowColor: '#4CAF50',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
   },
   coverageBadgeText: {
     fontSize: 9,
     fontWeight: '700',
-    color: 'white',
     letterSpacing: 0.2,
   },
 });
@@ -2911,18 +2877,9 @@ const dynamicHeroStyles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: 280, // Match hero container height
     zIndex: 3,
     pointerEvents: 'none',
-  },
-  // Rain Animation
-  rainDrop: {
-    position: 'absolute',
-    width: 2,
-    height: 15,
-    backgroundColor: '#4682B4',
-    borderRadius: 1,
-    opacity: 0.7,
   },
   // Storm Flash Animation
   stormFlash: {
