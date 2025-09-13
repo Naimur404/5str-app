@@ -1,23 +1,22 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { errorHandler } from './errorHandler';
-import { 
-  TopService, 
-  CategoriesResponse, 
-  TodayTrendingResponse, 
-  NotificationsResponse, 
-  NotificationActionResponse,
-  Collection,
-  CollectionsResponse,
-  CollectionResponse,
-  CreateCollectionRequest,
-  UpdateCollectionRequest,
+import {
   AddBusinessToCollectionRequest,
-  CollectionItemResponse,
+  CategoriesResponse,
   CollectionActionResponse,
+  CollectionItemResponse,
+  CollectionResponse,
+  CollectionsResponse,
+  CreateCollectionRequest,
+  NotificationActionResponse,
+  NotificationsResponse,
   PopularCollectionsResponse,
-  SearchCollectionsResponse
+  SearchCollectionsResponse,
+  TodayTrendingResponse,
+  TopService,
+  UpdateCollectionRequest
 } from '../types/api';
+import { errorHandler } from './errorHandler';
 
 /**
  * API Service with Smart Authentication

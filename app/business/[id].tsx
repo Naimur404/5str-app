@@ -1,57 +1,49 @@
+import AddToCollectionModal from '@/components/AddToCollectionModal';
+import BusinessImageGallery from '@/components/BusinessImageGallery';
+import BusinessMapView from '@/components/BusinessMapView';
+import CustomAlert from '@/components/CustomAlert';
+import { BusinessDetailsSkeleton, SimilarBusinessesSkeleton } from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { useToastGlobal } from '@/contexts/ToastContext';
+import { useBusinessTracking } from '@/hooks/useBusinessTracking';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
-    addToFavorites,
-    DetailedBusiness,
-    getBusinessDetails,
-    getBusinessOfferings,
-    getBusinessOffers,
-    getBusinessReviews,
-    getUserFavorites,
-    getUserProfile,
-    isAuthenticated,
-    Offering,
-    removeFromFavorites,
-    Review,
-    getAuthToken,
-    deleteReview,
-    getUserCollections,
-    addBusinessToCollection,
-    getSimilarBusinesses,
-    SimilarBusinessesResponse,
-    RecommendationBusiness,
-    getAdvancedAIRecommendations
+  addToFavorites,
+  deleteReview,
+  DetailedBusiness,
+  getAuthToken,
+  getBusinessDetails,
+  getBusinessOfferings,
+  getBusinessOffers,
+  getBusinessReviews,
+  getSimilarBusinesses,
+  getUserFavorites,
+  getUserProfile,
+  isAuthenticated,
+  Offering,
+  removeFromFavorites,
+  Review
 } from '@/services/api';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Alert
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import ReviewCard from '@/components/ReviewCard';
-import ProfileAvatar from '@/components/ProfileAvatar';
-import { BusinessDetailsSkeleton, SimilarBusinessesSkeleton } from '@/components/SkeletonLoader';
-import { useCustomAlert } from '@/hooks/useCustomAlert';
-import CustomAlert from '@/components/CustomAlert';
-import { useToastGlobal } from '@/contexts/ToastContext';
-import * as Location from 'expo-location';
-import { useLocation } from '@/contexts/LocationContext';
-import AddToCollectionModal from '@/components/AddToCollectionModal';
-import { useBusinessTracking } from '@/hooks/useBusinessTracking';
-import BusinessImageGallery from '@/components/BusinessImageGallery';
-import BusinessMapView from '@/components/BusinessMapView';
 
 const { width } = Dimensions.get('window');
 

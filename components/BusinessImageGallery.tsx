@@ -1,17 +1,17 @@
+import { BusinessImage } from '@/services/api';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  Image,
-  FlatList,
-  TouchableOpacity,
-  Dimensions,
-  StyleSheet,
-  Modal,
+    Dimensions,
+    FlatList,
+    Image,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { BusinessImage } from '@/services/api';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 

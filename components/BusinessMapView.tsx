@@ -1,18 +1,17 @@
+import { FreeMaps, GoogleMaps } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Linking,
-  Dimensions,
-  Modal,
+    Alert,
+    Dimensions,
+    Linking,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Ionicons } from '@expo/vector-icons';
-import { GoogleMaps, FreeMaps } from '@/services/api';
-import { Colors } from '@/constants/Colors';
 
 interface BusinessMapViewProps {
   googleMaps?: GoogleMaps;
