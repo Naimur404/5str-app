@@ -308,77 +308,93 @@ export default function TopNationalBrandsScreen() {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      {/* Title Section */}
-      <View style={styles.titleSection}>
-        <View style={styles.titleWithIcon}>
-          <View style={[styles.headerIcon, { backgroundColor: colors.tint }]}>
-            <Ionicons name="flag" size={20} color="white" />
-          </View>
-          <View>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>
-              Top National Brands
-            </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.icon }]}>
-              Leading brands across Bangladesh
-            </Text>
-          </View>
+      {/* Enhanced Hero Section */}
+      <View style={[styles.heroSection, { backgroundColor: colors.tint + '08' }]}>
+        <View style={styles.heroBackground}>
+          {/* Decorative Elements */}
+          <View style={[styles.decorativeCircle1, { backgroundColor: colors.tint + '10' }]} />
+          <View style={[styles.decorativeCircle2, { backgroundColor: getActiveCategory().color + '15' }]} />
+          <View style={[styles.decorativeCircle3, { backgroundColor: colors.tint + '05' }]} />
         </View>
-      </View>
-
-      {/* Category Tabs */}
-      <View style={styles.tabsContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsScrollContainer}
-        >
-          {CATEGORY_TABS.map((tab, index) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <TouchableOpacity
+        
+        <View style={styles.heroContent}>
+          <View style={styles.heroTitleSection}>
+            <View style={[styles.heroIconContainer, { backgroundColor: colors.tint }]}>
+              <Ionicons name="flag" size={24} color="white" />
+              <View style={[styles.iconGlow, { backgroundColor: colors.tint + '20' }]} />
+            </View>
+              <View style={styles.heroTextContainer}>
+                <Text style={[styles.heroTitle, { color: colors.text }]}>
+                  Top National Brands
+                </Text>
+                <Text style={[styles.heroSubtitle, { color: colors.icon }]}>
+                  Discover Bangladesh's leading companies in {getActiveCategory().displayName}
+                </Text>
+                <View style={styles.heroBadgeContainer}>
+                  <View style={[styles.heroBadge, { backgroundColor: getActiveCategory().color + '15' }]}>
+                    <Ionicons name={getActiveCategory().icon} size={12} color={getActiveCategory().color} />
+                    <Text style={[styles.heroBadgeText, { color: getActiveCategory().color }]}>
+                      {getActiveCategory().displayName}
+                    </Text>
+                  </View>
+                  {pagination.total > 0 && (
+                    <View style={[styles.heroBadge, { backgroundColor: colors.tint + '15' }]}>
+                      <Ionicons name="business" size={12} color={colors.tint} />
+                      <Text style={[styles.heroBadgeText, { color: colors.tint }]}>
+                        {pagination.total} brands
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+          </View>
+          
+          {/* Interactive Category Selection Stats */}
+          <View style={styles.statsContainer}>
+            {CATEGORY_TABS.map((tab, index) => (
+              <TouchableOpacity 
                 key={tab.id}
                 style={[
-                  styles.tab,
-                  isActive && { backgroundColor: tab.color + '15' }
+                  styles.statItem, 
+                  { backgroundColor: colors.card + '50' },
+                  activeTab === tab.id && { 
+                    backgroundColor: tab.color + '20',
+                    borderColor: tab.color + '40',
+                    borderWidth: 1,
+                    transform: [{ scale: 1.05 }]
+                  }
                 ]}
                 onPress={() => handleTabPress(tab.id)}
                 activeOpacity={0.7}
               >
                 <View style={[
-                  styles.tabIcon,
-                  { backgroundColor: isActive ? tab.color : colors.card }
+                  styles.statIcon, 
+                  { 
+                    backgroundColor: activeTab === tab.id ? tab.color : (tab.color + '20'),
+                  }
                 ]}>
                   <Ionicons 
                     name={tab.icon} 
-                    size={18} 
-                    color={isActive ? 'white' : colors.icon} 
+                    size={16} 
+                    color={activeTab === tab.id ? 'white' : tab.color} 
                   />
                 </View>
                 <Text style={[
-                  styles.tabText,
-                  { color: isActive ? tab.color : colors.text }
-                ]}>
-                  {tab.name}
+                  styles.statLabel, 
+                  { 
+                    color: activeTab === tab.id ? tab.color : colors.text,
+                    fontWeight: activeTab === tab.id ? '700' : '600'
+                  }
+                ]} numberOfLines={2}>
+                  {tab.displayName}
                 </Text>
-                {isActive && (
-                  <View style={[styles.activeTabIndicator, { backgroundColor: tab.color }]} />
+                {activeTab === tab.id && (
+                  <View style={[styles.activeIndicator, { backgroundColor: tab.color }]} />
                 )}
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Active Category Description */}
-      <View style={[styles.categoryDescription, { backgroundColor: colors.card }]}>
-        <Text style={[styles.categoryDescriptionText, { color: colors.icon }]}>
-          {getActiveCategory().description}
-        </Text>
-        {pagination.total > 0 && (
-          <Text style={[styles.resultCount, { color: colors.text }]}>
-            {pagination.total} brands found
-          </Text>
-        )}
+            ))}
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -479,8 +495,152 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   headerContainer: {
-    padding: 16,
+    paddingBottom: 16,
   },
+  
+  // Enhanced Hero Section Styles
+  heroSection: {
+    position: 'relative',
+    padding: 24,
+    marginBottom: 20,
+    borderRadius: 20,
+    marginHorizontal: 16,
+    overflow: 'hidden',
+  },
+  heroBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    top: -50,
+    right: -50,
+    opacity: 0.6,
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    bottom: -30,
+    left: -30,
+    opacity: 0.4,
+  },
+  decorativeCircle3: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    top: 10,
+    left: 10,
+    opacity: 0.3,
+  },
+  heroContent: {
+    position: 'relative',
+    zIndex: 1,
+  },
+  heroTitleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  heroIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    position: 'relative',
+  },
+  iconGlow: {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    top: -7,
+    left: -7,
+    zIndex: -1,
+  },
+  heroTextContainer: {
+    flex: 1,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    marginBottom: 12,
+    opacity: 0.8,
+  },
+  heroBadgeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  heroBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 4,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    flex: 1,
+    minWidth: 70,
+    maxWidth: 90,
+  },
+  statIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  statLabel: {
+    fontSize: 8,
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 10,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: 2,
+    right: 2,
+    height: 2,
+    borderRadius: 1,
+  },
+
   titleSection: {
     marginBottom: 20,
   },
@@ -507,9 +667,6 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     marginBottom: 16,
-  },
-  tabsScrollContainer: {
-    paddingHorizontal: 4,
   },
   tab: {
     alignItems: 'center',
@@ -558,6 +715,7 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    marginBottom: 8,
   },
   businessCard: {
     width: (width - 48) / 2,
@@ -565,6 +723,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   imageContainer: {
     position: 'relative',
