@@ -99,6 +99,31 @@ export interface SpecialOffer {
   };
 }
 
+// National Brand types
+export interface NationalBrand {
+  id: number;
+  business_name: string;
+  slug: string;
+  description: string;
+  overall_rating: string;
+  total_reviews: number;
+  is_national: boolean;
+  service_coverage: string;
+  business_model: string;
+  category: {
+    id: number;
+    name: string;
+  };
+  logo_image: string | null;
+}
+
+export interface TopNationalBrandSection {
+  section_title: string;
+  section_type: string;
+  section_description: string;
+  businesses: NationalBrand[];
+}
+
 // Dynamic Section types
 export interface DynamicSection {
   section_name: string;
@@ -137,6 +162,7 @@ export interface HomeResponse {
     featured_businesses: Business[];
     trending: Trending;
     user_location: UserLocation;
+    top_national_brands: TopNationalBrandSection[];
   };
 }
 
