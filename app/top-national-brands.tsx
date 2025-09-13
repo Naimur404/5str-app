@@ -2,23 +2,23 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import { addTrackingToPress } from '@/hooks/useFlatListTracking';
-import { getNationalBusinesses, NationalBusinessResponse } from '@/services/api';
+import { getNationalBusinesses } from '@/services/api';
 import { handleApiError } from '@/services/errorHandler';
-import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
+import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
