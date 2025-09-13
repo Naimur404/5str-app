@@ -641,37 +641,6 @@ export default function BusinessDetailsScreen() {
 
   const renderOverviewTab = () => (
     <View style={styles.tabInnerContent}>
-      {/* Business Info Card */}
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <View style={styles.businessInfoHeader}>
-          <View style={styles.businessInfoLeft}>
-            <Text style={[styles.businessInfoName, { color: colors.text }]}>
-              {business?.business_name}
-            </Text>
-            <Text style={[styles.businessInfoCategory, { color: colors.icon }]}>
-              {business?.category?.name} • {business?.subcategory?.name}
-            </Text>
-            <View style={styles.businessInfoMeta}>
-              <View style={styles.businessInfoRating}>
-                <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={[styles.businessInfoRatingText, { color: colors.text }]}>
-                  {business?.overall_rating} ({business?.total_reviews} reviews)
-                </Text>
-              </View>
-              <Text style={[styles.businessInfoPrice, { color: colors.tint }]}>
-                {getPriceRangeText(business?.price_range || 2)}
-              </Text>
-            </View>
-          </View>
-          {business?.is_verified && (
-            <View style={styles.businessVerifiedBadge}>
-              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-              <Text style={styles.businessVerifiedText}>Verified</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
       {/* Location and Contact */}
       <View style={[styles.section, { backgroundColor: colors.card }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Location And Contact</Text>
@@ -688,33 +657,6 @@ export default function BusinessDetailsScreen() {
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.icon} />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
-          <View style={[styles.contactIconContainer, { backgroundColor: '#4CAF50' }]}>
-            <Ionicons name="call" size={20} color="white" />
-          </View>
-          <View style={styles.contactTextContainer}>
-            <Text style={[styles.contactLabel, { color: colors.icon }]}>Phone</Text>
-            <Text style={[styles.contactText, { color: colors.text }]}>
-              {business?.business_phone}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {business?.website_url && (
-          <TouchableOpacity style={styles.contactItem} onPress={handleWebsite}>
-            <View style={[styles.contactIconContainer, { backgroundColor: '#FF9800' }]}>
-              <Ionicons name="globe" size={20} color="white" />
-            </View>
-            <View style={styles.contactTextContainer}>
-              <Text style={[styles.contactLabel, { color: colors.icon }]}>Website</Text>
-              <Text style={[styles.contactText, { color: colors.text }]} numberOfLines={1}>
-                {business?.website_url}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.icon} />
-          </TouchableOpacity>
-        )}
 
         {/* Map Section */}
         {(business?.google_maps || business?.free_maps || (business?.latitude && business?.longitude)) && (
@@ -733,11 +675,6 @@ export default function BusinessDetailsScreen() {
         <View style={styles.socialLinks}>
           <Text style={[styles.socialTitle, { color: colors.text }]}>Follow Us</Text>
           <View style={styles.socialIconsContainer}>
-            {business?.website_url && (
-              <TouchableOpacity style={[styles.socialIcon, { backgroundColor: '#FF9800' }]} onPress={handleWebsite}>
-                <Ionicons name="globe" size={20} color="white" />
-              </TouchableOpacity>
-            )}
             <TouchableOpacity style={[styles.socialIcon, { backgroundColor: '#E4405F' }]}>
               <Ionicons name="logo-instagram" size={20} color="white" />
             </TouchableOpacity>

@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface BusinessMapViewProps {
   googleMaps?: GoogleMaps;
@@ -38,6 +39,7 @@ export default function BusinessMapView({
 }: BusinessMapViewProps) {
   const [showFullScreenMap, setShowFullScreenMap] = useState(false);
   const [mapError, setMapError] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleMapPress = () => {
     if (googleMaps?.simple_url) {
@@ -230,7 +232,7 @@ export default function BusinessMapView({
         presentationStyle="fullScreen"
         onRequestClose={() => setShowFullScreenMap(false)}
       >
-        <View style={styles.fullScreenContainer}>
+        <View style={[styles.fullScreenContainer, { paddingTop: insets.top }]}>
           <View style={[styles.fullScreenHeader, { backgroundColor: colors.card }]}>
             <TouchableOpacity
               style={styles.closeButton}
@@ -363,7 +365,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: 50,
   },
   closeButton: {
     width: 40,
