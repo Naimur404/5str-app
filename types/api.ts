@@ -117,6 +117,38 @@ export interface NationalBrand {
   logo_image: string | null;
 }
 
+// Featured Attraction types
+export interface FeaturedAttraction {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  type: string;
+  category: string;
+  subcategory: string;
+  city: string;
+  area: string;
+  district: string;
+  is_free: boolean;
+  entry_fee: string;
+  currency: string;
+  overall_rating: number;
+  total_reviews: number;
+  total_views: number;
+  discovery_score: number;
+  estimated_duration_minutes: number;
+  difficulty_level: string;
+  cover_image_url: string;
+  google_maps_url: string;
+  distance_km: number;
+  facilities: string[];
+  best_time_to_visit: {
+    months: string[];
+  };
+  is_featured: boolean;
+  recent_reviews_count: number;
+}
+
 export interface TopNationalBrandSection {
   section_title: string;
   section_type: string;
@@ -160,6 +192,8 @@ export interface HomeResponse {
     dynamic_sections: DynamicSection[];
     special_offers: SpecialOffer[];
     featured_businesses: Business[];
+    featured_attractions: FeaturedAttraction[];
+    popular_attractions: FeaturedAttraction[];
     trending: Trending;
     user_location: UserLocation;
     top_national_brands: TopNationalBrandSection[];
@@ -276,6 +310,34 @@ export interface SpecialOffersResponse {
   success: boolean;
   data: {
     offers: SpecialOffer[];
+    location: UserLocation;
+    pagination?: {
+      current_page: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+// Popular Attractions Response
+export interface PopularAttractionsResponse {
+  success: boolean;
+  data: {
+    attractions: FeaturedAttraction[];
+    location: UserLocation;
+    pagination?: {
+      current_page: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+  };
+}
+
+// Featured Attractions Response
+export interface FeaturedAttractionsResponse {
+  success: boolean;
+  data: {
+    attractions: FeaturedAttraction[];
     location: UserLocation;
     pagination?: {
       current_page: number;

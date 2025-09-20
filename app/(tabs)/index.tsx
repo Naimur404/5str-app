@@ -13,7 +13,7 @@ import { fetchWithJsonValidation, getMainRecommendations, getUserProfile, isAuth
 import cacheService from '@/services/cacheService';
 import { handleApiError } from '@/services/errorHandler';
 import { WeatherData, weatherService } from '@/services/weatherService';
-import { Banner, Business, HomeResponse, NationalBrand, SpecialOffer, TopService } from '@/types/api';
+import { Banner, Business, FeaturedAttraction, HomeResponse, NationalBrand, SpecialOffer, TopService } from '@/types/api';
 import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -1260,6 +1260,14 @@ export default function HomeScreen() {
     router.push('/top-national-brands' as any);
   };
 
+  const handleViewAllFeaturedAttractions = () => {
+    router.push('/featured-attractions' as any);
+  };
+
+  const handleViewAllPopularAttractions = () => {
+    router.push('/popular-attractions' as any);
+  };
+
   const handleBannerScroll = useCallback((event: any) => {
     const slideSize = width - 48;
     const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
@@ -1587,6 +1595,120 @@ export default function HomeScreen() {
                   }
                 ]} 
               />
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderAttractionCard = ({ item, index }: { item: FeaturedAttraction, index?: number }) => {
+    // Create the original onPress handler
+    const originalOnPress = () => {
+      router.push(`/attraction/${item.id}` as any);
+    };
+
+    // Add tracking if index is provided
+    const onPressWithTracking = typeof index === 'number' 
+      ? addTrackingToPress(originalOnPress, item.id, index, 'featured_attractions')
+      : originalOnPress;
+
+    // Format distance for display
+    const formatDistance = (distance: number) => {
+      if (distance < 1) {
+        return `${Math.round(distance * 1000)}m`;
+      }
+      return `${distance.toFixed(1)}km`;
+    };
+
+    // Format estimated duration
+    const formatDuration = (minutes: number) => {
+      if (minutes < 60) {
+        return `${minutes}min`;
+      }
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes === 0) {
+        return `${hours}h`;
+      }
+      return `${hours}h ${remainingMinutes}min`;
+    };
+
+    // Get difficulty color
+    const getDifficultyColor = (level: string) => {
+      switch (level.toLowerCase()) {
+        case 'easy':
+          return '#22C55E'; // Green
+        case 'moderate':
+          return '#F59E0B'; // Amber
+        case 'hard':
+          return '#EF4444'; // Red
+        default:
+          return colors.icon;
+      }
+    };
+
+    return (
+      <TouchableOpacity 
+        style={[styles.attractionCard, { backgroundColor: colors.card }]}
+        onPress={onPressWithTracking}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={{ uri: getImageUrl(item.cover_image_url) || getFallbackImageUrl('general') }} 
+          style={styles.attractionImage}
+        />
+        
+        {/* Free/Paid Badge */}
+        <View style={[styles.priceBadge, { backgroundColor: item.is_free ? '#22C55E' : '#3B82F6' }]}>
+          <Text style={styles.priceBadgeText}>
+            {item.is_free ? 'FREE' : `${item.currency} ${item.entry_fee}`}
+          </Text>
+        </View>
+
+        {/* Featured Badge */}
+        {item.is_featured && (
+          <View style={[styles.featuredBadge, { backgroundColor: '#FFD700' }]}>
+            <Ionicons name="star" size={10} color="white" />
+            <Text style={styles.featuredBadgeText}>Featured</Text>
+          </View>
+        )}
+        
+        <View style={styles.attractionInfo}>
+          <Text style={[styles.attractionName, { color: colors.text }]} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <Text style={[styles.attractionCategory, { color: colors.icon }]} numberOfLines={1}>
+            {item.category} • {item.subcategory}
+          </Text>
+          <Text style={[styles.attractionLocation, { color: colors.icon }]} numberOfLines={1}>
+            {item.area}, {item.city}
+          </Text>
+          
+          <View style={styles.attractionMeta}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={12} color="#FFD700" />
+              <Text style={[styles.rating, { color: colors.text }]}>{item.overall_rating.toFixed(1)}</Text>
+              <Text style={[styles.attractionReviews, { color: colors.icon }]}>({item.total_reviews})</Text>
+            </View>
+            
+            <Text style={[styles.distance, { color: colors.icon }]}>{formatDistance(item.distance_km)}</Text>
+          </View>
+
+          {/* Additional attraction info */}
+          <View style={styles.attractionDetails}>
+            <View style={styles.attractionDetailItem}>
+              <Ionicons name="time-outline" size={12} color={colors.icon} />
+              <Text style={[styles.attractionDetailText, { color: colors.icon }]}>
+                {formatDuration(item.estimated_duration_minutes)}
+              </Text>
+            </View>
+            
+            <View style={styles.attractionDetailItem}>
+              <Ionicons name="fitness-outline" size={12} color={getDifficultyColor(item.difficulty_level)} />
+              <Text style={[styles.attractionDetailText, { color: getDifficultyColor(item.difficulty_level) }]}>
+                {item.difficulty_level}
+              </Text>
             </View>
           </View>
         </View>
@@ -1986,6 +2108,60 @@ export default function HomeScreen() {
               data={homeData.featured_businesses}
               renderItem={({ item, index }) => renderBusinessCard({ item, index, section: 'featured_businesses' })}
               keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.businessContainer}
+            />
+          </View>
+        )}
+
+        {/* Featured Attractions */}
+        {homeData?.featured_attractions && homeData.featured_attractions.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.attractionHeaderMain}>
+                <View style={[styles.attractionIcon, { backgroundColor: '#22C55E' }]}>
+                  <Ionicons name="location" size={16} color="white" />
+                </View>
+                <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                  Featured Attractions
+                </Text>
+              </View>
+              <TouchableOpacity onPress={handleViewAllFeaturedAttractions}>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={homeData.featured_attractions}
+              renderItem={({ item, index }) => renderAttractionCard({ item, index })}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.businessContainer}
+            />
+          </View>
+        )}
+
+        {/* Popular Attractions */}
+        {homeData?.popular_attractions && homeData.popular_attractions.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.attractionHeaderMain}>
+                <View style={[styles.attractionIcon, { backgroundColor: '#3B82F6' }]}>
+                  <Ionicons name="trending-up" size={16} color="white" />
+                </View>
+                <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8 }]}>
+                  Popular Attractions
+                </Text>
+              </View>
+              <TouchableOpacity onPress={handleViewAllPopularAttractions}>
+                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={homeData.popular_attractions}
+              renderItem={({ item, index }) => renderAttractionCard({ item, index })}
+              keyExtractor={(item) => `popular-${item.id}`}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.businessContainer}
@@ -2495,6 +2671,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  attractionHeaderMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  attractionIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   recommendationCard: {
     position: 'relative',
   },
@@ -2679,6 +2866,98 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+  // Featured Attraction Styles
+  attractionCard: {
+    width: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 4,
+  },
+  attractionImage: {
+    width: '100%',
+    height: 120,
+    resizeMode: 'cover',
+  },
+  attractionInfo: {
+    padding: 12,
+  },
+  attractionName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  attractionCategory: {
+    fontSize: 11,
+    marginBottom: 2,
+    opacity: 0.7,
+  },
+  attractionLocation: {
+    fontSize: 11,
+    marginBottom: 6,
+    opacity: 0.7,
+  },
+  attractionMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  attractionReviews: {
+    fontSize: 10,
+    marginLeft: 2,
+    opacity: 0.7,
+  },
+  attractionDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  attractionDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  attractionDetailText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  priceBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    zIndex: 1,
+  },
+  priceBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  featuredBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  featuredBadgeText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: '600',
+    marginLeft: 2,
   },
 });
 
