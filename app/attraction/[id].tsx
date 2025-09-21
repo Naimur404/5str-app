@@ -1,6 +1,7 @@
 import { AttractionInteractionPanel } from '@/components/AttractionInteractionPanel';
 import CustomAlert from '@/components/CustomAlert';
 import { RecordVisitModal } from '@/components/RecordVisitModal';
+import { AttractionDetailsSkeleton } from '@/components/SkeletonLoader';
 import SmartImage from '@/components/SmartImage';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -306,11 +307,7 @@ export default function AttractionDetailScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style="light" backgroundColor="transparent" translucent />
-        <View style={styles.loadingContainer}>
-          <Ionicons name="location-outline" size={64} color={colors.icon} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading attraction details...</Text>
-          <Text style={[styles.loadingSubText, { color: colors.icon }]}>Please wait while we fetch the information</Text>
-        </View>
+        <AttractionDetailsSkeleton colors={colors} />
       </SafeAreaView>
     );
   }

@@ -66,6 +66,286 @@ const SkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundCol
   );
 });
 
+// Attraction Details Skeleton - tailored specifically for attraction pages
+export const AttractionDetailsSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    {/* Hero Section Skeleton */}
+    <View style={styles.heroSkeleton}>
+      <SkeletonBox 
+        width="100%" 
+        height={240} 
+        borderRadius={0}
+        backgroundColor={colors.icon + '20'} 
+      />
+      {/* Back button skeleton */}
+      <View style={[styles.favoriteButtonSkeleton, { top: 50, left: 20, right: 'auto' }]}>
+        <SkeletonBox 
+          width={40} 
+          height={40} 
+          borderRadius={20}
+          backgroundColor="rgba(0,0,0,0.3)" 
+        />
+      </View>
+      {/* Hero content overlay skeleton */}
+      <View style={styles.heroContentSkeleton}>
+        <SkeletonBox 
+          width="85%" 
+          height={28} 
+          borderRadius={14}
+          backgroundColor="rgba(255,255,255,0.4)" 
+        />
+        <SkeletonBox 
+          width="70%" 
+          height={16} 
+          borderRadius={8}
+          backgroundColor="rgba(255,255,255,0.3)" 
+        />
+        <View style={styles.heroMetaSkeleton}>
+          <View style={styles.ratingBadgeSkeleton}>
+            <SkeletonBox 
+              width={14} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor="#FFD700" 
+            />
+            <SkeletonBox 
+              width={35} 
+              height={16} 
+              borderRadius={8}
+              backgroundColor="rgba(255,255,255,0.4)" 
+            />
+            <SkeletonBox 
+              width={45} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor="rgba(255,255,255,0.3)" 
+            />
+          </View>
+          <SkeletonBox 
+            width={60} 
+            height={14} 
+            borderRadius={7}
+            backgroundColor="rgba(255,255,255,0.2)" 
+          />
+        </View>
+      </View>
+    </View>
+    
+    {/* Quick Actions Skeleton */}
+    <View style={[styles.quickActionsSkeleton, { backgroundColor: colors.card }]}>
+      {[...Array(4)].map((_, index) => (
+        <View key={index} style={styles.actionButtonSkeleton}>
+          <SkeletonBox 
+            width={32} 
+            height={32} 
+            borderRadius={8}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width={40} 
+            height={11} 
+            borderRadius={5}
+            backgroundColor={colors.icon + '15'} 
+          />
+        </View>
+      ))}
+    </View>
+    
+    {/* Content Sections Skeleton */}
+    <View style={styles.contentSkeleton}>
+      {/* About Section */}
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <SkeletonBox 
+          width={80} 
+          height={20} 
+          borderRadius={10}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={styles.sectionContent}>
+          <SkeletonBox 
+            width="100%" 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+          <SkeletonBox 
+            width="95%" 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+          <SkeletonBox 
+            width="85%" 
+            height={14} 
+            borderRadius={7}
+            backgroundColor={colors.icon + '15'} 
+          />
+          {/* Tags skeleton */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            {[...Array(3)].map((_, index) => (
+              <SkeletonBox 
+                key={index}
+                width={60 + (index * 10)} 
+                height={20} 
+                borderRadius={10}
+                backgroundColor={colors.tint + '20'} 
+              />
+            ))}
+          </View>
+        </View>
+      </View>
+      
+      {/* Visit Information Section */}
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <SkeletonBox 
+          width={140} 
+          height={20} 
+          borderRadius={10}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={styles.detailRows}>
+          {[...Array(4)].map((_, rowIndex) => (
+            <View key={rowIndex} style={styles.detailRow}>
+              <SkeletonBox 
+                width={20} 
+                height={20} 
+                borderRadius={10}
+                backgroundColor={colors.tint + '30'} 
+              />
+              <View style={styles.detailContent}>
+                <SkeletonBox 
+                  width={180 + (rowIndex * 20)} 
+                  height={14} 
+                  borderRadius={7}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+      
+      {/* Facilities Section */}
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <SkeletonBox 
+          width={100} 
+          height={20} 
+          borderRadius={10}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {[...Array(6)].map((_, index) => (
+            <View key={index} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginBottom: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.tint + '30'} 
+              />
+              <SkeletonBox 
+                width={70 + (index * 15)} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+          ))}
+        </View>
+      </View>
+      
+      {/* Gallery Section */}
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <SkeletonBox 
+          width={160} 
+          height={20} 
+          borderRadius={10}
+          backgroundColor={colors.icon + '20'} 
+        />
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+          {[...Array(3)].map((_, index) => (
+            <SkeletonBox 
+              key={index}
+              width={200} 
+              height={150} 
+              borderRadius={8}
+              backgroundColor={colors.icon + '20'} 
+            />
+          ))}
+        </View>
+      </View>
+      
+      {/* Reviews Section */}
+      <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <SkeletonBox 
+            width={120} 
+            height={20} 
+            borderRadius={10}
+            backgroundColor={colors.icon + '20'} 
+          />
+          <SkeletonBox 
+            width={80} 
+            height={16} 
+            borderRadius={8}
+            backgroundColor={colors.tint + '30'} 
+          />
+        </View>
+        
+        {/* Review items */}
+        {[...Array(2)].map((_, index) => (
+          <View key={index} style={{ paddingBottom: 16, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <View style={{ flex: 1 }}>
+                <SkeletonBox 
+                  width={120} 
+                  height={16} 
+                  borderRadius={8}
+                  backgroundColor={colors.icon + '20'} 
+                />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 }}>
+                  {[...Array(5)].map((_, starIndex) => (
+                    <SkeletonBox 
+                      key={starIndex}
+                      width={12} 
+                      height={12} 
+                      borderRadius={6}
+                      backgroundColor="#FFD700" 
+                    />
+                  ))}
+                  <SkeletonBox 
+                    width={40} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor={colors.icon + '15'} 
+                  />
+                </View>
+              </View>
+              <SkeletonBox 
+                width={60} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+            <SkeletonBox 
+              width="100%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + '15'} 
+            />
+            <SkeletonBox 
+              width="85%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + '15'} 
+            />
+          </View>
+        ))}
+      </View>
+    </View>
+  </View>
+);
+
 // Business Details Skeleton
 export const BusinessDetailsSkeleton = ({ colors }: SkeletonProps) => (
   <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
