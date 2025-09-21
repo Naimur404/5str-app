@@ -1,5 +1,5 @@
+import { useToastGlobal } from '@/contexts/ToastContext';
 import {
-    getUserAttractionInteractions,
     getUserAttractionInteractionStatus,
     getUserBookmarkedAttractions,
     getUserLikedAttractions,
@@ -16,7 +16,6 @@ import {
     VisitCompanionType
 } from '@/types/api';
 import React, { useCallback, useState } from 'react';
-import { useToastGlobal } from '@/contexts/ToastContext';
 
 interface AttractionInteractionState {
   isLiked: boolean;
