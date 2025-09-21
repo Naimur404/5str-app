@@ -132,15 +132,16 @@ export interface FeaturedAttraction {
   is_free: boolean;
   entry_fee: string;
   currency: string;
-  overall_rating: number;
+  overall_rating: string | number; // API returns string but can be number in some cases
   total_reviews: number;
   total_views: number;
-  discovery_score: number;
+  discovery_score: number | string;
   estimated_duration_minutes: number;
   difficulty_level: string;
   cover_image_url: string;
   google_maps_url: string;
-  distance_km: number;
+  distance_km?: number; // Optional for backward compatibility
+  distance?: number | string; // New field from API response
   facilities: string[];
   best_time_to_visit: {
     months: string[];

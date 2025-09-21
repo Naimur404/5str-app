@@ -1,5 +1,7 @@
 import React from 'react';
 import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get('window');
 
@@ -3450,5 +3452,150 @@ export const SimpleReviewsSkeleton = ({ colors }: SkeletonProps) => (
         </View>
       ))}
     </View>
+  </View>
+);
+
+// Attraction List Skeleton
+export const AttractionListSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={{ padding: 16, gap: 16 }}>
+    {[...Array(6)].map((_, index) => (
+      <View key={index} style={[
+        { 
+          backgroundColor: colors.card, 
+          borderRadius: 16, 
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 4,
+        }
+      ]}>
+        {/* Attraction Image */}
+        <SkeletonBox 
+          width="100%" 
+          height={160} 
+          borderRadius={0}
+          backgroundColor={colors.icon + "15"} 
+        />
+        
+        {/* Attraction Content */}
+        <View style={{ padding: 16, gap: 12 }}>
+          {/* Main Info */}
+          <View style={{ gap: 4 }}>
+            <SkeletonBox 
+              width={200 + (index * 20)} 
+              height={20} 
+              borderRadius={10}
+              backgroundColor={colors.icon + "20"} 
+            />
+            <SkeletonBox 
+              width={150} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + "15"} 
+            />
+            <SkeletonBox 
+              width={120} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + "15"} 
+            />
+          </View>
+          
+          {/* Meta Info (Rating & Distance) */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor="#FFD700" 
+              />
+              <SkeletonBox 
+                width={25} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + "20"} 
+              />
+              <SkeletonBox 
+                width={30} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + "15"} 
+              />
+            </View>
+            <SkeletonBox 
+              width={45} 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.buttonPrimary + "40"} 
+            />
+          </View>
+          
+          {/* Details (Duration, Difficulty, Views) */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + "20"} 
+              />
+              <SkeletonBox 
+                width={40} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + "15"} 
+              />
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + "20"} 
+              />
+              <SkeletonBox 
+                width={35} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + "15"} 
+              />
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + "20"} 
+              />
+              <SkeletonBox 
+                width={40} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + "15"} 
+              />
+            </View>
+          </View>
+          
+          {/* Description */}
+          <View style={{ gap: 4 }}>
+            <SkeletonBox 
+              width="100%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + "15"} 
+            />
+            <SkeletonBox 
+              width="75%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + "15"} 
+            />
+          </View>
+        </View>
+      </View>
+    ))}
   </View>
 );

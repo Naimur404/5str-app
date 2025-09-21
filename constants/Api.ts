@@ -46,6 +46,8 @@ export const API_CONFIG = {
     BUSINESS_NATIONAL: '/api/v1/businesses/national',
     // Attraction Endpoints
     ATTRACTIONS: '/api/v1/attractions',
+    FEATURED_ATTRACTIONS: '/api/v1/attractions/featured',
+    POPULAR_ATTRACTIONS: '/api/v1/attractions/popular',
     ATTRACTION_REVIEWS: '/api/v1/attraction-reviews',
     // Attraction Interaction Endpoints
     ATTRACTION_INTERACTIONS: '/api/v1/attraction-interactions',

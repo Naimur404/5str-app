@@ -20,8 +20,10 @@ import {
   CollectionResponse,
   CollectionsResponse,
   CreateCollectionRequest,
+  FeaturedAttractionsResponse,
   NotificationActionResponse,
   NotificationsResponse,
+  PopularAttractionsResponse,
   PopularCollectionsResponse,
   SearchCollectionsResponse,
   TodayTrendingResponse,
@@ -1867,6 +1869,34 @@ export const submitAttractionReview = async (
     method: 'POST',
     body: JSON.stringify(reviewData),
   }, true); // Requires authentication
+};
+
+/**
+ * Get featured attractions with location filtering and pagination
+ */
+export const getFeaturedAttractions = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1
+): Promise<FeaturedAttractionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.FEATURED_ATTRACTIONS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false); // Public endpoint, works for both logged-in and guest users
+};
+
+/**
+ * Get popular attractions with location filtering and pagination
+ */
+export const getPopularAttractions = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 20,
+  radiusKm: number = 15,
+  page: number = 1
+): Promise<PopularAttractionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.POPULAR_ATTRACTIONS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false); // Public endpoint, works for both logged-in and guest users
 };
 
 /**
