@@ -1,27 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Dimensions,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { Colors } from '../../../constants/Colors';
-import { useColorScheme } from '../../../hooks/useColorScheme';
-import { useToast } from '../../../hooks/useToast';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
-import { getAttractionDetails, submitAttractionReview, isAuthenticated } from '../../../services/api';
+import { useToast } from '../../../hooks/useToast';
+import { getAttractionDetails, isAuthenticated, submitAttractionReview } from '../../../services/api';
 import { AttractionDetailResponse, AttractionReviewSubmissionRequest } from '../../../types/api';
 
 const { width } = Dimensions.get('window');
@@ -29,8 +26,8 @@ const { width } = Dimensions.get('window');
 export default function WriteReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const { showSuccess, showError } = useToast();
   const { showAlert, hideAlert } = useCustomAlert();
 
@@ -205,7 +202,7 @@ export default function WriteReviewScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style="dark" />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
           <Text style={[styles.loadingText, { color: colors.text }]}>

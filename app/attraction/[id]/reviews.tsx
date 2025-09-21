@@ -1,29 +1,29 @@
+import CustomAlert from '@/components/CustomAlert';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
-import CustomAlert from '@/components/CustomAlert';
-import { 
-  getAttractionReviews,
-  voteAttractionReviewHelpful,
-  voteAttractionReviewNotHelpful,
-  isAuthenticated
+import {
+    getAttractionReviews,
+    isAuthenticated,
+    voteAttractionReviewHelpful,
+    voteAttractionReviewNotHelpful
 } from '@/services/api';
 import { AttractionReview } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  RefreshControl
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 
 export default function AttractionReviewsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -1,43 +1,39 @@
+import CustomAlert from '@/components/CustomAlert';
+import SmartImage from '@/components/SmartImage';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
-import CustomAlert from '@/components/CustomAlert';
-import { 
-  getAttractionDetails,
-  getAttractionReviews,
-  submitAttractionReview,
-  voteAttractionReviewHelpful,
-  voteAttractionReviewNotHelpful,
-  isAuthenticated
+import {
+    getAttractionDetails,
+    getAttractionReviews,
+    isAuthenticated,
+    voteAttractionReviewHelpful,
+    voteAttractionReviewNotHelpful
 } from '@/services/api';
-import { 
-  AttractionDetail, 
-  AttractionReview,
-  AttractionReviewSubmissionRequest
+import {
+    AttractionDetail,
+    AttractionReview
 } from '@/types/api';
-import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
+import { getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Linking,
-  Modal,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Dimensions,
+    Linking,
+    Modal,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import SmartImage from '@/components/SmartImage';
 
 const { width } = Dimensions.get('window');
 const HERO_HEIGHT = 240;

@@ -1,39 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { Colors } from '../../../constants/Colors';
-import { useColorScheme } from '../../../hooks/useColorScheme';
-import { AttractionDetailResponse, AttractionReviewsResponse, AttractionReview } from '../../../types/api';
-import { 
-  getAttractionDetails, 
-  getAttractionReviews, 
-  voteAttractionReviewHelpful, 
-  voteAttractionReviewNotHelpful,
-  isAuthenticated 
-} from '../../../services/api';
-import { useToast } from '../../../hooks/useToast';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
+import { useToast } from '../../../hooks/useToast';
+import {
+    getAttractionDetails,
+    getAttractionReviews,
+    isAuthenticated,
+    voteAttractionReviewHelpful,
+    voteAttractionReviewNotHelpful
+} from '../../../services/api';
+import { AttractionDetailResponse, AttractionReview } from '../../../types/api';
 
 const { width } = Dimensions.get('window');
 
 export default function AllReviewsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const { colorScheme } = useTheme();
+  const colors = Colors[colorScheme];
   const { showSuccess, showError } = useToast();
   const { showAlert, hideAlert } = useCustomAlert();
 
@@ -175,7 +174,7 @@ export default function AllReviewsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style="dark" />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
