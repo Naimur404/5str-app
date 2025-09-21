@@ -28,6 +28,7 @@ import {
   TopService,
   UpdateCollectionRequest,
   UserAttractionInteractionsResponse,
+  UserAttractionInteractionStatusResponse,
   UserBookmarkedAttractionsResponse,
   UserLikedAttractionsResponse,
   UserVisitedAttractionsResponse
@@ -1946,6 +1947,14 @@ export const getUserAttractionInteractions = async (
   }
   
   return makeApiCall(url, {}, false); // Public endpoint
+};
+
+/**
+ * Check user interaction status for a specific attraction
+ */
+export const getUserAttractionInteractionStatus = async (attractionId: number): Promise<UserAttractionInteractionStatusResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_STATUS}/${attractionId}`;
+  return makeApiCall(url, {}, true); // Requires authentication
 };
 
 /**

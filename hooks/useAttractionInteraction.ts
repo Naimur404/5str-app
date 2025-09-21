@@ -1,5 +1,6 @@
 import {
     getUserAttractionInteractions,
+    getUserAttractionInteractionStatus,
     getUserBookmarkedAttractions,
     getUserLikedAttractions,
     getUserVisitedAttractions,
@@ -15,7 +16,7 @@ import {
     VisitCompanionType
 } from '@/types/api';
 import React, { useCallback, useState } from 'react';
-import { useToast } from './useToast';
+import { useToastGlobal } from '@/contexts/ToastContext';
 
 interface AttractionInteractionState {
   isLiked: boolean;
@@ -36,30 +37,25 @@ export const useAttractionInteraction = (attractionId: number) => {
     error: null,
   });
 
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError } = useToastGlobal();
 
   // Initialize interaction states from API
   const initializeStates = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
       
-      // Fetch user's interactions for this attraction
-      const response = await getUserAttractionInteractions(attractionId);
+      // Fetch user's interaction status for this attraction
+      const response = await getUserAttractionInteractionStatus(attractionId);
       
-      if (response.success && response.data?.data) {
-        const interactions = response.data.data; // Access the nested data array
-        
-        const isLiked = interactions.some((i: any) => i.interaction_type === 'like');
-        const isBookmarked = interactions.some((i: any) => i.interaction_type === 'bookmark');
-        const isWishlisted = interactions.some((i: any) => i.interaction_type === 'wishlist');
-        const hasVisited = interactions.some((i: any) => i.interaction_type === 'visit');
+      if (response.success && response.data?.interaction_status) {
+        const status = response.data.interaction_status;
         
         setState(prev => ({
           ...prev,
-          isLiked,
-          isBookmarked,
-          isWishlisted,
-          hasVisited,
+          isLiked: status.has_liked,
+          isBookmarked: status.has_bookmarked,
+          isWishlisted: status.has_wishlisted,
+          hasVisited: status.has_visited,
           loading: false,
         }));
       } else {
@@ -67,7 +63,7 @@ export const useAttractionInteraction = (attractionId: number) => {
         setState(prev => ({ ...prev, loading: false }));
       }
     } catch (error) {
-      console.log('Could not fetch user interactions (possibly not authenticated):', error);
+      console.log('Could not fetch user interaction status (possibly not authenticated):', error);
       setState(prev => ({ ...prev, loading: false })); // Don't show error for auth issues
     }
   }, [attractionId]);
@@ -93,6 +89,7 @@ export const useAttractionInteraction = (attractionId: number) => {
       });
 
       if (response.success) {
+        console.log('🎉 Attraction interaction success:', response.message);
         showSuccess(response.message);
         
         // Update local state based on interaction type
@@ -118,6 +115,7 @@ export const useAttractionInteraction = (attractionId: number) => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to record interaction';
+      console.log('❌ Store interaction error:', errorMessage);
       updateState({ error: errorMessage });
       showError(errorMessage);
       throw error;
@@ -137,6 +135,8 @@ export const useAttractionInteraction = (attractionId: number) => {
       });
 
       if (response.success) {
+        // Show the API response message (like login success)
+        console.log('🎯 Toggle interaction success:', response.message);
         showSuccess(response.message);
         
         // Update local state based on interaction type and action
@@ -162,6 +162,7 @@ export const useAttractionInteraction = (attractionId: number) => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to toggle interaction';
+      console.log('❌ Toggle interaction error:', errorMessage);
       updateState({ error: errorMessage });
       showError(errorMessage);
       throw error;
@@ -318,7 +319,7 @@ export const useAttractionInteraction = (attractionId: number) => {
 export const useUserAttractionLists = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { showError } = useToast();
+  const { showError } = useToastGlobal();
 
   const fetchLikedAttractions = useCallback(async (page: number = 1, perPage: number = 15) => {
     setLoading(true);

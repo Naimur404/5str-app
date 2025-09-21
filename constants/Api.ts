@@ -56,6 +56,7 @@ export const API_CONFIG = {
     ATTRACTION_INTERACTIONS_LIKED: '/api/v1/attraction-interactions/liked',
     ATTRACTION_INTERACTIONS_BOOKMARKED: '/api/v1/attraction-interactions/bookmarked',
     ATTRACTION_INTERACTIONS_VISITED: '/api/v1/attraction-interactions/visited',
+    ATTRACTION_INTERACTIONS_STATUS: '/api/v1/attraction-interactions/status',
   }
 };
 

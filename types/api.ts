@@ -1092,6 +1092,26 @@ export interface UserAttractionInteractionsResponse {
   };
 }
 
+// User Attraction Interaction Status Response
+export interface UserAttractionInteractionStatusResponse {
+  success: boolean;
+  message: string;
+  data: {
+    attraction_id: number;
+    user_id: number;
+    interaction_status: {
+      has_liked: boolean;
+      has_disliked: boolean;
+      has_bookmarked: boolean;
+      has_visited: boolean;
+      has_shared: boolean;
+      has_wishlisted: boolean;
+      interaction_details: AttractionInteraction[];
+    };
+    total_interactions: number;
+  };
+}
+
 export interface AttractionInteractionsResponse {
   success: boolean;
   message: string;
