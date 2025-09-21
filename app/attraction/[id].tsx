@@ -38,6 +38,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 const HERO_HEIGHT = 240;
@@ -280,6 +281,25 @@ export default function AttractionDetailScreen() {
   const openImageModal = (index: number) => {
     setSelectedImageIndex(index);
     setShowImageModal(true);
+  };
+
+  const handleImageSwipe = (event: any) => {
+    if (event.nativeEvent.state === State.END) {
+      const { translationX } = event.nativeEvent;
+      const swipeThreshold = 50;
+      
+      if (translationX > swipeThreshold) {
+        // Swipe right - go to previous image
+        if (selectedImageIndex > 0) {
+          setSelectedImageIndex(selectedImageIndex - 1);
+        }
+      } else if (translationX < -swipeThreshold) {
+        // Swipe left - go to next image
+        if (selectedImageIndex < (attraction?.media?.gallery?.length || 0) - 1) {
+          setSelectedImageIndex(selectedImageIndex + 1);
+        }
+      }
+    }
   };
 
   if (loading && !attraction) {
@@ -753,59 +773,48 @@ export default function AttractionDetailScreen() {
 
       {/* Image Gallery Modal */}
       <Modal visible={showImageModal} animationType="fade" transparent={true}>
-        <View style={styles.imageModalOverlay}>
-          <View style={styles.imageModalContainer}>
-            <TouchableOpacity 
-              style={styles.imageModalCloseButton}
-              onPress={() => setShowImageModal(false)}
-            >
-              <Ionicons name="close" size={30} color="white" />
-            </TouchableOpacity>
-            
-            {attraction?.media?.gallery && attraction.media.gallery.length > 0 && (
-              <View style={styles.imageModalContent}>
-                <SmartImage
-                  source={attraction.media.gallery[selectedImageIndex]?.full_image_url || 
-                          attraction.media.gallery[selectedImageIndex]?.image_url}
-                  type="general"
-                  width={width - 40}
-                  height={300}
-                  style={styles.modalImage}
-                />
-                
-                {attraction.media.gallery[selectedImageIndex]?.title && (
-                  <Text style={styles.imageModalTitle}>
-                    {attraction.media.gallery[selectedImageIndex].title}
-                  </Text>
-                )}
-                
-                <Text style={styles.imageCounter}>
-                  {selectedImageIndex + 1} of {attraction.media.gallery.length}
-                </Text>
-                
-                {attraction.media.gallery.length > 1 && (
-                  <View style={styles.imageNavigationContainer}>
-                    <TouchableOpacity 
-                      style={[styles.imageNavButton, selectedImageIndex === 0 && styles.disabledButton]}
-                      onPress={() => selectedImageIndex > 0 && setSelectedImageIndex(selectedImageIndex - 1)}
-                      disabled={selectedImageIndex === 0}
-                    >
-                      <Ionicons name="chevron-back" size={24} color={selectedImageIndex === 0 ? "#666" : "white"} />
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity 
-                      style={[styles.imageNavButton, selectedImageIndex === (attraction.media?.gallery?.length || 0) - 1 && styles.disabledButton]}
-                      onPress={() => selectedImageIndex < (attraction.media?.gallery?.length || 0) - 1 && setSelectedImageIndex(selectedImageIndex + 1)}
-                      disabled={selectedImageIndex === (attraction.media?.gallery?.length || 0) - 1}
-                    >
-                      <Ionicons name="chevron-forward" size={24} color={selectedImageIndex === (attraction.media?.gallery?.length || 0) - 1 ? "#666" : "white"} />
-                    </TouchableOpacity>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <View style={styles.imageModalOverlay}>
+            <View style={styles.imageModalContainer}>
+              
+              {attraction?.media?.gallery && attraction.media.gallery.length > 0 && (
+                <View style={styles.imageModalContent}>
+                  <TouchableOpacity 
+                    style={styles.imageModalCloseButton}
+                    onPress={() => setShowImageModal(false)}
+                  >
+                    <Ionicons name="close" size={24} color="white" />
+                  </TouchableOpacity>
+                  
+                  <PanGestureHandler onHandlerStateChange={handleImageSwipe}>
+                    <View style={styles.swipeContainer}>
+                      <SmartImage
+                        source={attraction.media.gallery[selectedImageIndex]?.full_image_url || 
+                                attraction.media.gallery[selectedImageIndex]?.image_url}
+                        type="general"
+                        width={width - 40}
+                        height={300}
+                        style={styles.modalImage}
+                      />
+                    </View>
+                  </PanGestureHandler>
+                  
+                  {attraction.media.gallery[selectedImageIndex]?.title && (
+                    <Text style={styles.imageModalTitle}>
+                      {attraction.media.gallery[selectedImageIndex].title}
+                    </Text>
+                  )}
+                  
+                  <View style={styles.imageCounterContainer}>
+                    <Text style={styles.imageCounter}>
+                      {selectedImageIndex + 1} of {attraction.media.gallery.length}
+                    </Text>
                   </View>
-                )}
-              </View>
-            )}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
       <RecordVisitModal
@@ -1258,7 +1267,7 @@ const styles = StyleSheet.create({
   // Image Modal Styles
   imageModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1268,54 +1277,66 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  imageModalCloseButton: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    zIndex: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   imageModalContent: {
     alignItems: 'center',
     paddingHorizontal: 20,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  imageModalCloseButton: {
+    position: 'absolute',
+    top: -10,
+    right: 10,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   modalImage: {
-    borderRadius: 12,
+    borderRadius: 16,
   },
   imageModalTitle: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginTop: 16,
+    marginTop: 20,
     textAlign: 'center',
+    paddingHorizontal: 20,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  imageCounterContainer: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
   },
   imageCounter: {
     color: 'white',
     fontSize: 14,
-    marginTop: 8,
-    opacity: 0.8,
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  imageNavigationContainer: {
-    flexDirection: 'row',
-    marginTop: 20,
-    gap: 40,
-  },
-  imageNavButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  disabledButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
+
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
