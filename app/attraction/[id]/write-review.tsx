@@ -7,6 +7,8 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -16,8 +18,8 @@ import {
 } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useToastGlobal } from '../../../contexts/ToastContext';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
-import { useToast } from '../../../hooks/useToast';
 import { getAttractionDetails, isAuthenticated, submitAttractionReview } from '../../../services/api';
 import { AttractionDetailResponse, AttractionReviewSubmissionRequest } from '../../../types/api';
 
@@ -28,7 +30,7 @@ export default function WriteReviewScreen() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError } = useToastGlobal();
   const { showAlert, hideAlert } = useCustomAlert();
 
   const [attraction, setAttraction] = useState<AttractionDetailResponse | null>(null);
@@ -163,17 +165,19 @@ export default function WriteReviewScreen() {
       const response = await submitAttractionReview(parseInt(id!), reviewData);
 
       if (response.success) {
-        showSuccess('Review submitted successfully! Thank you for sharing your experience.');
+        showSuccess(response.message || 'Review submitted successfully! Thank you for sharing your experience.');
         
         // Navigate back after a short delay to allow user to see the success message
         setTimeout(() => {
           router.back();
         }, 2000);
       } else {
+        const errorMsg = response.message || 'Failed to submit your review. Please try again.';
+        showError(errorMsg);
         showAlert({
           type: 'error',
           title: 'Submission Failed',
-          message: response.message || 'Failed to submit your review. Please try again.',
+          message: errorMsg,
           buttons: [{ text: 'OK', onPress: hideAlert }]
         });
       }
@@ -214,7 +218,11 @@ export default function WriteReviewScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
       <StatusBar style="light" backgroundColor="transparent" translucent={true} />
       
       {/* Modern Header with Gradient */}
@@ -284,6 +292,7 @@ export default function WriteReviewScreen() {
               value={title}
               onChangeText={setTitle}
               maxLength={100}
+              returnKeyType="next"
             />
           </View>
 
@@ -300,6 +309,8 @@ export default function WriteReviewScreen() {
               numberOfLines={6}
               textAlignVertical="top"
               maxLength={1000}
+              returnKeyType="done"
+              blurOnSubmit={true}
             />
             <Text style={[styles.charCount, { color: colors.icon }]}>
               {comment.length}/1000 characters
@@ -349,6 +360,7 @@ export default function WriteReviewScreen() {
                 placeholderTextColor={colors.icon}
                 value={visitDate}
                 onChangeText={setVisitDate}
+                returnKeyType="next"
               />
             </View>
 
@@ -361,6 +373,7 @@ export default function WriteReviewScreen() {
                 value={durationHours}
                 onChangeText={setDurationHours}
                 keyboardType="numeric"
+                returnKeyType="next"
               />
             </View>
 
@@ -373,6 +386,8 @@ export default function WriteReviewScreen() {
                 value={companions}
                 onChangeText={setCompanions}
                 keyboardType="numeric"
+                returnKeyType="done"
+                blurOnSubmit={true}
               />
             </View>
           </View>
@@ -415,7 +430,7 @@ export default function WriteReviewScreen() {
 
           <View style={{ height: 30 }} />
         </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

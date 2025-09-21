@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useToastGlobal } from '../../../contexts/ToastContext';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
-import { useToast } from '../../../hooks/useToast';
 import {
     getAttractionDetails,
     getAttractionReviews,
@@ -33,7 +33,7 @@ export default function AllReviewsScreen() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError } = useToastGlobal();
   const { showAlert, hideAlert } = useCustomAlert();
 
   const [attraction, setAttraction] = useState<AttractionDetailResponse | null>(null);
@@ -60,7 +60,14 @@ export default function AllReviewsScreen() {
     try {
       const reviewsData = await getAttractionReviews(parseInt(id));
       if (reviewsData && reviewsData.data && reviewsData.data.data) {
-        setReviews(reviewsData.data.data);
+        // Filter out any invalid review objects
+        const validReviews = reviewsData.data.data.filter((review: any) => 
+          review && 
+          typeof review === 'object' && 
+          review.id && 
+          review.user
+        );
+        setReviews(validReviews);
       } else {
         console.log('No reviews data received:', reviewsData);
         setReviews([]);
@@ -109,6 +116,14 @@ export default function AllReviewsScreen() {
       return;
     }
 
+    // Find the current review to check existing vote
+    const currentReview = reviews.find(review => review.id === reviewId);
+    if (!currentReview) return;
+
+    // Check if user is clicking the same vote they already made (to remove it)
+    const isRemovingVote = (isHelpful && currentReview.user_vote === 'helpful') || 
+                           (!isHelpful && currentReview.user_vote === 'not_helpful');
+
     setVotingReviewId(reviewId);
     
     try {
@@ -116,56 +131,46 @@ export default function AllReviewsScreen() {
         ? await voteAttractionReviewHelpful(parseInt(id!), reviewId)
         : await voteAttractionReviewNotHelpful(parseInt(id!), reviewId);
       
+      // Check if the API response indicates success
+      if (response.success === false) {
+        // API returned an error (like "You cannot vote on your own review")
+        console.log('Vote failed - API returned success: false');
+        console.log('Showing error toast:', response.message);
+        showError(response.message || 'Failed to vote on review');
+        return;
+      }
+      
       // Update the local review data
       setReviews(prevReviews =>
-        prevReviews.map(review =>
+        prevReviews.filter(review => review && review.id).map(review =>
           review.id === reviewId
             ? {
                 ...review,
-                helpful_votes: response.data.helpful_votes,
-                total_votes: response.data.total_votes,
-                helpful_percentage: response.data.helpful_percentage,
-                user_vote: isHelpful ? 'helpful' : 'not_helpful'
+                helpful_votes: response.data?.helpful_votes || review.helpful_votes || 0,
+                total_votes: response.data?.total_votes || review.total_votes || 0,
+                helpful_percentage: response.data?.helpful_percentage || review.helpful_percentage || 0,
+                // Toggle vote logic: if clicking same vote, remove it; otherwise set new vote
+                user_vote: isRemovingVote ? null : (isHelpful ? 'helpful' : 'not_helpful')
               }
             : review
         )
       );
 
-      // Show success toast
-      showSuccess(isHelpful ? 'Vote added successfully!' : 'Vote updated successfully!');
+      // Show appropriate success message
+      if (isRemovingVote && response.message?.toLowerCase().includes('removed')) {
+        showSuccess(response.message || 'Vote removed successfully!');
+      } else {
+        showSuccess(response.message || 'Vote recorded successfully!');
+      }
       
     } catch (error: any) {
       console.error('Error voting on review:', error);
       
-      // Handle specific HTTP error codes
-      if (error.response?.status === 400) {
-        showAlert({
-          type: 'info',
-          title: 'Cannot Vote',
-          message: error.response?.data?.message || 'You cannot vote on your own review',
-          buttons: [{ text: 'OK', onPress: hideAlert }]
-        });
-      } else if (error.response?.status === 409) {
-        showAlert({
-          type: 'info',
-          title: 'Already Voted',
-          message: error.response?.data?.message || 'You have already voted on this review',
-          buttons: [{ text: 'OK', onPress: hideAlert }]
-        });
-      } else if (error.response?.status === 401) {
-        showAlert({
-          type: 'error',
-          title: 'Authentication Required',
-          message: 'Please sign in again to vote on reviews',
-          buttons: [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Sign In', onPress: () => router.push('/welcome' as any) }
-          ]
-        });
-        setIsUserAuthenticated(false);
-      } else {
-        showError('Failed to vote on review');
-      }
+      // Show error message with actual API response
+      const errorMessage = error.response?.data?.message || 'Failed to vote on review';
+      console.log('Showing error toast:', errorMessage);
+      showError(errorMessage);
+      
     } finally {
       setVotingReviewId(null);
     }
@@ -219,11 +224,11 @@ export default function AllReviewsScreen() {
 
         {reviews.length > 0 ? (
           <View style={styles.reviewsList}>
-            {reviews.map((review) => (
+            {reviews.filter(review => review && typeof review === 'object' && review.id).map((review) => (
               <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.reviewHeader}>
                   <View style={styles.reviewUserInfo}>
-                    <Text style={[styles.reviewUserName, { color: colors.text }]}>{review.user.name}</Text>
+                    <Text style={[styles.reviewUserName, { color: colors.text }]}>{review.user?.name || 'Anonymous'}</Text>
                     <View style={styles.reviewRating}>
                       {[...Array(5)].map((_, i) => {
                         const rating = review.rating ? parseFloat(review.rating.toString()) : 0;
@@ -245,12 +250,12 @@ export default function AllReviewsScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.reviewTime, { color: colors.icon }]}>{review.time_ago}</Text>
+                  <Text style={[styles.reviewTime, { color: colors.icon }]}>{review.time_ago || ''}</Text>
                 </View>
 
                 {/* Popular Review Badge */}
-                {review.helpful_votes > 0 && review.total_votes > 0 && 
-                 (review.helpful_votes / review.total_votes) >= 0.75 && (
+                {(review.helpful_votes || 0) > 0 && (review.total_votes || 0) > 0 && 
+                 ((review.helpful_votes || 0) / (review.total_votes || 0)) >= 0.75 && (
                   <View style={[styles.popularBadge, { backgroundColor: colors.tint + '20', borderColor: colors.tint }]}>
                     <Ionicons name="trophy" size={12} color={colors.tint} />
                     <Text style={[styles.popularBadgeText, { color: colors.tint }]}>Popular Review</Text>
@@ -275,32 +280,50 @@ export default function AllReviewsScreen() {
                 
                 <View style={styles.reviewActions}>
                   <TouchableOpacity
-                    style={[styles.reviewVoteButton, { opacity: votingReviewId === review.id ? 0.6 : 1 }]}
+                    style={[
+                      styles.reviewVoteButton, 
+                      { 
+                        opacity: votingReviewId === review.id ? 0.6 : 1,
+                        backgroundColor: review.user_vote === 'helpful' ? colors.tint + '15' : 'transparent'
+                      }
+                    ]}
                     onPress={() => handleReviewVote(review.id, true)}
-                    disabled={review.user_vote !== null || votingReviewId === review.id}
+                    disabled={votingReviewId === review.id}
                   >
                     <Ionicons 
                       name={votingReviewId === review.id ? "hourglass-outline" : "thumbs-up"}
                       size={16} 
                       color={review.user_vote === 'helpful' ? colors.tint : colors.icon} 
                     />
-                    <Text style={[styles.reviewVoteText, { color: colors.icon }]}>
-                      {votingReviewId === review.id ? 'Voting...' : `Helpful (${review.helpful_votes})`}
+                    <Text style={[
+                      styles.reviewVoteText, 
+                      { color: review.user_vote === 'helpful' ? colors.tint : colors.icon }
+                    ]}>
+                      {votingReviewId === review.id ? 'Voting...' : `Helpful (${review.helpful_votes || 0})`}
                     </Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    style={[styles.reviewVoteButton, { opacity: votingReviewId === review.id ? 0.6 : 1 }]}
+                    style={[
+                      styles.reviewVoteButton, 
+                      { 
+                        opacity: votingReviewId === review.id ? 0.6 : 1,
+                        backgroundColor: review.user_vote === 'not_helpful' ? colors.tint + '15' : 'transparent'
+                      }
+                    ]}
                     onPress={() => handleReviewVote(review.id, false)}
-                    disabled={review.user_vote !== null || votingReviewId === review.id}
+                    disabled={votingReviewId === review.id}
                   >
                     <Ionicons 
                       name={votingReviewId === review.id ? "hourglass-outline" : "thumbs-down"}
                       size={16} 
                       color={review.user_vote === 'not_helpful' ? colors.tint : colors.icon} 
                     />
-                    <Text style={[styles.reviewVoteText, { color: colors.icon }]}>
-                      {votingReviewId === review.id ? 'Voting...' : `Not Helpful (${review.total_votes - review.helpful_votes})`}
+                    <Text style={[
+                      styles.reviewVoteText, 
+                      { color: review.user_vote === 'not_helpful' ? colors.tint : colors.icon }
+                    ]}>
+                      {votingReviewId === review.id ? 'Voting...' : `Not Helpful (${Math.max(0, (review.total_votes || 0) - (review.helpful_votes || 0))})`}
                     </Text>
                   </TouchableOpacity>
                 </View>
