@@ -1608,10 +1608,17 @@ export default function HomeScreen() {
       router.push(`/attraction/${item.id}` as any);
     };
 
-    // Add tracking if index is provided
-    const onPressWithTracking = typeof index === 'number' 
-      ? addTrackingToPress(originalOnPress, item.id, index, 'featured_attractions')
-      : originalOnPress;
+    // Use attraction-specific tracking instead of business tracking
+    const onPressWithTracking = () => {
+      // Log attraction click tracking (since we don't have a full attraction tracking service, just log it)
+      console.log('📊 Featured attraction clicked:', {
+        attractionId: item.id,
+        position: (index || 0) + 1,
+        section: 'featured_attractions',
+        element: 'attraction_card',
+      });
+      originalOnPress();
+    };
 
     // Format distance for display
     const formatDistance = (distance: number) => {
