@@ -1,26 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  Dimensions,
-  Image,
-} from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { AttractionListSkeleton } from '@/components/SkeletonLoader';
+import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/contexts/LocationContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getFeaturedAttractions } from '@/services/api';
+import { handleApiError } from '@/services/errorHandler';
+import { FeaturedAttraction, FeaturedAttractionsResponse } from '@/types/api';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { getFeaturedAttractions } from '@/services/api';
-import { FeaturedAttraction, FeaturedAttractionsResponse } from '@/types/api';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useLocation } from '@/contexts/LocationContext';
-import { Colors } from '@/constants/Colors';
-import { AttractionListSkeleton } from '@/components/SkeletonLoader';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { handleApiError } from '@/services/errorHandler';
+import React, { useCallback, useState } from 'react';
+import {
+    Dimensions,
+    FlatList,
+    Image,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const { width } = Dimensions.get('window');
 const cardWidth = width - 32; // Account for padding

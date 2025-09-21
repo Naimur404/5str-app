@@ -1,7 +1,5 @@
 import React from 'react';
 import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
-import { useTheme } from '@/contexts/ThemeContext';
-import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get('window');
 
