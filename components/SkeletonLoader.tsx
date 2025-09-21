@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
+import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -3104,3 +3104,351 @@ const aiRecommendationsStyles = StyleSheet.create({
     gap: 12,
   },
 });
+
+// All Reviews Page Skeleton - tailored specifically for reviews list page
+export const AllReviewsSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    {/* Header Section Skeleton */}
+    <View style={{ 
+      height: 120, 
+      paddingTop: 50, 
+      paddingBottom: 16, 
+      paddingHorizontal: 16,
+      backgroundColor: colors.headerGradientStart 
+    }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Back button */}
+        <SkeletonBox 
+          width={40} 
+          height={40} 
+          borderRadius={20}
+          backgroundColor="rgba(255,255,255,0.2)" 
+        />
+        
+        {/* Header text */}
+        <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+          <SkeletonBox 
+            width={120} 
+            height={20} 
+            borderRadius={10}
+            backgroundColor="rgba(255,255,255,0.4)" 
+          />
+          <SkeletonBox 
+            width={80} 
+            height={14} 
+            borderRadius={7}
+            backgroundColor="rgba(255,255,255,0.3)" 
+          />
+        </View>
+        
+        {/* Write review button */}
+        <SkeletonBox 
+          width={40} 
+          height={40} 
+          borderRadius={20}
+          backgroundColor="rgba(255,255,255,0.2)" 
+        />
+      </View>
+    </View>
+
+    {/* Content Section Skeleton */}
+    <View style={{ padding: 16, gap: 16 }}>
+      {/* Reviews List Skeleton */}
+      {[...Array(5)].map((_, index) => (
+        <View key={index} style={[
+          { 
+            backgroundColor: colors.card, 
+            borderColor: colors.border, 
+            borderWidth: 1,
+            borderRadius: 16, 
+            padding: 16, 
+            gap: 12 
+          }
+        ]}>
+          {/* Review Header */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flex: 1, gap: 6 }}>
+              {/* User name */}
+              <SkeletonBox 
+                width={120 + (index * 20)} 
+                height={16} 
+                borderRadius={8}
+                backgroundColor={colors.icon + '20'} 
+              />
+              
+              {/* Rating stars */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                {[...Array(5)].map((_, starIndex) => (
+                  <SkeletonBox 
+                    key={starIndex}
+                    width={14} 
+                    height={14} 
+                    borderRadius={7}
+                    backgroundColor="#FFD700" 
+                  />
+                ))}
+                <SkeletonBox 
+                  width={30} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + '15'} 
+                />
+              </View>
+            </View>
+            
+            {/* Time ago */}
+            <SkeletonBox 
+              width={60} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={colors.icon + '15'} 
+            />
+          </View>
+          
+          {/* Popular badge (occasionally) */}
+          {index % 3 === 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start' }}>
+              <SkeletonBox 
+                width={12} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.tint} 
+              />
+              <SkeletonBox 
+                width={90} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.tint + '30'} 
+              />
+            </View>
+          )}
+          
+          {/* Review title (occasionally) */}
+          {index % 2 === 0 && (
+            <SkeletonBox 
+              width="85%" 
+              height={16} 
+              borderRadius={8}
+              backgroundColor={colors.icon + '20'} 
+            />
+          )}
+          
+          {/* Review comment */}
+          <View style={{ gap: 6 }}>
+            <SkeletonBox 
+              width="100%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + '15'} 
+            />
+            <SkeletonBox 
+              width="95%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + '15'} 
+            />
+            <SkeletonBox 
+              width="80%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + '15'} 
+            />
+          </View>
+          
+          {/* Experience tags (occasionally) */}
+          {index % 3 !== 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+              {[...Array(2 + (index % 2))].map((_, tagIndex) => (
+                <SkeletonBox 
+                  key={tagIndex}
+                  width={60 + (tagIndex * 15)} 
+                  height={20} 
+                  borderRadius={10}
+                  backgroundColor={colors.background} 
+                />
+              ))}
+            </View>
+          )}
+          
+          {/* Vote buttons */}
+          <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <SkeletonBox 
+                width={16} 
+                height={16} 
+                borderRadius={8}
+                backgroundColor={colors.icon + '20'} 
+              />
+              <SkeletonBox 
+                width={20} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <SkeletonBox 
+                width={16} 
+                height={16} 
+                borderRadius={8}
+                backgroundColor={colors.icon + '20'} 
+              />
+              <SkeletonBox 
+                width={20} 
+                height={12} 
+                borderRadius={6}
+                backgroundColor={colors.icon + '15'} 
+              />
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+);
+
+
+// Simple Reviews Skeleton - for simpler reviews pages with basic header
+export const SimpleReviewsSkeleton = ({ colors }: SkeletonProps) => (
+  <View style={[styles.skeletonContainer, { backgroundColor: colors.background }]}>
+    {/* Simple Header Section Skeleton */}
+    <View style={{ 
+      flexDirection: "row", 
+      alignItems: "center", 
+      justifyContent: "space-between", 
+      paddingHorizontal: 16, 
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border + "40"
+    }}>
+      {/* Back button */}
+      <SkeletonBox 
+        width={24} 
+        height={24} 
+        borderRadius={12}
+        backgroundColor={colors.icon + "20"} 
+      />
+      
+      {/* Title */}
+      <SkeletonBox 
+        width={120} 
+        height={20} 
+        borderRadius={10}
+        backgroundColor={colors.icon + "20"} 
+      />
+      
+      {/* Add review button */}
+      <SkeletonBox 
+        width={24} 
+        height={24} 
+        borderRadius={12}
+        backgroundColor={colors.tint + "30"} 
+      />
+    </View>
+
+    {/* Content Section Skeleton */}
+    <View style={{ padding: 16, gap: 12 }}>
+      {/* Reviews List Skeleton */}
+      {[...Array(6)].map((_, index) => (
+        <View key={index} style={[
+          { 
+            backgroundColor: colors.card, 
+            borderColor: colors.border, 
+            borderWidth: 1,
+            borderRadius: 12, 
+            padding: 16, 
+            gap: 10 
+          }
+        ]}>
+          {/* Review Header */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              {/* User name */}
+              <SkeletonBox 
+                width={100 + (index * 15)} 
+                height={16} 
+                borderRadius={8}
+                backgroundColor={colors.icon + "20"} 
+              />
+              
+              {/* Rating stars */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                {[...Array(5)].map((_, starIndex) => (
+                  <SkeletonBox 
+                    key={starIndex}
+                    width={12} 
+                    height={12} 
+                    borderRadius={6}
+                    backgroundColor="#FFD700" 
+                  />
+                ))}
+                <SkeletonBox 
+                  width={25} 
+                  height={12} 
+                  borderRadius={6}
+                  backgroundColor={colors.icon + "15"} 
+                />
+              </View>
+            </View>
+            
+            {/* Time ago */}
+            <SkeletonBox 
+              width={50} 
+              height={12} 
+              borderRadius={6}
+              backgroundColor={colors.icon + "15"} 
+            />
+          </View>
+          
+          {/* Review comment */}
+          <View style={{ gap: 4 }}>
+            <SkeletonBox 
+              width="100%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + "15"} 
+            />
+            <SkeletonBox 
+              width="90%" 
+              height={14} 
+              borderRadius={7}
+              backgroundColor={colors.icon + "15"} 
+            />
+          </View>
+          
+          {/* Vote buttons */}
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + "20"} 
+              />
+              <SkeletonBox 
+                width={15} 
+                height={10} 
+                borderRadius={5}
+                backgroundColor={colors.icon + "15"} 
+              />
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <SkeletonBox 
+                width={14} 
+                height={14} 
+                borderRadius={7}
+                backgroundColor={colors.icon + "20"} 
+              />
+              <SkeletonBox 
+                width={15} 
+                height={10} 
+                borderRadius={5}
+                backgroundColor={colors.icon + "15"} 
+              />
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  </View>
+);

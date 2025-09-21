@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { AllReviewsSkeleton } from '../../../components/SkeletonLoader';
 import { Colors } from '../../../constants/Colors';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useToastGlobal } from '../../../contexts/ToastContext';
@@ -186,13 +187,8 @@ export default function AllReviewsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>
-            Loading reviews...
-          </Text>
-        </View>
+        <StatusBar style="light" backgroundColor="transparent" translucent={true} />
+        <AllReviewsSkeleton colors={colors} />
       </View>
     );
   }

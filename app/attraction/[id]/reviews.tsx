@@ -1,4 +1,5 @@
 import CustomAlert from '@/components/CustomAlert';
+import { SimpleReviewsSkeleton } from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
@@ -186,17 +187,7 @@ export default function AttractionReviewsScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} backgroundColor={colors.background} translucent={false} />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Reviews</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.icon }]}>Loading reviews...</Text>
-        </View>
+        <SimpleReviewsSkeleton colors={colors} />
       </SafeAreaView>
     );
   }
