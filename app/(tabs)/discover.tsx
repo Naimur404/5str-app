@@ -1,28 +1,28 @@
+import { DiscoveryPageSkeleton } from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getCategories, getTodayTrending } from '@/services/api';
 import { Category, TrendingBusiness, TrendingOffering } from '@/types/api';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { DiscoveryPageSkeleton } from '@/components/SkeletonLoader';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
+    Dimensions,
     FlatList,
     Image,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-    ActivityIndicator,
-    RefreshControl,
-    Alert,
-    Dimensions
+    View
 } from 'react-native';
-import { useLocation } from '@/contexts/LocationContext';
 
 const { width } = Dimensions.get('window');
 

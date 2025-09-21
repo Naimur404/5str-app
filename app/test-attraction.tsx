@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
 import { AttractionCard } from '@/components/AttractionCard';
-import { FeaturedAttraction } from '@/types/api';
 import { Colors } from '@/constants/Colors';
+import { FeaturedAttraction } from '@/types/api';
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 // Mock attraction data for testing
 const mockAttraction: FeaturedAttraction = {

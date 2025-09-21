@@ -1,13 +1,13 @@
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  ActivityIndicator,
+    ActivityIndicator,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
-import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface AttractionInteractionButtonProps {
   type: 'like' | 'bookmark' | 'share' | 'wishlist';

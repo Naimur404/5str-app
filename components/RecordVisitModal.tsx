@@ -1,19 +1,19 @@
+import { useAttractionInteraction } from '@/hooks/useAttractionInteraction';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { VisitCompanionType } from '@/types/api';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  Modal,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Alert,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { ThemedView } from './ThemedView';
 import { ThemedText } from './ThemedText';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useAttractionInteraction } from '@/hooks/useAttractionInteraction';
-import { VisitCompanionType } from '@/types/api';
+import { ThemedView } from './ThemedView';
 
 interface RecordVisitModalProps {
   visible: boolean;

@@ -1,19 +1,16 @@
-import React from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { ThemedText } from './ThemedText';
-import { AttractionInteractionButton } from './AttractionInteractionButton';
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useAttractionInteraction } from '@/hooks/useAttractionInteraction';
 import { useAttractionTracking } from '@/hooks/useAttractionTracking';
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useTheme } from '@/contexts/ThemeContext';
-import { Colors } from '@/constants/Colors';
-import { Share } from 'react-native';
+import React from 'react';
+import {
+    ActivityIndicator,
+    Share,
+    StyleSheet,
+    View
+} from 'react-native';
+import { AttractionInteractionButton } from './AttractionInteractionButton';
+import { ThemedText } from './ThemedText';
 
 interface AttractionInteractionPanelProps {
   attractionId: number;

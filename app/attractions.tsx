@@ -1,21 +1,21 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  StyleSheet,
-  View,
-  Text,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { AttractionCard } from '@/components/AttractionCard';
+import { LocationHeader } from '@/components/LocationHeader';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
-import { LocationHeader } from '@/components/LocationHeader';
-import { AttractionCard } from '@/components/AttractionCard';
 import { useAttractionListTracking } from '@/hooks/useAttractionTracking';
 import { useCoordinates } from '@/hooks/useCoordinates';
 import { FeaturedAttraction } from '@/types/api';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    FlatList,
+    RefreshControl,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
 
 export default function AttractionsScreen() {
   const router = useRouter();

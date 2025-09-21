@@ -1,7 +1,7 @@
-import CustomAlert from '@/components/CustomAlert';
-import SmartImage from '@/components/SmartImage';
 import { AttractionInteractionPanel } from '@/components/AttractionInteractionPanel';
+import CustomAlert from '@/components/CustomAlert';
 import { RecordVisitModal } from '@/components/RecordVisitModal';
+import SmartImage from '@/components/SmartImage';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';

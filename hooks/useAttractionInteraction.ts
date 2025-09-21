@@ -1,22 +1,20 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  AttractionInteractionRequest, 
-  AttractionInteractionToggleRequest,
-  AttractionInteractionRemoveRequest,
-  AttractionInteractionType,
-  AttractionInteractionPriority,
-  VisitCompanionType
-} from '@/types/api';
-import { 
-  storeAttractionInteraction,
-  toggleAttractionInteraction,
-  removeAttractionInteraction,
-  getUserLikedAttractions,
-  getUserBookmarkedAttractions,
-  getUserVisitedAttractions,
-  getAttractionInteractions,
-  getUserAttractionInteractions 
+import {
+    getUserAttractionInteractions,
+    getUserBookmarkedAttractions,
+    getUserLikedAttractions,
+    getUserVisitedAttractions,
+    removeAttractionInteraction,
+    storeAttractionInteraction,
+    toggleAttractionInteraction
 } from '@/services/api';
+import {
+    AttractionInteractionPriority,
+    AttractionInteractionRequest,
+    AttractionInteractionToggleRequest,
+    AttractionInteractionType,
+    VisitCompanionType
+} from '@/types/api';
+import React, { useCallback, useState } from 'react';
 import { useToast } from './useToast';
 
 interface AttractionInteractionState {

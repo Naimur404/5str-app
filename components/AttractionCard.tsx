@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
-import {
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  Image,
-  Dimensions,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { ThemedText } from './ThemedText';
-import { ThemedView } from './ThemedView';
-import { AttractionInteractionButton } from './AttractionInteractionButton';
-import { RecordVisitModal } from './RecordVisitModal';
 import { useAttractionInteraction } from '@/hooks/useAttractionInteraction';
 import { useAttractionTracking } from '@/hooks/useAttractionTracking';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { FeaturedAttraction } from '@/types/api';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    Dimensions,
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { AttractionInteractionButton } from './AttractionInteractionButton';
+import { RecordVisitModal } from './RecordVisitModal';
+import { ThemedText } from './ThemedText';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 cards per row with padding
