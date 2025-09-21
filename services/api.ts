@@ -2,6 +2,11 @@ import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AddBusinessToCollectionRequest,
+  AttractionDetailResponse,
+  AttractionReviewsResponse,
+  AttractionReviewSubmissionRequest,
+  AttractionReviewSubmissionResponse,
+  AttractionReviewVoteResponse,
   CategoriesResponse,
   CollectionActionResponse,
   CollectionItemResponse,
@@ -684,26 +689,36 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
         };
       }
       
-      // For other endpoints, treat 401 as token expired
-      console.log('🔐 401 Unauthorized - Token expired, redirecting to login');
-      
-      // Clear stored authentication data
-      await AsyncStorage.removeItem('auth_token');
-      await AsyncStorage.removeItem('user_data');
-      
-      // Import router and redirect to login
-      const router = require('expo-router').router;
-      if (router) {
-        router.replace('/auth/login');
+      // Only redirect to login for protected endpoints (requireAuth = true)
+      if (requireAuth) {
+        console.log('🔐 401 Unauthorized on protected endpoint - Token expired, redirecting to login');
+        
+        // Clear stored authentication data
+        await AsyncStorage.removeItem('auth_token');
+        await AsyncStorage.removeItem('user_data');
+        
+        // Import router and redirect to login
+        const router = require('expo-router').router;
+        if (router) {
+          router.replace('/auth/login');
+        }
+        
+        // Return response indicating redirect to login
+        return {
+          success: false,
+          message: 'Session expired. Please log in again.',
+          status: response.status,
+          redirectToLogin: true
+        };
+      } else {
+        // For public endpoints with 401, just return the error without redirecting
+        console.log('🔐 401 on public endpoint - returning error without redirect');
+        return {
+          success: false,
+          message: responseData?.message || 'Authentication error',
+          status: response.status
+        };
       }
-      
-      // Return response indicating redirect to login
-      return {
-        success: false,
-        message: 'Session expired. Please log in again.',
-        status: response.status,
-        redirectToLogin: true
-      };
     }
     
     if (response.status === 422) {
@@ -1787,4 +1802,85 @@ export const getNationalBusinesses = async (
   
   // Send token if available for analytics and user-specific data
   return makeApiCall(url, {}, false);
+};
+
+// ==========================================
+// ATTRACTION APIS
+// ==========================================
+
+/**
+ * Get attraction details by ID
+ */
+export const getAttractionDetails = async (attractionId: number): Promise<AttractionDetailResponse> => {
+  const endpoint = `${API_CONFIG.ENDPOINTS.ATTRACTIONS}/${attractionId}`;
+  return makeApiCall(endpoint, {}, false); // Public endpoint, works for both logged-in and guest users
+};
+
+/**
+ * Get reviews for an attraction
+ */
+export const getAttractionReviews = async (
+  attractionId: number,
+  page: number = 1,
+  perPage: number = 10,
+  sortBy: 'newest' | 'oldest' | 'rating_high' | 'rating_low' | 'helpful' = 'helpful',
+  rating?: number,
+  minRating?: number,
+  featured?: boolean,
+  verified?: boolean,
+  experienceTag?: string
+): Promise<AttractionReviewsResponse> => {
+  let endpoint = `${API_CONFIG.ENDPOINTS.ATTRACTION_REVIEWS}/${attractionId}/reviews`;
+  endpoint += `?page=${page}&per_page=${perPage}&sort_by=${sortBy}`;
+  
+  if (rating) endpoint += `&rating=${rating}`;
+  if (minRating) endpoint += `&min_rating=${minRating}`;
+  if (featured !== undefined) endpoint += `&featured=${featured}`;
+  if (verified !== undefined) endpoint += `&verified=${verified}`;
+  if (experienceTag) endpoint += `&experience_tag=${encodeURIComponent(experienceTag)}`;
+  
+  return makeApiCall(endpoint, {}, false); // Public endpoint
+};
+
+/**
+ * Submit a review for an attraction (requires authentication)
+ */
+export const submitAttractionReview = async (
+  attractionId: number,
+  reviewData: AttractionReviewSubmissionRequest
+): Promise<AttractionReviewSubmissionResponse> => {
+  const endpoint = `${API_CONFIG.ENDPOINTS.ATTRACTION_REVIEWS}/${attractionId}/reviews`;
+  
+  return makeApiCall(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(reviewData),
+  }, true); // Requires authentication
+};
+
+/**
+ * Vote a review as helpful (requires authentication)
+ */
+export const voteAttractionReviewHelpful = async (
+  attractionId: number,
+  reviewId: number
+): Promise<AttractionReviewVoteResponse> => {
+  const endpoint = `${API_CONFIG.ENDPOINTS.ATTRACTION_REVIEWS}/${attractionId}/reviews/${reviewId}/helpful`;
+  
+  return makeApiCall(endpoint, {
+    method: 'POST',
+  }, true); // Requires authentication
+};
+
+/**
+ * Vote a review as not helpful (requires authentication)
+ */
+export const voteAttractionReviewNotHelpful = async (
+  attractionId: number,
+  reviewId: number
+): Promise<AttractionReviewVoteResponse> => {
+  const endpoint = `${API_CONFIG.ENDPOINTS.ATTRACTION_REVIEWS}/${attractionId}/reviews/${reviewId}/not-helpful`;
+  
+  return makeApiCall(endpoint, {
+    method: 'POST',
+  }, true); // Requires authentication
 };

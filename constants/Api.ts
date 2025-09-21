@@ -44,6 +44,9 @@ export const API_CONFIG = {
     TRACK_INTERACTION: '/api/v1/interactions/track',
     TRACK_BATCH: '/api/v1/interactions/batch',
     BUSINESS_NATIONAL: '/api/v1/businesses/national',
+    // Attraction Endpoints
+    ATTRACTIONS: '/api/v1/attractions',
+    ATTRACTION_REVIEWS: '/api/v1/attraction-reviews',
   }
 };
 

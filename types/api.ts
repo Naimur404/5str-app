@@ -149,6 +149,223 @@ export interface FeaturedAttraction {
   recent_reviews_count: number;
 }
 
+// Detailed Attraction types
+export interface AttractionLocation {
+  latitude: number;
+  longitude: number;
+  address: string;
+  city: string;
+  area: string;
+  district: string;
+  country: string;
+}
+
+export interface AttractionPricing {
+  is_free: boolean;
+  entry_fee: string;
+  currency: string;
+}
+
+export interface AttractionSchedule {
+  opening_hours: {
+    [key: string]: {
+      open: string;
+      close: string;
+    };
+  };
+}
+
+export interface AttractionContact {
+  phone: string;
+  email: string;
+  website: string;
+}
+
+export interface AttractionVisitInfo {
+  facilities: string[];
+  best_time_to_visit: {
+    months: string[];
+  };
+  estimated_duration_minutes: number;
+  difficulty_level: string;
+}
+
+export interface AttractionAccessibility {
+  wheelchair_accessible: boolean;
+  parking_available: boolean;
+}
+
+export interface AttractionRatings {
+  overall_rating: string;
+  total_reviews: number;
+}
+
+export interface AttractionEngagement {
+  total_likes: number;
+  total_dislikes: number;
+  total_shares: number;
+  total_views: number;
+}
+
+export interface AttractionGalleryItem {
+  id: number;
+  image_url: string;
+  title: string;
+  description: string;
+  is_cover: boolean;
+  sort_order: number;
+  full_image_url: string;
+  thumbnail_url: string;
+}
+
+export interface AttractionMedia {
+  cover_image_url: string;
+  gallery_count: number;
+  gallery: AttractionGalleryItem[];
+}
+
+export interface AttractionStatusFlags {
+  is_verified: boolean;
+  is_featured: boolean;
+  is_active: boolean;
+  status: string;
+}
+
+export interface AttractionMetaData {
+  tags: string[];
+}
+
+export interface AttractionUserInteractions {
+  user_has_liked: boolean;
+  user_has_bookmarked: boolean;
+  user_has_visited: boolean;
+}
+
+export interface AttractionReviewUser {
+  id: number;
+  name: string;
+  profile_image: string | null;
+  total_points?: number;
+  trust_level: number;
+}
+
+export interface AttractionReview {
+  id: number;
+  attraction_id?: number;
+  user_id?: number;
+  user: AttractionReviewUser;
+  rating: string;
+  title: string;
+  comment: string;
+  visit_date: string;
+  experience_tags: string[];
+  visit_info?: {
+    duration_hours?: number;
+    companions?: number;
+    transportation?: string;
+    weather?: string;
+    crowd_level?: string;
+  };
+  helpful_votes: number;
+  total_votes: number;
+  helpful_percentage: number;
+  is_verified: boolean;
+  is_featured: boolean;
+  is_anonymous: boolean;
+  time_ago: string;
+  is_recent: boolean;
+  user_vote?: string | null;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AttractionImage {
+  id: number;
+  attraction_id: number;
+  image_url: string;
+  image_path: string;
+  title: string;
+  description: string;
+  alt_text: string | null;
+  is_cover: boolean;
+  sort_order: number;
+  image_type: string;
+  meta_data: any;
+  uploaded_by: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  full_image_url: string;
+  thumbnail_url: string;
+  uploader?: any;
+}
+
+export interface AttractionDetail {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  type: string;
+  category: string;
+  subcategory: string;
+  latitude: string;
+  longitude: string;
+  address: string;
+  city: string;
+  area: string;
+  district: string;
+  country: string;
+  is_free: boolean;
+  entry_fee: string;
+  currency: string;
+  opening_hours: string; // JSON string
+  contact_info: string; // JSON string
+  facilities: string; // JSON string array
+  best_time_to_visit: string; // JSON string
+  estimated_duration_minutes: number;
+  difficulty_level: string;
+  accessibility_info: string; // JSON string
+  overall_rating: string;
+  total_reviews: number;
+  total_likes: number;
+  total_dislikes: number;
+  total_shares: number;
+  total_views: number;
+  discovery_score: string;
+  is_verified: boolean;
+  is_featured: boolean;
+  is_active: boolean;
+  status: string;
+  rejection_reason: string | null;
+  created_by: number | null;
+  verified_by: number | null;
+  verified_at: string | null;
+  meta_data: string; // JSON string
+  created_at: string;
+  updated_at: string;
+  google_maps_url: string;
+  cover_image_url: string;
+  gallery_count: number;
+  gallery: AttractionImage[];
+  reviews: AttractionReview[];
+  creator: any | null;
+  verifier: any | null;
+  cover_image: AttractionImage;
+  
+  // Computed/parsed properties (we'll add these in the component)
+  location?: AttractionLocation;
+  pricing?: AttractionPricing;
+  schedule?: AttractionSchedule;
+  contact?: AttractionContact;
+  visit_info?: AttractionVisitInfo;
+  accessibility?: AttractionAccessibility;
+  ratings?: AttractionRatings;
+  engagement?: AttractionEngagement;
+  media?: AttractionMedia;
+  status_flags?: AttractionStatusFlags;
+}
+
 export interface TopNationalBrandSection {
   section_title: string;
   section_type: string;
@@ -343,6 +560,116 @@ export interface FeaturedAttractionsResponse {
       current_page: number;
       total_pages: number;
       has_more: boolean;
+    };
+  };
+}
+
+// Attraction Detail Response
+export interface AttractionDetailResponse {
+  success: boolean;
+  message: string;
+  data: AttractionDetail;
+}
+
+// Review Submission Request
+export interface AttractionReviewSubmissionRequest {
+  rating: number;
+  title?: string;
+  comment: string;
+  visit_date?: string;
+  experience_tags?: string[];
+  visit_info?: {
+    duration_hours?: number;
+    companions?: number;
+    transportation?: string;
+    weather?: string;
+    crowd_level?: string;
+  };
+  is_anonymous?: boolean;
+}
+
+// Review Submission Response
+export interface AttractionReviewSubmissionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    id: number;
+    attraction_id: string;
+    user_id: number;
+    rating: string;
+    title: string;
+    comment: string;
+    visit_date: string;
+    experience_tags: string[];
+    visit_info: {
+      duration_hours?: number;
+      companions?: number;
+      transportation?: string;
+      weather?: string;
+      crowd_level?: string;
+    };
+    is_anonymous: boolean;
+    status: string;
+    helpful_votes: number;
+    total_votes: number;
+    helpful_percentage: number;
+    time_ago: string;
+    is_recent: boolean;
+    is_verified: boolean;
+    is_featured: boolean;
+    created_at: string;
+    updated_at: string;
+    user: AttractionReviewUser;
+    attraction: {
+      id: number;
+      name: string;
+      slug: string;
+      overall_rating: string;
+      total_reviews: number;
+    };
+  };
+}
+
+// Review Vote Response
+export interface AttractionReviewVoteResponse {
+  success: boolean;
+  message: string;
+  data: {
+    helpful_votes: number;
+    total_votes: number;
+    helpful_percentage: number;
+  };
+}
+
+// Reviews List Response
+export interface AttractionReviewsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionReview[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: Array<{
+      url: string | null;
+      label: string;
+      active: boolean;
+    }>;
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+  };
+  meta: {
+    attraction: {
+      id: number;
+      name: string;
+      overall_rating: number;
+      total_reviews: number;
     };
   };
 }
