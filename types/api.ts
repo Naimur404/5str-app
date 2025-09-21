@@ -274,7 +274,18 @@ export interface AttractionReview {
   is_anonymous: boolean;
   time_ago: string;
   is_recent: boolean;
-  user_vote?: string | null;
+  user_vote_status?: {
+    has_voted: boolean;
+    is_upvoted: boolean;
+    is_downvoted: boolean;
+    vote_details: {
+      id: number;
+      review_id: number;
+      user_id: number;
+      is_helpful: boolean;
+      created_at: string;
+    } | null;
+  };
   status?: string;
   created_at?: string;
   updated_at?: string;

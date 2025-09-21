@@ -112,68 +112,66 @@ export default function AttractionReviewsScreen() {
     try {
       setVotingReviewId(reviewId);
       
+      // Find the current review to check existing vote
+      const currentReview = reviews.find(review => review.id === reviewId);
+      if (!currentReview) return;
+
+      // Check if user is clicking the same vote they already made (to remove it)
+      const isRemovingVote = (isHelpful && currentReview.user_vote_status?.is_upvoted) || 
+                             (!isHelpful && currentReview.user_vote_status?.is_downvoted);
+      
       const voteFunction = isHelpful ? voteAttractionReviewHelpful : voteAttractionReviewNotHelpful;
       const response = await voteFunction(parseInt(id as string), reviewId);
       
-      if (response.success) {
-        // Update the review in the local state
-        setReviews(prevReviews =>
-          prevReviews.map(review =>
-            review.id === reviewId
-              ? {
-                  ...review,
-                  helpful_votes: response.data.helpful_votes,
-                  total_votes: response.data.total_votes,
-                  user_vote: isHelpful ? 'helpful' : 'not_helpful'
-                }
-              : review
-          )
-        );
-        
-        showSuccess(isHelpful ? 'Marked as helpful!' : 'Marked as not helpful!');
-        
-        // Log the helpful percentage for popular badge calculation
-        const helpfulPercentage = (response.data.helpful_votes / response.data.total_votes) * 100;
-        console.log(`Review ${reviewId} helpful percentage: ${helpfulPercentage.toFixed(1)}%`);
-      } else {
-        showError('Failed to submit vote');
+      // Check if the API response indicates success
+      if (response.success === false) {
+        // API returned an error (like "You cannot vote on your own review")
+        console.log('Vote failed - API returned success: false');
+        console.log('Showing error toast:', response.message);
+        showError(response.message || 'Failed to vote on review');
+        return;
       }
+      
+      // Update the review in the local state
+      setReviews(prevReviews =>
+        prevReviews.map(review =>
+          review.id === reviewId
+            ? {
+                ...review,
+                helpful_votes: response.data?.helpful_votes || review.helpful_votes || 0,
+                total_votes: response.data?.total_votes || review.total_votes || 0,
+                helpful_percentage: response.data?.helpful_percentage || review.helpful_percentage || 0,
+                // Update vote status using new structure
+                user_vote_status: isRemovingVote 
+                  ? { has_voted: false, is_upvoted: false, is_downvoted: false, vote_details: null }
+                  : { 
+                      has_voted: true, 
+                      is_upvoted: isHelpful, 
+                      is_downvoted: !isHelpful, 
+                      vote_details: null 
+                    }
+              }
+            : review
+        )
+      );
+      
+      // Show appropriate success message
+      if (isRemovingVote && response.message?.toLowerCase().includes('removed')) {
+        showSuccess(response.message || 'Vote removed successfully!');
+      } else {
+        showSuccess(response.message || 'Vote recorded successfully!');
+      }
+      
+      // Log the helpful percentage for popular badge calculation
+      const helpfulPercentage = ((response.data?.helpful_votes || 0) / (response.data?.total_votes || 1)) * 100;
+      console.log(`Review ${reviewId} helpful percentage: ${helpfulPercentage.toFixed(1)}%`);
     } catch (error: any) {
       console.error('Error voting on review:', error);
       
-      // Handle specific HTTP error codes
-      if (error.response?.status === 400) {
-        // Own review vote error
-        showAlert({
-          type: 'info',
-          title: 'Cannot Vote',
-          message: error.response?.data?.message || 'You cannot vote on your own review',
-          buttons: [{ text: 'OK', onPress: hideAlert }]
-        });
-      } else if (error.response?.status === 409) {
-        // Already voted error
-        showAlert({
-          type: 'info',
-          title: 'Already Voted',
-          message: error.response?.data?.message || 'You have already voted on this review',
-          buttons: [{ text: 'OK', onPress: hideAlert }]
-        });
-      } else if (error.response?.status === 401) {
-        // Authentication error
-        showAlert({
-          type: 'error',
-          title: 'Authentication Required',
-          message: 'Please sign in again to vote on reviews',
-          buttons: [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Sign In', onPress: () => router.push('/welcome' as any) }
-          ]
-        });
-        setIsUserAuthenticated(false);
-      } else {
-        // Generic network error
-        showError(error?.message || 'Network error occurred while voting');
-      }
+      // Show error message with actual API response
+      const errorMessage = error.response?.data?.message || 'Failed to vote on review';
+      console.log('Showing error toast:', errorMessage);
+      showError(errorMessage);
     } finally {
       setVotingReviewId(null);
     }
@@ -251,8 +249,8 @@ export default function AttractionReviewsScreen() {
               </View>
               
               {/* Popular Review Badge */}
-              {review.helpful_votes > 0 && review.total_votes > 0 && 
-               (review.helpful_votes / review.total_votes) >= 0.75 && (
+              {(review.helpful_votes || 0) > 0 && (review.total_votes || 0) > 0 && 
+               ((review.helpful_votes || 0) / (review.total_votes || 0)) >= 0.75 && (
                 <View style={[styles.popularBadge, { backgroundColor: colors.tint + '20', borderColor: colors.tint }]}>
                   <Ionicons name="trophy" size={12} color={colors.tint} />
                   <Text style={[styles.popularBadgeText, { color: colors.tint }]}>Popular Review</Text>
@@ -277,32 +275,50 @@ export default function AttractionReviewsScreen() {
               
               <View style={styles.reviewActions}>
                 <TouchableOpacity
-                  style={[styles.reviewVoteButton, { opacity: votingReviewId === review.id ? 0.6 : 1 }]}
+                  style={[
+                    styles.reviewVoteButton, 
+                    { 
+                      opacity: votingReviewId === review.id ? 0.6 : 1,
+                      backgroundColor: review.user_vote_status?.is_upvoted ? colors.tint + '15' : 'transparent'
+                    }
+                  ]}
                   onPress={() => handleReviewVote(review.id, true)}
-                  disabled={review.user_vote !== null || votingReviewId === review.id}
+                  disabled={votingReviewId === review.id}
                 >
                   <Ionicons 
                     name={votingReviewId === review.id ? "hourglass-outline" : "thumbs-up"}
                     size={16} 
-                    color={review.user_vote === 'helpful' ? colors.tint : colors.icon} 
+                    color={review.user_vote_status?.is_upvoted ? colors.tint : colors.icon} 
                   />
-                  <Text style={[styles.reviewVoteText, { color: colors.icon }]}>
-                    {votingReviewId === review.id ? 'Voting...' : `Helpful (${review.helpful_votes})`}
+                  <Text style={[
+                    styles.reviewVoteText, 
+                    { color: review.user_vote_status?.is_upvoted ? colors.tint : colors.icon }
+                  ]}>
+                    {votingReviewId === review.id ? 'Voting...' : `Helpful (${review.helpful_votes || 0})`}
                   </Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={[styles.reviewVoteButton, { opacity: votingReviewId === review.id ? 0.6 : 1 }]}
+                  style={[
+                    styles.reviewVoteButton, 
+                    { 
+                      opacity: votingReviewId === review.id ? 0.6 : 1,
+                      backgroundColor: review.user_vote_status?.is_downvoted ? colors.tint + '15' : 'transparent'
+                    }
+                  ]}
                   onPress={() => handleReviewVote(review.id, false)}
-                  disabled={review.user_vote !== null || votingReviewId === review.id}
+                  disabled={votingReviewId === review.id}
                 >
                   <Ionicons 
                     name={votingReviewId === review.id ? "hourglass-outline" : "thumbs-down"}
                     size={16} 
-                    color={review.user_vote === 'not_helpful' ? colors.tint : colors.icon} 
+                    color={review.user_vote_status?.is_downvoted ? colors.tint : colors.icon} 
                   />
-                  <Text style={[styles.reviewVoteText, { color: colors.icon }]}>
-                    {votingReviewId === review.id ? 'Voting...' : `Not Helpful (${review.total_votes - review.helpful_votes})`}
+                  <Text style={[
+                    styles.reviewVoteText, 
+                    { color: review.user_vote_status?.is_downvoted ? colors.tint : colors.icon }
+                  ]}>
+                    {votingReviewId === review.id ? 'Voting...' : `Not Helpful (${Math.max(0, (review.total_votes || 0) - (review.helpful_votes || 0))})`}
                   </Text>
                 </TouchableOpacity>
               </View>

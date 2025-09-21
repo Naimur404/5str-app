@@ -121,8 +121,8 @@ export default function AllReviewsScreen() {
     if (!currentReview) return;
 
     // Check if user is clicking the same vote they already made (to remove it)
-    const isRemovingVote = (isHelpful && currentReview.user_vote === 'helpful') || 
-                           (!isHelpful && currentReview.user_vote === 'not_helpful');
+    const isRemovingVote = (isHelpful && currentReview.user_vote_status?.is_upvoted) || 
+                           (!isHelpful && currentReview.user_vote_status?.is_downvoted);
 
     setVotingReviewId(reviewId);
     
@@ -149,8 +149,15 @@ export default function AllReviewsScreen() {
                 helpful_votes: response.data?.helpful_votes || review.helpful_votes || 0,
                 total_votes: response.data?.total_votes || review.total_votes || 0,
                 helpful_percentage: response.data?.helpful_percentage || review.helpful_percentage || 0,
-                // Toggle vote logic: if clicking same vote, remove it; otherwise set new vote
-                user_vote: isRemovingVote ? null : (isHelpful ? 'helpful' : 'not_helpful')
+                // Update vote status using new structure
+                user_vote_status: isRemovingVote 
+                  ? { has_voted: false, is_upvoted: false, is_downvoted: false, vote_details: null }
+                  : { 
+                      has_voted: true, 
+                      is_upvoted: isHelpful, 
+                      is_downvoted: !isHelpful, 
+                      vote_details: null 
+                    }
               }
             : review
         )
@@ -284,7 +291,7 @@ export default function AllReviewsScreen() {
                       styles.reviewVoteButton, 
                       { 
                         opacity: votingReviewId === review.id ? 0.6 : 1,
-                        backgroundColor: review.user_vote === 'helpful' ? colors.tint + '15' : 'transparent'
+                        backgroundColor: review.user_vote_status?.is_upvoted ? colors.tint + '15' : 'transparent'
                       }
                     ]}
                     onPress={() => handleReviewVote(review.id, true)}
@@ -293,11 +300,11 @@ export default function AllReviewsScreen() {
                     <Ionicons 
                       name={votingReviewId === review.id ? "hourglass-outline" : "thumbs-up"}
                       size={16} 
-                      color={review.user_vote === 'helpful' ? colors.tint : colors.icon} 
+                      color={review.user_vote_status?.is_upvoted ? colors.tint : colors.icon} 
                     />
                     <Text style={[
                       styles.reviewVoteText, 
-                      { color: review.user_vote === 'helpful' ? colors.tint : colors.icon }
+                      { color: review.user_vote_status?.is_upvoted ? colors.tint : colors.icon }
                     ]}>
                       {votingReviewId === review.id ? 'Voting...' : `Helpful (${review.helpful_votes || 0})`}
                     </Text>
@@ -308,7 +315,7 @@ export default function AllReviewsScreen() {
                       styles.reviewVoteButton, 
                       { 
                         opacity: votingReviewId === review.id ? 0.6 : 1,
-                        backgroundColor: review.user_vote === 'not_helpful' ? colors.tint + '15' : 'transparent'
+                        backgroundColor: review.user_vote_status?.is_downvoted ? colors.tint + '15' : 'transparent'
                       }
                     ]}
                     onPress={() => handleReviewVote(review.id, false)}
@@ -317,11 +324,11 @@ export default function AllReviewsScreen() {
                     <Ionicons 
                       name={votingReviewId === review.id ? "hourglass-outline" : "thumbs-down"}
                       size={16} 
-                      color={review.user_vote === 'not_helpful' ? colors.tint : colors.icon} 
+                      color={review.user_vote_status?.is_downvoted ? colors.tint : colors.icon} 
                     />
                     <Text style={[
                       styles.reviewVoteText, 
-                      { color: review.user_vote === 'not_helpful' ? colors.tint : colors.icon }
+                      { color: review.user_vote_status?.is_downvoted ? colors.tint : colors.icon }
                     ]}>
                       {votingReviewId === review.id ? 'Voting...' : `Not Helpful (${Math.max(0, (review.total_votes || 0) - (review.helpful_votes || 0))})`}
                     </Text>
