@@ -372,9 +372,9 @@ export default function DiscoverScreen() {
           </View>
           <View style={styles.quickActions}>
             {[
+              { icon: 'compass', text: 'Attractions', route: '/attractions', color: '#9C27B0' },
               { icon: 'location', text: 'Nearby', route: '/popular-nearby', color: '#4CAF50' },
               { icon: 'star', text: 'Top Rated', route: '/top-rated', color: '#FFD700' },
-              { icon: 'time', text: 'Open Now', route: '/open-now', color: '#2196F3' },
               { icon: 'pricetag', text: 'Offers', route: '/special-offers', color: '#FF6B35' }
             ].map((action, index) => (
               <TouchableOpacity 

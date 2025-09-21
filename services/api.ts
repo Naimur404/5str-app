@@ -3,6 +3,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   AddBusinessToCollectionRequest,
   AttractionDetailResponse,
+  AttractionInteractionActionResponse,
+  AttractionInteractionRemoveRequest,
+  AttractionInteractionRequest,
+  AttractionInteractionResponse,
+  AttractionInteractionsResponse,
+  AttractionInteractionToggleRequest,
+  AttractionInteractionToggleResponse,
   AttractionReviewsResponse,
   AttractionReviewSubmissionRequest,
   AttractionReviewSubmissionResponse,
@@ -19,7 +26,11 @@ import {
   SearchCollectionsResponse,
   TodayTrendingResponse,
   TopService,
-  UpdateCollectionRequest
+  UpdateCollectionRequest,
+  UserAttractionInteractionsResponse,
+  UserBookmarkedAttractionsResponse,
+  UserLikedAttractionsResponse,
+  UserVisitedAttractionsResponse
 } from '../types/api';
 import { errorHandler } from './errorHandler';
 
@@ -1883,4 +1894,107 @@ export const voteAttractionReviewNotHelpful = async (
   return makeApiCall(endpoint, {
     method: 'POST',
   }, true); // Requires authentication
+};
+
+// ==========================================
+// ATTRACTION INTERACTION APIS
+// ==========================================
+
+/**
+ * Store a new interaction for an attraction (like, bookmark, share, visit, wishlist)
+ */
+export const storeAttractionInteraction = async (interactionData: AttractionInteractionRequest): Promise<AttractionInteractionResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS, {
+    method: 'POST',
+    body: JSON.stringify(interactionData),
+  }, true); // Requires authentication
+};
+
+/**
+ * Toggle interaction on/off (like, bookmark, wishlist)
+ */
+export const toggleAttractionInteraction = async (toggleData: AttractionInteractionToggleRequest): Promise<AttractionInteractionToggleResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_TOGGLE, {
+    method: 'POST',
+    body: JSON.stringify(toggleData),
+  }, true); // Requires authentication
+};
+
+/**
+ * Remove a specific interaction
+ */
+export const removeAttractionInteraction = async (removeData: AttractionInteractionRemoveRequest): Promise<AttractionInteractionActionResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_REMOVE, {
+    method: 'DELETE',
+    body: JSON.stringify(removeData),
+  }, true); // Requires authentication
+};
+
+/**
+ * Get user interactions for a specific user
+ */
+export const getUserAttractionInteractions = async (
+  userId: number,
+  interactionType?: string,
+  page: number = 1,
+  perPage: number = 15
+): Promise<UserAttractionInteractionsResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_USER}/${userId}?page=${page}&per_page=${perPage}`;
+  
+  if (interactionType) {
+    url += `&interaction_type=${interactionType}`;
+  }
+  
+  return makeApiCall(url, {}, false); // Public endpoint
+};
+
+/**
+ * Get all interactions for a specific attraction
+ */
+export const getAttractionInteractions = async (
+  attractionId: number,
+  interactionType?: string,
+  page: number = 1,
+  perPage: number = 20
+): Promise<AttractionInteractionsResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_ATTRACTION}/${attractionId}?page=${page}&per_page=${perPage}`;
+  
+  if (interactionType) {
+    url += `&interaction_type=${interactionType}`;
+  }
+  
+  return makeApiCall(url, {}, false); // Public endpoint
+};
+
+/**
+ * Get current user's liked attractions
+ */
+export const getUserLikedAttractions = async (
+  page: number = 1,
+  perPage: number = 15
+): Promise<UserLikedAttractionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_LIKED}?page=${page}&per_page=${perPage}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
+/**
+ * Get current user's bookmarked attractions
+ */
+export const getUserBookmarkedAttractions = async (
+  page: number = 1,
+  perPage: number = 15
+): Promise<UserBookmarkedAttractionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_BOOKMARKED}?page=${page}&per_page=${perPage}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
+/**
+ * Get current user's visited attractions
+ */
+export const getUserVisitedAttractions = async (
+  page: number = 1,
+  perPage: number = 15
+): Promise<UserVisitedAttractionsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_VISITED}?page=${page}&per_page=${perPage}`;
+  return makeApiCall(url, {}, true); // Requires authentication
 };

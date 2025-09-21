@@ -47,6 +47,15 @@ export const API_CONFIG = {
     // Attraction Endpoints
     ATTRACTIONS: '/api/v1/attractions',
     ATTRACTION_REVIEWS: '/api/v1/attraction-reviews',
+    // Attraction Interaction Endpoints
+    ATTRACTION_INTERACTIONS: '/api/v1/attraction-interactions',
+    ATTRACTION_INTERACTIONS_TOGGLE: '/api/v1/attraction-interactions/toggle',
+    ATTRACTION_INTERACTIONS_REMOVE: '/api/v1/attraction-interactions/remove',
+    ATTRACTION_INTERACTIONS_USER: '/api/v1/attraction-interactions/user',
+    ATTRACTION_INTERACTIONS_ATTRACTION: '/api/v1/attraction-interactions/attraction',
+    ATTRACTION_INTERACTIONS_LIKED: '/api/v1/attraction-interactions/liked',
+    ATTRACTION_INTERACTIONS_BOOKMARKED: '/api/v1/attraction-interactions/bookmarked',
+    ATTRACTION_INTERACTIONS_VISITED: '/api/v1/attraction-interactions/visited',
   }
 };
 

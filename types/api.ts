@@ -936,3 +936,222 @@ export interface SearchCollectionsResponse {
     collections: Collection[];
   };
 }
+
+// ==========================================
+// ATTRACTION INTERACTION TYPES
+// ==========================================
+
+// Attraction Interaction Types
+export type AttractionInteractionType = 'like' | 'dislike' | 'bookmark' | 'share' | 'visit' | 'wishlist';
+export type AttractionInteractionPriority = 'low' | 'medium' | 'high';
+export type VisitCompanionType = 'solo' | 'partner' | 'friend' | 'family' | 'group' | 'business';
+
+// Base Interaction Data Interface
+export interface AttractionInteractionData {
+  // Visit-specific fields
+  visit_date?: string;
+  duration_minutes?: number;
+  companions?: VisitCompanionType[];
+  weather?: string;
+  
+  // Share-specific fields
+  platform?: string;
+  message?: string;
+  
+  // Bookmark/Wishlist-specific fields
+  priority?: AttractionInteractionPriority;
+  planned_visit_date?: string;
+}
+
+// Request Interfaces
+export interface AttractionInteractionRequest {
+  attraction_id: number;
+  interaction_type: AttractionInteractionType;
+  notes?: string;
+  is_public?: boolean;
+  rating?: number; // For visit interactions (0-5)
+  
+  // Type-specific fields
+  visit_date?: string;
+  duration_minutes?: number;
+  companions?: VisitCompanionType[];
+  weather?: string;
+  platform?: string;
+  message?: string;
+  priority?: AttractionInteractionPriority;
+  planned_visit_date?: string;
+}
+
+export interface AttractionInteractionToggleRequest {
+  attraction_id: number;
+  interaction_type: 'like' | 'dislike' | 'bookmark' | 'wishlist';
+  notes?: string;
+  is_public?: boolean;
+  priority?: AttractionInteractionPriority;
+  planned_visit_date?: string;
+}
+
+export interface AttractionInteractionRemoveRequest {
+  attraction_id: number;
+  interaction_type: AttractionInteractionType;
+}
+
+// Response Data Interfaces
+export interface AttractionInteraction {
+  id: number;
+  user_id: number;
+  attraction_id: number;
+  interaction_type: AttractionInteractionType;
+  interaction_data: AttractionInteractionData;
+  notes: string | null;
+  user_rating: number | null;
+  is_public: boolean;
+  is_active: boolean;
+  interaction_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AttractionInteractionWithUser extends AttractionInteraction {
+  user: {
+    id: number;
+    name: string;
+    profile_image: string | null;
+    trust_level: number;
+  };
+}
+
+export interface AttractionInteractionWithAttraction extends AttractionInteraction {
+  attraction: {
+    id: number;
+    name: string;
+    slug: string;
+    cover_image_url: string;
+    overall_rating: string;
+    category: string;
+    city: string;
+    is_free: boolean;
+  };
+}
+
+export interface AttractionStats {
+  total_likes: number;
+  total_dislikes: number;
+  total_shares: number;
+  total_visits?: number;
+  total_bookmarks?: number;
+  total_wishlists?: number;
+}
+
+// Response Interfaces
+export interface AttractionInteractionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    interaction: AttractionInteraction;
+    attraction: {
+      id: number;
+      name: string;
+      total_likes: number;
+      total_shares: number;
+    };
+  };
+}
+
+export interface AttractionInteractionToggleResponse {
+  success: boolean;
+  message: string;
+  data: {
+    action: 'created' | 'removed';
+    is_liked?: boolean;
+    is_bookmarked?: boolean;
+    is_wishlisted?: boolean;
+    interaction: AttractionInteraction | null;
+    attraction_stats: AttractionStats;
+  };
+}
+
+export interface AttractionInteractionActionResponse {
+  success: boolean;
+  message: string;
+}
+
+// List Response Interfaces
+export interface UserAttractionInteractionsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionInteractionWithAttraction[];
+    first_page_url: string;
+    per_page: number;
+    total: number;
+    last_page: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+  };
+}
+
+export interface AttractionInteractionsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionInteractionWithUser[];
+    per_page: number;
+    total: number;
+    last_page: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+  };
+  meta: {
+    attraction: {
+      id: number;
+      name: string;
+      total_likes: number;
+      total_shares: number;
+    };
+  };
+}
+
+export interface UserLikedAttractionsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionInteractionWithAttraction[];
+    per_page: number;
+    total: number;
+    last_page: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+  };
+}
+
+export interface UserBookmarkedAttractionsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionInteractionWithAttraction[];
+    per_page: number;
+    total: number;
+    last_page: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+  };
+}
+
+export interface UserVisitedAttractionsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionInteractionWithAttraction[];
+    per_page: number;
+    total: number;
+    last_page: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+  };
+}

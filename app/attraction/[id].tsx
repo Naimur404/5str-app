@@ -1,8 +1,12 @@
 import CustomAlert from '@/components/CustomAlert';
 import SmartImage from '@/components/SmartImage';
+import { AttractionInteractionPanel } from '@/components/AttractionInteractionPanel';
+import { RecordVisitModal } from '@/components/RecordVisitModal';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import { useAttractionInteraction } from '@/hooks/useAttractionInteraction';
+import { useAttractionTracking } from '@/hooks/useAttractionTracking';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
     getAttractionDetails,
@@ -56,8 +60,16 @@ export default function AttractionDetailScreen() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [votingReviewId, setVotingReviewId] = useState<number | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [showRecordVisitModal, setShowRecordVisitModal] = useState(false);
+
+  // Attraction interactions hook
+  const attractionInteractionHook = useAttractionInteraction(parseInt(id as string));
+
+  // Attraction tracking
+  const { trackClick, trackShare, trackReview } = useAttractionTracking(parseInt(id as string), {
+    autoTrackView: true,
+    viewSource: 'attraction_detail',
+  });
 
   // Load attraction data and check authentication
   useFocusEffect(
@@ -373,6 +385,16 @@ export default function AttractionDetailScreen() {
           <Text style={[styles.actionLabel, { color: colors.text }]}>Directions</Text>
         </TouchableOpacity>
         
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => setShowRecordVisitModal(true)}
+        >
+          <View style={[styles.actionIcon, { backgroundColor: '#9C27B0' }]}>
+            <Ionicons name="calendar-outline" size={16} color="white" />
+          </View>
+          <Text style={[styles.actionLabel, { color: colors.text }]}>Record Visit</Text>
+        </TouchableOpacity>
+        
         {attraction?.contact?.website && (
           <TouchableOpacity 
             style={styles.actionButton}
@@ -397,6 +419,19 @@ export default function AttractionDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Interaction Panel */}
+      {attraction && (
+        <AttractionInteractionPanel
+          attractionId={parseInt(id as string)}
+          attractionName={attraction.name}
+          attractionSlug={attraction.slug}
+          initialStats={{
+            total_likes: attraction.engagement?.total_likes || 0,
+            total_shares: attraction.engagement?.total_shares || 0,
+          }}
+        />
+      )}
 
       {/* Scrollable Content */}
       <ScrollView
@@ -772,6 +807,13 @@ export default function AttractionDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <RecordVisitModal
+        visible={showRecordVisitModal}
+        onClose={() => setShowRecordVisitModal(false)}
+        attractionId={parseInt(id as string)}
+        attractionName={attraction?.name || 'Attraction'}
+      />
 
       <CustomAlert
         visible={alertConfig.visible}
