@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  TextInput,
-} from 'react-native';
-import { router } from 'expo-router';
+import { BusinessListSkeleton } from '@/components/SkeletonLoader';
+import { BusinessLogo } from '@/components/SmartImage';
+import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/contexts/LocationContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getCategories, getOpenNow } from '@/services/api';
+import { Business, Category } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { getOpenNow, getCategories } from '@/services/api';
-import { Business, Category } from '@/types/api';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useLocation } from '@/contexts/LocationContext';
-import { Colors } from '@/constants/Colors';
-import { BusinessLogo } from '@/components/SmartImage';
-import { BusinessListSkeleton } from '@/components/SkeletonLoader';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface BusinessCardProps {
   business: Business;

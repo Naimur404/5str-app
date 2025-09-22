@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  TextInput,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
+import SmartImage from '@/components/SmartImage';
+import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/contexts/LocationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getAttractions } from '@/services/api';
 import { AttractionListItem } from '@/types/api';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useLocation } from '@/contexts/LocationContext';
-import { Colors } from '@/constants/Colors';
-import SmartImage from '@/components/SmartImage';
 import { formatDistance } from '@/utils/distanceUtils';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 interface AttractionCardProps {
   attraction: AttractionListItem;
