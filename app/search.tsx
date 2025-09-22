@@ -1,29 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Animated,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Location from 'expo-location';
-import { router } from 'expo-router';
 
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/contexts/ThemeContext';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { Business, SearchResponse, Offering, AttractionListItem } from '@/types/api';
-import { fetchWithJsonValidation } from '@/services/api';
 import { useLocation } from '@/contexts/LocationContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { fetchWithJsonValidation } from '@/services/api';
+import { AttractionListItem, Business, Offering, SearchResponse } from '@/types/api';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 
 export default function SearchScreen() {
   const { colorScheme } = useTheme();
