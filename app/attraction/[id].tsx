@@ -1,4 +1,6 @@
 import { AttractionInteractionPanel } from '@/components/AttractionInteractionPanel';
+import AttractionMapView from '@/components/AttractionMapView';
+import BusinessMapView from '@/components/BusinessMapView';
 import CustomAlert from '@/components/CustomAlert';
 import { RecordVisitModal } from '@/components/RecordVisitModal';
 import { AttractionDetailsSkeleton } from '@/components/SkeletonLoader';
@@ -43,6 +45,26 @@ import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-g
 
 const { width } = Dimensions.get('window');
 const HERO_HEIGHT = 240;
+
+// Helper function to check if visit info has meaningful data
+const hasVisitInfo = (visitInfo: any) => {
+  if (!visitInfo) return false;
+  
+  // Check best_time_to_visit - handle both array and object formats
+  const hasBestTime = visitInfo.best_time_to_visit && (
+    (Array.isArray(visitInfo.best_time_to_visit) && 
+     visitInfo.best_time_to_visit.length > 0) ||
+    (visitInfo.best_time_to_visit.months && 
+     visitInfo.best_time_to_visit.months.length > 0)
+  );
+  
+  return !!(
+    visitInfo.estimated_duration_minutes ||
+    visitInfo.difficulty_level ||
+    hasBestTime ||
+    (visitInfo.facilities && visitInfo.facilities.length > 0)
+  );
+};
 
 export default function AttractionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -370,10 +392,19 @@ export default function AttractionDetailScreen() {
                 <Text style={styles.reviewsCount}>({attraction?.ratings?.total_reviews || 0} reviews)</Text>
               </View>
               
-              <View style={styles.priceBadge}>
-                <Text style={styles.priceBadgeText}>
-                  {attraction?.pricing?.is_free ? 'FREE' : `${attraction?.pricing?.currency || ''} ${attraction?.pricing?.entry_fee || ''}`}
-                </Text>
+              <View style={styles.headerStats}>
+                {attraction?.engagement?.total_views && (
+                  <View style={styles.viewsContainer}>
+                    <Ionicons name="eye" size={14} color="white" />
+                    <Text style={styles.viewsText}>{attraction.engagement.total_views} views</Text>
+                  </View>
+                )}
+                
+                <View style={styles.priceBadge}>
+                  <Text style={styles.priceBadgeText}>
+                    {attraction?.pricing?.is_free ? 'FREE' : `${attraction?.pricing?.currency || ''} ${attraction?.pricing?.entry_fee || ''}`}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
@@ -476,52 +507,118 @@ export default function AttractionDetailScreen() {
           )}
         </View>
 
-        {/* Visit Information */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Visit Information</Text>
-          
-          {attraction?.visit_info ? (
-            <View>
-            
-            {attraction.visit_info.estimated_duration_minutes && (
-              <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={20} color={colors.tint} />
-                <Text style={[styles.infoText, { color: colors.text }]}>
-                  Duration: {Math.floor(attraction.visit_info.estimated_duration_minutes / 60)}h {attraction.visit_info.estimated_duration_minutes % 60}min
-                </Text>
+        {/* Visit Information - Enhanced with better visual design */}
+        {hasVisitInfo(attraction?.visit_info) && (
+          <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <View style={styles.sectionHeaderWithIcon}>
+              <View style={[styles.sectionIconContainer, { backgroundColor: colors.tint + '20' }]}>
+                <Ionicons name="information-circle" size={20} color={colors.tint} />
               </View>
-            )}
-            
-            {attraction.visit_info.difficulty_level && (
-              <View style={styles.infoRow}>
-                <Ionicons name="fitness-outline" size={20} color={colors.tint} />
-                <Text style={[styles.infoText, { color: colors.text }]}>
-                  Difficulty: {attraction.visit_info.difficulty_level}
-                </Text>
-              </View>
-            )}
-            
-            {attraction.visit_info.best_time_to_visit?.months && attraction.visit_info.best_time_to_visit.months.length > 0 && (
-              <View style={styles.infoRow}>
-                <Ionicons name="calendar-outline" size={20} color={colors.tint} />
-                <Text style={[styles.infoText, { color: colors.text }]}>
-                  Best time: {attraction.visit_info.best_time_to_visit.months.join(', ')}
-                </Text>
-              </View>
-            )}
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Visit Information</Text>
             </View>
-          ) : (
-            <View style={styles.infoRow}>
-              <Ionicons name="information-circle-outline" size={20} color={colors.tint} />
-              <Text style={[styles.infoText, { color: colors.text }]}>Visit information will be available soon</Text>
+            
+            <View style={styles.visitInfoContainer}>
+              {/* First Row: Duration (Full Width if available) */}
+              {attraction?.visit_info?.estimated_duration_minutes && (
+                <View style={[styles.visitInfoCardFullWidth, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  <View style={[styles.visitInfoIconBg, { backgroundColor: '#3B82F6' + '20' }]}>
+                    <Ionicons name="time" size={16} color="#3B82F6" />
+                  </View>
+                  <View style={styles.visitInfoTextContainer}>
+                    <Text style={[styles.visitInfoLabel, { color: colors.icon, textAlign: 'left' }]}>Duration</Text>
+                    <Text style={[styles.visitInfoValue, { color: colors.text, textAlign: 'left' }]}>
+                      {Math.floor(attraction.visit_info.estimated_duration_minutes / 60)}h {attraction.visit_info.estimated_duration_minutes % 60}m
+                    </Text>
+                  </View>
+                </View>
+              )}
+              
+              {/* Second Row: Difficulty and Best Time to Visit side by side */}
+              <View style={styles.visitInfoRow}>
+                {attraction?.visit_info?.difficulty_level && (
+                  <View style={[styles.visitInfoCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                    <View style={[styles.visitInfoIconBg, { backgroundColor: '#10B981' + '20' }]}>
+                      <Ionicons name="fitness" size={16} color="#10B981" />
+                    </View>
+                    <Text style={[styles.visitInfoLabel, { color: colors.icon }]}>Difficulty</Text>
+                    <Text style={[styles.visitInfoValue, { color: colors.text }]}>
+                      {attraction.visit_info.difficulty_level.charAt(0).toUpperCase() + attraction.visit_info.difficulty_level.slice(1)}
+                    </Text>
+                  </View>
+                )}
+                
+                {/* Best Time to Visit */}
+                {attraction?.visit_info?.best_time_to_visit && (() => {
+                  const bestTime = attraction.visit_info.best_time_to_visit;
+                  let timeArray: string[] = [];
+                  
+                  if (Array.isArray(bestTime)) {
+                    timeArray = bestTime;
+                  } else if (bestTime.months && Array.isArray(bestTime.months)) {
+                    timeArray = bestTime.months;
+                  }
+                  
+                  if (timeArray.length > 0) {
+                    return (
+                      <View style={[styles.visitInfoCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                        <View style={[styles.visitInfoIconBg, { backgroundColor: '#F59E0B' + '20' }]}>
+                          <Ionicons name="calendar" size={16} color="#F59E0B" />
+                        </View>
+                        <Text style={[styles.visitInfoLabel, { color: colors.icon }]}>Best Time</Text>
+                        <Text style={[styles.visitInfoValue, { color: colors.text }]}>
+                          {timeArray.join(', ')}
+                        </Text>
+                      </View>
+                    );
+                  }
+                  return null;
+                })()}
+              </View>
             </View>
-          )}
-        </View>
+            
+            {/* Enhanced Facilities Section */}
+            {attraction?.visit_info?.facilities && attraction.visit_info.facilities.length > 0 && (
+              <View style={styles.facilitiesSection}>
+                <View style={styles.facilitiesHeader}>
+                  <View style={[styles.facilitiesIconContainer, { backgroundColor: '#8B5CF6' + '20' }]}>
+                    <Ionicons name="business" size={16} color="#8B5CF6" />
+                  </View>
+                  <Text style={[styles.facilitiesTitle, { color: colors.text }]}>Available Facilities</Text>
+                </View>
+                <View style={styles.facilitiesGrid}>
+                  {attraction.visit_info.facilities.map((facility: string, index: number) => {
+                    const facilityIcons: { [key: string]: string } = {
+                      'parking': 'car',
+                      'restaurant': 'restaurant',
+                      'restroom': 'person',
+                      'wifi': 'wifi',
+                      'shop': 'bag',
+                      'guide': 'person-circle',
+                      'wheelchair': 'accessibility',
+                      'atm': 'card'
+                    };
+                    const iconName = facilityIcons[facility.toLowerCase()] || 'checkmark-circle';
+                    
+                    return (
+                      <View key={index} style={[styles.facilityChip, { backgroundColor: colors.tint + '10', borderColor: colors.tint + '30' }]}>
+                        <Ionicons name={iconName as any} size={14} color={colors.tint} />
+                        <Text style={[styles.facilityChipText, { color: colors.tint }]}>
+                          {facility.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
-        {/* Opening Hours */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
-          {attraction?.schedule?.opening_hours && Object.keys(attraction.schedule.opening_hours).length > 0 ? (
+        {/* Opening Hours - Only show if schedule data is available */}
+        {attraction?.schedule?.opening_hours && 
+         Object.keys(attraction.schedule.opening_hours).length > 0 && (
+          <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
             <View>
               {Object.entries(attraction.schedule.opening_hours).map(([day, hours]: [string, any]) => (
                 <View key={day} style={styles.infoRow}>
@@ -532,68 +629,37 @@ export default function AttractionDetailScreen() {
                 </View>
               ))}
             </View>
-          ) : (
-            <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={20} color={colors.tint} />
-              <Text style={[styles.infoText, { color: colors.text }]}>Opening hours: 6:00 AM - 8:00 PM (Daily)</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Facilities */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Facilities</Text>
-          {attraction?.visit_info?.facilities && attraction.visit_info.facilities.length > 0 ? (
-            <View style={styles.facilitiesContainer}>
-              {attraction.visit_info.facilities.map((facility: string, index: number) => (
-                <View key={index} style={[styles.facilityItem, { backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1 }]}>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.tint} style={styles.facilityIcon} />
-                  <Text style={[styles.facilityText, { color: colors.text }]}>{facility.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.noFacilitiesContainer}>
-              <Ionicons name="business-outline" size={24} color={colors.icon} />
-              <Text style={[styles.noFacilitiesText, { color: colors.icon }]}>Facility information coming soon</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Best Time to Visit */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Best Time to Visit</Text>
-          {attraction?.visit_info?.best_time_to_visit?.months && attraction.visit_info.best_time_to_visit.months.length > 0 ? (
-            <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color={colors.tint} />
-              <Text style={[styles.infoText, { color: colors.text }]}>
-                {attraction.visit_info.best_time_to_visit.months.join(', ')}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color={colors.tint} />
-              <Text style={[styles.infoText, { color: colors.text }]}>Best months: November - March (Winter season)</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Accessibility */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Accessibility</Text>
-          <View style={styles.infoRow}>
-            <Ionicons name="accessibility-outline" size={20} color={colors.tint} />
-            <Text style={[styles.infoText, { color: colors.text }]}>
-              {attraction?.accessibility?.wheelchair_accessible ? 'Wheelchair accessible' : 'Limited wheelchair access'}
-            </Text>
           </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="car-outline" size={20} color={colors.tint} />
-            <Text style={[styles.infoText, { color: colors.text }]}>
-              {attraction?.accessibility?.parking_available ? 'Parking available' : 'Limited parking'}
-            </Text>
+        )}
+
+
+
+
+
+        {/* Accessibility - Only show if accessibility data is available */}
+        {attraction?.accessibility && 
+         (attraction.accessibility.wheelchair_accessible !== undefined || 
+          attraction.accessibility.parking_available !== undefined) && (
+          <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Accessibility</Text>
+            {attraction.accessibility.wheelchair_accessible !== undefined && (
+              <View style={styles.infoRow}>
+                <Ionicons name="accessibility-outline" size={20} color={colors.tint} />
+                <Text style={[styles.infoText, { color: colors.text }]}>
+                  {attraction.accessibility.wheelchair_accessible ? 'Wheelchair accessible' : 'Limited wheelchair access'}
+                </Text>
+              </View>
+            )}
+            {attraction.accessibility.parking_available !== undefined && (
+              <View style={styles.infoRow}>
+                <Ionicons name="car-outline" size={20} color={colors.tint} />
+                <Text style={[styles.infoText, { color: colors.text }]}>
+                  {attraction.accessibility.parking_available ? 'Parking available' : 'Limited parking'}
+                </Text>
+              </View>
+            )}
           </View>
-        </View>
+        )}
 
         {/* Gallery */}
         {attraction?.media?.gallery && attraction.media.gallery.length > 0 && (
@@ -624,48 +690,71 @@ export default function AttractionDetailScreen() {
           </View>
         )}
 
-        {/* Contact Information */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
-          {attraction?.contact && Object.keys(attraction.contact).length > 0 ? (
-            <View>
-              {attraction.contact.phone && (
-                <TouchableOpacity 
-                  style={styles.infoRow}
-                  onPress={() => attraction.contact?.phone && Linking.openURL(`tel:${attraction.contact.phone}`)}
-                >
-                  <Ionicons name="call-outline" size={20} color={colors.tint} />
-                  <Text style={[styles.infoText, { color: colors.tint }]}>{attraction.contact.phone}</Text>
-                </TouchableOpacity>
-              )}
-              
-              {attraction.contact.email && (
-                <TouchableOpacity 
-                  style={styles.infoRow}
-                  onPress={() => attraction.contact?.email && Linking.openURL(`mailto:${attraction.contact.email}`)}
-                >
-                  <Ionicons name="mail-outline" size={20} color={colors.tint} />
-                  <Text style={[styles.infoText, { color: colors.tint }]}>{attraction.contact.email}</Text>
-                </TouchableOpacity>
-              )}
-              
-              {attraction.contact.website && (
-                <TouchableOpacity 
-                  style={styles.infoRow}
-                  onPress={() => attraction.contact?.website && Linking.openURL(attraction.contact.website)}
-                >
-                  <Ionicons name="globe-outline" size={20} color={colors.tint} />
-                  <Text style={[styles.infoText, { color: colors.tint }]}>Visit Website</Text>
-                </TouchableOpacity>
-              )}
+        {/* Location & Map - Enhanced with free_maps support */}
+        {attraction?.location && (attraction.location.latitude || attraction.google_maps_url || attraction.free_maps) && (
+          <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+            <View style={styles.sectionHeaderWithIcon}>
+              <View style={[styles.sectionIconContainer, { backgroundColor: colors.tint + '20' }]}>
+                <Ionicons name="location" size={20} color={colors.tint} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Location & Map</Text>
             </View>
-          ) : (
-            <View style={styles.infoRow}>
-              <Ionicons name="information-circle-outline" size={20} color={colors.icon} />
-              <Text style={[styles.infoText, { color: colors.icon }]}>Contact information will be available soon</Text>
+            
+            {/* Address Information */}
+            <View style={styles.locationInfo}>
+              <View style={styles.infoRow}>
+                <Ionicons name="location-outline" size={18} color={colors.tint} />
+                <Text style={[styles.infoText, { color: colors.text, flex: 1 }]}>
+                  {attraction.location.address || 
+                   `${attraction.location.area ? attraction.location.area + ', ' : ''}${attraction.location.city || ''}, ${attraction.location.district || ''}`}
+                </Text>
+              </View>
             </View>
-          )}
-        </View>
+            
+            {/* Map View - Clean dedicated component */}
+            <AttractionMapView attraction={attraction} colors={colors} />
+          </View>
+        )}
+
+        {/* Contact Information - Only show if contact data is available */}
+        {attraction?.contact && (
+          (attraction.contact.phone || attraction.contact.email || attraction.contact.website) && (
+            <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
+              <View>
+                {attraction.contact.phone && (
+                  <TouchableOpacity 
+                    style={styles.infoRow}
+                    onPress={() => attraction.contact?.phone && Linking.openURL(`tel:${attraction.contact.phone}`)}
+                  >
+                    <Ionicons name="call-outline" size={20} color={colors.tint} />
+                    <Text style={[styles.infoText, { color: colors.tint }]}>{attraction.contact.phone}</Text>
+                  </TouchableOpacity>
+                )}
+                
+                {attraction.contact.email && (
+                  <TouchableOpacity 
+                    style={styles.infoRow}
+                    onPress={() => attraction.contact?.email && Linking.openURL(`mailto:${attraction.contact.email}`)}
+                  >
+                    <Ionicons name="mail-outline" size={20} color={colors.tint} />
+                    <Text style={[styles.infoText, { color: colors.tint }]}>{attraction.contact.email}</Text>
+                  </TouchableOpacity>
+                )}
+                
+                {attraction.contact.website && (
+                  <TouchableOpacity 
+                    style={styles.infoRow}
+                    onPress={() => attraction.contact?.website && Linking.openURL(attraction.contact.website)}
+                  >
+                    <Ionicons name="globe-outline" size={20} color={colors.tint} />
+                    <Text style={[styles.infoText, { color: colors.tint }]}>Visit Website</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )
+        )}
 
         {/* Pricing & Hours */}
         <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
@@ -959,9 +1048,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  viewsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  viewsText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: '600',
   },
   ratingText: {
     color: 'white',
@@ -1334,6 +1442,159 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  // Enhanced Visit Information Styles
+  sectionHeaderWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  sectionIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  visitInfoContainer: {
+    marginBottom: 16,
+    gap: 12,
+  },
+  visitInfoRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  visitInfoCard: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  visitInfoCardFullWidth: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    gap: 12,
+  },
+  visitInfoIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  visitInfoTextContainer: {
+    flex: 1,
+  },
+  visitInfoLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 2,
+    opacity: 0.8,
+  },
+  visitInfoValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  locationInfo: {
+    marginBottom: 12,
+  },
+  mapPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 12,
+    gap: 12,
+  },
+  mapPlaceholderIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPlaceholderTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  mapPlaceholderSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  mapButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  facilitiesSection: {
+    marginTop: 8,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.08)',
+  },
+  facilitiesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  facilitiesIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  facilitiesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  facilitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  facilityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+  facilityChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',

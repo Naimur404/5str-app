@@ -1695,11 +1695,11 @@ export default function HomeScreen() {
           <View style={styles.attractionMeta}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={12} color="#FFD700" />
-              <Text style={[styles.rating, { color: colors.text }]}>{item.overall_rating.toFixed(1)}</Text>
+              <Text style={[styles.rating, { color: colors.text }]}>{Number(item.overall_rating).toFixed(1)}</Text>
               <Text style={[styles.attractionReviews, { color: colors.icon }]}>({item.total_reviews})</Text>
             </View>
             
-            <Text style={[styles.distance, { color: colors.icon }]}>{formatDistance(item.distance_km)}</Text>
+            <Text style={[styles.distance, { color: colors.icon }]}>{item.distance_km ? formatDistance(item.distance_km) : 'N/A'}</Text>
           </View>
 
           {/* Additional attraction info */}
@@ -1707,7 +1707,7 @@ export default function HomeScreen() {
             <View style={styles.attractionDetailItem}>
               <Ionicons name="time-outline" size={12} color={colors.icon} />
               <Text style={[styles.attractionDetailText, { color: colors.icon }]}>
-                {formatDuration(item.estimated_duration_minutes)}
+                {/* {formatDuration(item.estimated_duration_minutes)} */}
               </Text>
             </View>
             

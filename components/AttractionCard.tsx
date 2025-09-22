@@ -91,8 +91,9 @@ export const AttractionCard: React.FC<AttractionCardProps> = ({
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
   };
 
-  const formatRating = (rating: number) => {
-    return rating.toFixed(1);
+  const formatRating = (rating: string | number) => {
+    const numRating = typeof rating === 'string' ? parseFloat(rating) : rating;
+    return numRating.toFixed(1);
   };
 
   return (

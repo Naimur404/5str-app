@@ -314,6 +314,7 @@ export interface AttractionImage {
 }
 
 export interface AttractionDetail {
+  openstreetmap_url: any;
   id: number;
   name: string;
   slug: string;
@@ -357,6 +358,23 @@ export interface AttractionDetail {
   created_at: string;
   updated_at: string;
   google_maps_url: string;
+  free_maps?: {
+    openstreetmap_url: string;
+    leaflet_data: {
+      center: {
+        lat: number;
+        lng: number;
+      };
+      zoom: number;
+      marker: {
+        lat: number;
+        lng: number;
+        popup: string;
+      };
+      tile_url: string;
+      attribution: string;
+    };
+  };
   cover_image_url: string;
   gallery_count: number;
   gallery: AttractionImage[];
