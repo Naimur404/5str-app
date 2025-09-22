@@ -14,6 +14,7 @@ import {
   AttractionReviewSubmissionRequest,
   AttractionReviewSubmissionResponse,
   AttractionReviewVoteResponse,
+  AttractionsListResponse,
   CategoriesResponse,
   CollectionActionResponse,
   CollectionItemResponse,
@@ -1896,6 +1897,27 @@ export const getPopularAttractions = async (
   page: number = 1
 ): Promise<PopularAttractionsResponse> => {
   const url = `${API_CONFIG.ENDPOINTS.POPULAR_ATTRACTIONS}?latitude=${latitude}&longitude=${longitude}&limit=${limit}&radius=${radiusKm}&page=${page}`;
+  return makeApiCall(url, {}, false); // Public endpoint, works for both logged-in and guest users
+};
+
+/**
+ * Get attractions list with location filtering and pagination
+ */
+export const getAttractions = async (
+  latitude: number,
+  longitude: number,
+  page: number = 1,
+  perPage: number = 15,
+  radiusKm: number = 15,
+  category?: string,
+  openNow?: boolean
+): Promise<AttractionsListResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.ATTRACTIONS}?latitude=${latitude}&longitude=${longitude}&page=${page}&per_page=${perPage}`;
+  
+  if (radiusKm !== undefined) url += `&radius=${radiusKm}`;
+  if (category) url += `&category=${encodeURIComponent(category)}`;
+  if (openNow !== undefined) url += `&open_now=${openNow}`;
+  
   return makeApiCall(url, {}, false); // Public endpoint, works for both logged-in and guest users
 };
 

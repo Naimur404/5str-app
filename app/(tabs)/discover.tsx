@@ -50,7 +50,7 @@ export default function DiscoverScreen() {
       // Get coordinates from location service
       const coordinates = getCoordinatesForAPI();
 
-      // Fetch both categories and trending data
+      // Fetch categories and trending data
       const [categoriesResponse, trendingResponse] = await Promise.all([
         getCategories(1, 50),
         getTodayTrending(coordinates.latitude, coordinates.longitude)
@@ -330,6 +330,8 @@ export default function DiscoverScreen() {
           </View>
         )}
 
+
+
         {/* Enhanced Categories Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -373,7 +375,8 @@ export default function DiscoverScreen() {
           <View style={styles.quickActions}>
             {[
               { icon: 'compass', text: 'Attractions', route: '/attractions', color: '#9C27B0' },
-              { icon: 'location', text: 'Nearby', route: '/popular-nearby', color: '#4CAF50' },
+              { icon: 'time', text: 'Open Now', route: '/open-now', color: '#4CAF50' },
+              { icon: 'location', text: 'Nearby', route: '/popular-nearby', color: '#2196F3' },
               { icon: 'star', text: 'Top Rated', route: '/top-rated', color: '#FFD700' },
               { icon: 'pricetag', text: 'Offers', route: '/special-offers', color: '#FF6B35' }
             ].map((action, index) => (
@@ -694,31 +697,34 @@ const styles = StyleSheet.create({
   quickActions: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    gap: 10,
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   actionButton: {
-    flex: 1,
     alignItems: 'center',
-    padding: 14,
+    padding: 12,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
-    minHeight: 80,
+    minHeight: 75,
     justifyContent: 'center',
+    width: '18%', // Ensures 5 cards fit in one row with proper spacing
+    minWidth: 60,
   },
   actionIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   actionText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
   },

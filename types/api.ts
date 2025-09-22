@@ -601,6 +601,127 @@ export interface AttractionDetailResponse {
   data: AttractionDetail;
 }
 
+// Attraction List Item (for general attractions listing)
+export interface AttractionListItem {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  type: string;
+  category: string;
+  subcategory: string;
+  latitude: string;
+  longitude: string;
+  address: string;
+  city: string;
+  area: string;
+  district: string;
+  country: string;
+  is_free: boolean;
+  entry_fee: string;
+  currency: string;
+  opening_hours: any[];
+  contact_info: {
+    phone?: string;
+  };
+  facilities: string[];
+  best_time_to_visit: any[];
+  estimated_duration_minutes: number;
+  difficulty_level: string;
+  accessibility_info: any[];
+  overall_rating: string;
+  total_reviews: number;
+  total_likes: number;
+  total_dislikes: number;
+  total_shares: number;
+  total_views: number;
+  discovery_score: string;
+  is_verified: boolean;
+  is_featured: boolean;
+  is_active: boolean;
+  status: string;
+  rejection_reason: string | null;
+  created_by: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  meta_data: string;
+  created_at: string;
+  updated_at: string;
+  distance: number; // Distance in km
+  google_maps_url: string;
+  cover_image_url: string;
+  gallery_count: number;
+  gallery: {
+    id: number;
+    attraction_id: number;
+    image_url: string;
+    image_path: string;
+    title: string;
+    description: string;
+    alt_text: string | null;
+    is_cover: boolean;
+    sort_order: number;
+    image_type: string;
+    meta_data: string | null;
+    uploaded_by: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    full_image_url: string;
+    thumbnail_url: string;
+  }[];
+  cover_image: {
+    id: number;
+    attraction_id: number;
+    image_url: string;
+    image_path: string;
+    title: string;
+    description: string;
+    alt_text: string | null;
+    is_cover: boolean;
+    sort_order: number;
+    image_type: string;
+    meta_data: string | null;
+    uploaded_by: string | null;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    full_image_url: string;
+    thumbnail_url: string;
+  };
+}
+
+// Attractions List Response (from /api/v1/attractions)
+export interface AttractionsListResponse {
+  success: boolean;
+  message: string;
+  data: {
+    current_page: number;
+    data: AttractionListItem[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: {
+      url: string | null;
+      label: string;
+      active: boolean;
+    }[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+  };
+  meta: {
+    total_count: number;
+    current_page: number;
+    per_page: number;
+    last_page: number;
+  };
+}
+
 // Review Submission Request
 export interface AttractionReviewSubmissionRequest {
   rating: number;

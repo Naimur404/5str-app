@@ -1,13 +1,13 @@
-import { AttractionCard } from '@/components/AttractionCard';
 import { LocationHeader } from '@/components/LocationHeader';
+import TrackableAttractionCard from '@/components/TrackableAttractionCard';
 import { Colors } from '@/constants/Colors';
+import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useAttractionListTracking } from '@/hooks/useAttractionTracking';
-import { useCoordinates } from '@/hooks/useCoordinates';
-import { FeaturedAttraction } from '@/types/api';
+import { getAttractions } from '@/services/api';
+import { AttractionListItem } from '@/types/api';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     FlatList,
     RefreshControl,
@@ -15,114 +15,20 @@ import {
     StyleSheet,
     Text,
     View,
+    ActivityIndicator,
 } from 'react-native';
 
 export default function AttractionsScreen() {
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
-  const { coordinates } = useCoordinates();
-  const { trackItemView, trackItemClick } = useAttractionListTracking('featured_attractions');
+  const { getCoordinatesForAPI } = useLocation();
 
   // State
-  const [attractions, setAttractions] = useState<FeaturedAttraction[]>([]);
+  const [attractions, setAttractions] = useState<AttractionListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Mock data for demonstration
-  const mockAttractions: FeaturedAttraction[] = [
-    {
-      id: 1,
-      name: "Cox's Bazar Beach",
-      slug: "coxs-bazar-beach",
-      description: "The world's longest natural sandy sea beach",
-      type: "Beach",
-      category: "Natural",
-      subcategory: "Beach",
-      city: "Cox's Bazar",
-      area: "Cox's Bazar Sadar",
-      district: "Cox's Bazar",
-      is_free: true,
-      entry_fee: "0",
-      currency: "BDT",
-      overall_rating: 4.6,
-      total_reviews: 1547,
-      total_views: 25890,
-      discovery_score: 9.2,
-      estimated_duration_minutes: 480,
-      difficulty_level: "Easy",
-      cover_image_url: "https://picsum.photos/400/300?random=1",
-      google_maps_url: "https://maps.google.com/?q=Cox's+Bazar+Beach",
-      distance_km: 0,
-      facilities: ["parking", "restaurant", "restroom"],
-      best_time_to_visit: {
-        months: ["November", "December", "January", "February", "March"]
-      },
-      is_featured: true,
-      recent_reviews_count: 23,
-    },
-    {
-      id: 2,
-      name: "Sundarbans Mangrove Forest",
-      slug: "sundarbans-mangrove-forest",
-      description: "The largest mangrove forest in the world",
-      type: "Forest",
-      category: "Natural",
-      subcategory: "Forest",
-      city: "Khulna",
-      area: "Sundarbans",
-      district: "Khulna",
-      is_free: false,
-      entry_fee: "500",
-      currency: "BDT",
-      overall_rating: 4.8,
-      total_reviews: 892,
-      total_views: 15632,
-      discovery_score: 9.8,
-      estimated_duration_minutes: 720,
-      difficulty_level: "Moderate",
-      cover_image_url: "https://picsum.photos/400/300?random=2",
-      google_maps_url: "https://maps.google.com/?q=Sundarbans",
-      distance_km: 15,
-      facilities: ["guide", "boat", "wildlife_viewing"],
-      best_time_to_visit: {
-        months: ["October", "November", "December", "January", "February"]
-      },
-      is_featured: true,
-      recent_reviews_count: 15,
-    },
-    {
-      id: 3,
-      name: "Sylhet Tea Gardens",
-      slug: "sylhet-tea-gardens",
-      description: "Beautiful tea plantations in the hills of Sylhet",
-      type: "Plantation",
-      category: "Cultural",
-      subcategory: "Agriculture",
-      city: "Sylhet",
-      area: "Malnichara",
-      district: "Sylhet",
-      is_free: true,
-      entry_fee: "0",
-      currency: "BDT",
-      overall_rating: 4.5,
-      total_reviews: 634,
-      total_views: 12890,
-      discovery_score: 8.9,
-      estimated_duration_minutes: 360,
-      difficulty_level: "Easy",
-      cover_image_url: "https://picsum.photos/400/300?random=3",
-      google_maps_url: "https://maps.google.com/?q=Sylhet+Tea+Garden",
-      distance_km: 8,
-      facilities: ["tea_tasting", "guided_tour", "photography"],
-      best_time_to_visit: {
-        months: ["November", "December", "January", "February", "March", "April"]
-      },
-      is_featured: true,
-      recent_reviews_count: 18,
-    },
-  ];
 
   useFocusEffect(
     useCallback(() => {
@@ -135,9 +41,19 @@ export default function AttractionsScreen() {
       setLoading(true);
       setError(null);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setAttractions(mockAttractions);
+      const coordinates = getCoordinatesForAPI();
+      const response = await getAttractions(
+        coordinates.latitude, 
+        coordinates.longitude, 
+        1, 
+        20
+      );
+
+      if (response.success) {
+        setAttractions(response.data.data || []);
+      } else {
+        setError('Failed to load attractions');
+      }
     } catch (error) {
       console.error('Error fetching attractions:', error);
       setError('Failed to load attractions');
@@ -152,39 +68,27 @@ export default function AttractionsScreen() {
     fetchAttractions();
   };
 
-  const handleAttractionPress = (attraction: FeaturedAttraction, index: number) => {
-    trackItemClick(attraction.id, index + 1, {
-      attraction_name: attraction.name,
-      attraction_type: attraction.type,
-      distance_km: attraction.distance_km,
-    });
+  const handleAttractionPress = (attraction: AttractionListItem) => {
     router.push(`/attraction/${attraction.id}`);
   };
 
-  const renderAttraction = ({ item, index }: { item: FeaturedAttraction; index: number }) => {
-    // Track item view when rendered
-    useEffect(() => {
-      trackItemView(item.id, index + 1, {
-        attraction_name: item.name,
-        attraction_type: item.type,
-        distance_km: item.distance_km,
-      });
-    }, []);
-
+  const renderAttraction = ({ item, index }: { item: AttractionListItem; index: number }) => {
     return (
-      <View style={[styles.cardContainer, { marginLeft: index % 2 === 0 ? 0 : 8 }]}>
-        <AttractionCard 
-          attraction={item} 
-          onPress={() => handleAttractionPress(item, index)}
-        />
-      </View>
+      <TrackableAttractionCard 
+        attraction={item} 
+        position={index + 1}
+        section="attractions_list"
+        source="attractions_page"
+        onPress={() => handleAttractionPress(item)}
+        style={styles.attractionCard}
+      />
     );
   };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>No Attractions Found</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.tabIconDefault }]}>
+      <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
         Try adjusting your location or check back later
       </Text>
     </View>
@@ -193,7 +97,7 @@ export default function AttractionsScreen() {
   const renderError = () => (
     <View style={styles.emptyContainer}>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>Something went wrong</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.tabIconDefault }]}>
+      <Text style={[styles.emptySubtitle, { color: colors.icon }]}>
         {error}
       </Text>
     </View>
@@ -206,18 +110,24 @@ export default function AttractionsScreen() {
       <LocationHeader />
       
       <View style={styles.titleContainer}>
-        <Text style={[styles.title, { color: colors.text }]}>Featured Attractions</Text>
+        <Text style={[styles.title, { color: colors.text }]}>All Attractions</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>
+          Discover amazing places around you
+        </Text>
       </View>
       
-      {error ? (
+      {loading && attractions.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.tint} />
+          <Text style={[styles.loadingText, { color: colors.icon }]}>Loading attractions...</Text>
+        </View>
+      ) : error ? (
         renderError()
       ) : (
         <FlatList
           data={attractions}
           renderItem={renderAttraction}
           keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
           contentContainerStyle={[styles.listContent, { paddingBottom: 100 }]}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -248,15 +158,27 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
   },
-  row: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+  subtitle: {
+    fontSize: 14,
+    marginTop: 4,
+    opacity: 0.7,
   },
   listContent: {
     paddingTop: 16,
+    paddingHorizontal: 20,
   },
-  cardContainer: {
+  attractionCard: {
+    marginBottom: 16,
+  },
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
   },
   emptyContainer: {
     flex: 1,
