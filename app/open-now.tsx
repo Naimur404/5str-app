@@ -495,14 +495,14 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 35,
-    paddingBottom: 12,
+    paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    height: 125,
+    height: 160,
   },
   headerContent: {
-    marginBottom: 8,
+    marginBottom: 16,
   },
   headerTitleContainer: {
     flexDirection: 'row',
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   searchContainer: {
-    marginBottom: 6,
+    marginBottom: 12,
   },
   searchBar: {
     flexDirection: 'row',
