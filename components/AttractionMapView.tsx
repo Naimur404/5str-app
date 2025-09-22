@@ -2,11 +2,11 @@ import BusinessMapView from '@/components/BusinessMapView';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
-  Linking,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Linking,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 interface AttractionMapViewProps {

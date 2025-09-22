@@ -50,7 +50,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
             {business.business_name}
           </Text>
           <Text style={[styles.categoryName, { color: colors.icon }]} numberOfLines={1}>
-            {business.category_name}
+            {business.area}
           </Text>
         </View>
         

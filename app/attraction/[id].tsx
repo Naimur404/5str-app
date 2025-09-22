@@ -1,6 +1,5 @@
 import { AttractionInteractionPanel } from '@/components/AttractionInteractionPanel';
 import AttractionMapView from '@/components/AttractionMapView';
-import BusinessMapView from '@/components/BusinessMapView';
 import CustomAlert from '@/components/CustomAlert';
 import { RecordVisitModal } from '@/components/RecordVisitModal';
 import { AttractionDetailsSkeleton } from '@/components/SkeletonLoader';
@@ -12,15 +11,15 @@ import { useAttractionInteraction } from '@/hooks/useAttractionInteraction';
 import { useAttractionTracking } from '@/hooks/useAttractionTracking';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
-    getAttractionDetails,
-    getAttractionReviews,
-    isAuthenticated,
-    voteAttractionReviewHelpful,
-    voteAttractionReviewNotHelpful
+  getAttractionDetails,
+  getAttractionReviews,
+  isAuthenticated,
+  voteAttractionReviewHelpful,
+  voteAttractionReviewNotHelpful
 } from '@/services/api';
 import {
-    AttractionDetail,
-    AttractionReview
+  AttractionDetail,
+  AttractionReview
 } from '@/types/api';
 import { getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,16 +29,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useState } from 'react';
 import {
-    Dimensions,
-    Linking,
-    Modal,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Dimensions,
+  Linking,
+  Modal,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 
