@@ -466,6 +466,16 @@ export interface SearchResponse {
           has_more: boolean;
         };
       };
+      attractions: {
+        data: AttractionListItem[];
+        pagination: {
+          current_page: number;
+          last_page: number;
+          per_page: number;
+          total: number;
+          has_more: boolean;
+        };
+      };
       offerings: {
         data: Offering[];
         pagination: {
@@ -477,6 +487,8 @@ export interface SearchResponse {
         };
       };
     };
+    filters_applied?: any;
+    suggestions?: any[];
   };
 }
 

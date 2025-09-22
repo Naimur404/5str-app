@@ -21,7 +21,7 @@ import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import { Business, SearchResponse, Offering } from '@/types/api';
+import { Business, SearchResponse, Offering, AttractionListItem } from '@/types/api';
 import { fetchWithJsonValidation } from '@/services/api';
 import { useLocation } from '@/contexts/LocationContext';
 
@@ -101,8 +101,12 @@ export default function SearchScreen() {
       
       const data: SearchResponse = await fetchWithJsonValidation(url);
       console.log('Search API response:', data);
+      console.log('Parsed response data:', data.data);
 
       if (data.success) {
+        console.log('Attractions found:', data.data.results.attractions?.data?.length || 0);
+        console.log('Businesses found:', data.data.results.businesses?.data?.length || 0);
+        console.log('Offerings found:', data.data.results.offerings?.data?.length || 0);
         setSearchResults(data.data);
       } else {
         Alert.alert('Error', data.message || 'Search failed');
@@ -284,6 +288,132 @@ export default function SearchScreen() {
     );
   };
 
+  const renderAttractionItem = ({ item }: { item: AttractionListItem }) => {
+    if (!item || !item.id) {
+      return null;
+    }
+    
+    const formatDistance = (distanceData: any) => {
+      // Handle new distance_formatted structure
+      if (distanceData?.distance_formatted?.formatted) {
+        return distanceData.distance_formatted.formatted;
+      }
+      // Handle legacy distance_km
+      if (distanceData?.distance_km) {
+        const distance = parseFloat(distanceData.distance_km);
+        if (distance < 1) {
+          return `${Math.round(distance * 1000)}m`;
+        }
+        return `${distance.toFixed(1)}km`;
+      }
+      // Handle direct distance field
+      if (typeof distanceData === 'number') {
+        if (distanceData < 1) {
+          return `${Math.round(distanceData * 1000)}m`;
+        }
+        return `${distanceData.toFixed(1)}km`;
+      }
+      return null;
+    };
+
+    // Get the best available image URL
+    const getAttractionImage = (item: any) => {
+      return item.cover_image_url || item.image_url || item.logo_url;
+    };
+
+    // Get rating value - try different fields
+    const getRating = (item: any) => {
+      return item.average_rating || item.overall_rating || '0';
+    };
+    
+    return (
+      <TouchableOpacity 
+        style={[styles.businessItem, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => router.push(`/attraction/${item.id}`)}
+        activeOpacity={0.7}
+      >
+        <Image 
+          source={{ uri: getImageUrl(getAttractionImage(item)) || getFallbackImageUrl('general') }} 
+          style={styles.businessImage} 
+        />
+        <View style={styles.businessInfo}>
+          <View style={styles.businessHeader}>
+            <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+              {item.name || 'Unknown Attraction'}
+            </Text>
+            <View style={styles.attractionBadges}>
+              {item.is_featured ? (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="star" size={14} color="#d97706" />
+                </View>
+              ) : null}
+              {item.is_verified ? (
+                <View style={styles.verifiedBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#059669" />
+                </View>
+              ) : null}
+            </View>
+          </View>
+          <Text style={[styles.businessCategory, { color: colors.icon }]}>
+            {`${item.category} • ${item.city}${item.area ? `, ${item.area}` : ''}`}
+          </Text>
+          {item.description ? (
+            <Text style={[styles.businessDescription, { color: colors.icon }]} numberOfLines={2}>
+              {item.description}
+            </Text>
+          ) : null}
+          <View style={styles.businessMeta}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={14} color="#d97706" />
+              <Text style={styles.rating}>{parseFloat(getRating(item)).toFixed(1)}</Text>
+              {item.total_reviews ? (
+                <Text style={styles.reviewCount}>
+                  ({item.total_reviews})
+                </Text>
+              ) : null}
+            </View>
+            {formatDistance(item) && (
+              <Text style={[styles.distance, { color: colors.tint }]}>
+                {formatDistance(item)}
+              </Text>
+            )}
+          </View>
+          {/* Additional attraction info */}
+          <View style={styles.attractionInfo}>
+            {item.is_free ? (
+              <View style={[styles.attractionBadge, { backgroundColor: '#10B981' + '20' }]}>
+                <Text style={[styles.attractionBadgeText, { color: '#10B981' }]}>Free Entry</Text>
+              </View>
+            ) : item.entry_fee && parseFloat(item.entry_fee) > 0 ? (
+              <View style={[styles.attractionBadge, { backgroundColor: colors.tint + '20' }]}>
+                <Text style={[styles.attractionBadgeText, { color: colors.tint }]}>
+                  {item.currency} {item.entry_fee}
+                </Text>
+              </View>
+            ) : null}
+            {item.difficulty_level && (
+              <View style={[styles.attractionBadge, { backgroundColor: colors.icon + '20' }]}>
+                <Text style={[styles.attractionBadgeText, { color: colors.icon }]}>
+                  {item.difficulty_level}
+                </Text>
+              </View>
+            )}
+            {item.estimated_duration_minutes && (
+              <View style={[styles.attractionBadge, { backgroundColor: '#8B5CF6' + '20' }]}>
+                <Text style={[styles.attractionBadgeText, { color: '#8B5CF6' }]}>
+                  {Math.round(item.estimated_duration_minutes / 60)}h
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <View style={styles.chevronContainer}>
+          <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   console.log('Render called with state:', { 
     searchQuery, 
     hasResults: !!searchResults, 
@@ -412,6 +542,19 @@ export default function SearchScreen() {
               </View>
             )}
 
+            {/* Attractions Section */}
+            {searchResults.results.attractions?.data && searchResults.results.attractions.data.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Attractions</Text>
+                <FlatList
+                  data={searchResults.results.attractions.data.filter((item: any) => item && item.id)}
+                  renderItem={renderAttractionItem}
+                  keyExtractor={(item) => `attraction-${item.id?.toString() || Math.random().toString()}`}
+                  scrollEnabled={false}
+                />
+              </View>
+            )}
+
             {/* Offerings Section */}
             {searchResults.results.offerings.data && searchResults.results.offerings.data.length > 0 && (
               <View style={styles.section}>
@@ -427,6 +570,7 @@ export default function SearchScreen() {
 
             {/* No Results */}
             {(!searchResults.results.businesses.data || searchResults.results.businesses.data.length === 0) &&
+             (!searchResults.results.attractions?.data || searchResults.results.attractions.data.length === 0) &&
              (!searchResults.results.offerings.data || searchResults.results.offerings.data.length === 0) && (
               <View style={[styles.noResults, { backgroundColor: colors.card }]}>
                 <Ionicons name="search-outline" size={80} color={colors.icon} />
@@ -903,6 +1047,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     marginLeft: 4,
+  },
+  // Attraction-specific styles
+  attractionInfo: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  attractionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  attractionBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  attractionBadges: {
+    flexDirection: 'row',
+    gap: 4,
   },
 });
 
