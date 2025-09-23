@@ -246,10 +246,10 @@ export default function CategoryBusinessesScreen() {
             {error}
           </Text>
           <TouchableOpacity 
-            style={[styles.retryButton, { backgroundColor: colors.tint }]}
+            style={[styles.retryButton, { backgroundColor: colors.buttonPrimary }]}
             onPress={() => loadBusinesses(1, true)}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={[styles.retryButtonText, { color: colors.buttonText }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       );
@@ -271,11 +271,11 @@ export default function CategoryBusinessesScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: categoryColor }]}>
-        <StatusBar style="light" backgroundColor={categoryColor} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         {/* Header */}
         <LinearGradient
-          colors={[categoryColor, categoryColor + 'DD']}
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
           style={styles.header}
         >
           <TouchableOpacity 
@@ -302,11 +302,11 @@ export default function CategoryBusinessesScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: categoryColor }]}>
-      <StatusBar style="light" backgroundColor={categoryColor} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       {/* Header */}
       <LinearGradient
-        colors={[categoryColor, categoryColor + 'DD']}
+        colors={[colors.headerGradientStart, colors.headerGradientEnd]}
         style={styles.header}
       >
         <TouchableOpacity 
@@ -363,6 +363,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   backButton: {
     position: 'absolute',
@@ -527,7 +529,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
