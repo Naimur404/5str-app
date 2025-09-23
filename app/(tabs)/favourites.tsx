@@ -1,28 +1,26 @@
+import CustomAlert from '@/components/CustomAlert';
+import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
+import SmartImage, { BusinessLogo, OfferingImage } from '@/components/SmartImage';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useToastGlobal } from '@/contexts/ToastContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { getUserFavorites, isAuthenticated, removeFromFavorites, type Favorite } from '@/services/api';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useCustomAlert } from '@/hooks/useCustomAlert';
-import CustomAlert from '@/components/CustomAlert';
-import { useToastGlobal } from '@/contexts/ToastContext';
-import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
-import SmartImage, { BusinessLogo, OfferingImage } from '@/components/SmartImage';
 
 const filterOptions = ['All', 'Businesses', 'Offerings', 'Attractions'];
 
