@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
     Image,
     Modal,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
@@ -40,6 +41,8 @@ export default function EmailVerificationModal({
   const [isResending, setIsResending] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [retryAfter, setRetryAfter] = useState(0);
+  const [isCodeExpired, setIsCodeExpired] = useState(false);
+  const [currentExpiresAt, setCurrentExpiresAt] = useState(expiresAt);
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const [localToast, setLocalToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
@@ -63,13 +66,14 @@ export default function EmailVerificationModal({
 
   // Calculate initial time left
   useEffect(() => {
-    if (expiresAt && visible) {
-      const expiresAtDate = new Date(expiresAt);
+    if (currentExpiresAt && visible) {
+      const expiresAtDate = new Date(currentExpiresAt);
       const now = new Date();
       const difference = Math.max(0, Math.floor((expiresAtDate.getTime() - now.getTime()) / 1000));
       setTimeLeft(difference);
+      setIsCodeExpired(difference === 0);
     }
-  }, [expiresAt, visible]);
+  }, [currentExpiresAt, visible]);
 
   // Countdown timer
   useEffect(() => {
@@ -78,8 +82,10 @@ export default function EmailVerificationModal({
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
+    } else if (timeLeft === 0 && currentExpiresAt) {
+      setIsCodeExpired(true);
     }
-  }, [timeLeft]);
+  }, [timeLeft, currentExpiresAt]);
 
   // Retry after countdown
   useEffect(() => {
@@ -98,9 +104,23 @@ export default function EmailVerificationModal({
       setIsVerifying(false);
       setIsResending(false);
       setRetryAfter(0);
+      setCurrentExpiresAt(expiresAt);
+      
+      // Calculate initial expired state
+      if (expiresAt) {
+        const expiresAtDate = new Date(expiresAt);
+        const now = new Date();
+        const difference = Math.max(0, Math.floor((expiresAtDate.getTime() - now.getTime()) / 1000));
+        setTimeLeft(difference);
+        setIsCodeExpired(difference === 0);
+      } else {
+        setIsCodeExpired(true);
+        setTimeLeft(0);
+      }
+      
       setLocalToast({ visible: false, message: '', type: 'success' });
     }
-  }, [visible]);
+  }, [visible, expiresAt]);
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -179,17 +199,36 @@ export default function EmailVerificationModal({
       if (response.success) {
         showSuccess('New verification code sent to your email');
         
-        // Reset the timer if new expiration is provided
+        // Update current expiration time and reset timer
         if (response.data?.verification_expires_at) {
-          const expiresAtDate = new Date(response.data.verification_expires_at);
+          const newExpiresAt = response.data.verification_expires_at;
+          const expiresAtDate = new Date(newExpiresAt);
           const now = new Date();
           const difference = Math.max(0, Math.floor((expiresAtDate.getTime() - now.getTime()) / 1000));
+          
+          // Update states in the correct order
+          setCurrentExpiresAt(newExpiresAt);
           setTimeLeft(difference);
+          setIsCodeExpired(false);
+          
+          console.log('New expiration set:', newExpiresAt);
+          console.log('Time difference:', difference);
+          console.log('Code expired state:', false);
+        } else {
+          // If no expiration provided, assume code is valid for 20 minutes
+          const newExpiresAt = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+          setCurrentExpiresAt(newExpiresAt);
+          setTimeLeft(20 * 60);
+          setIsCodeExpired(false);
         }
         
         // Clear the current code
         setCode(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
+        
+        // Focus on first input after a short delay to ensure UI is updated
+        setTimeout(() => {
+          inputRefs.current[0]?.focus();
+        }, 100);
       } else {
         if (response.retry_after_seconds) {
           setRetryAfter(response.retry_after_seconds);
@@ -213,7 +252,12 @@ export default function EmailVerificationModal({
     >
       <StatusBar backgroundColor="rgba(0, 0, 0, 0.7)" barStyle="light-content" />
       <View style={styles.overlay}>
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.container, { backgroundColor: colors.background }]}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -234,7 +278,7 @@ export default function EmailVerificationModal({
           <View style={styles.content}>
             <Text style={[styles.title, { color: colors.text }]}>Verify Your Email</Text>
             <Text style={[styles.subtitle, { color: colors.icon }]}>
-              {!expiresAt || timeLeft === 0 ? (
+              {isCodeExpired ? (
                 <>
                   Your verification code has expired.{'\n'}
                   Please request a new code for{'\n'}
@@ -248,36 +292,38 @@ export default function EmailVerificationModal({
               )}
             </Text>
 
-            {/* Code Input */}
-            <View style={styles.codeContainer}>
-              {code.map((digit, index) => (
-                <TextInput
-                  key={index}
-                  ref={(ref) => {
-                    inputRefs.current[index] = ref;
-                  }}
-                  style={[
-                    styles.codeInput,
-                    {
-                      borderColor: digit ? colors.tint : colors.icon + '40',
-                      backgroundColor: colors.card,
-                      color: colors.text,
-                    }
-                  ]}
-                  value={digit}
-                  onChangeText={(text) => handleCodeChange(text, index)}
-                  onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
-                  keyboardType="numeric"
-                  maxLength={6} // Allow paste
-                  selectTextOnFocus
-                  textAlign="center"
-                  autoComplete="off"
-                  textContentType="none"
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-              ))}
-            </View>
+            {/* Code Input - Only show when code is not expired */}
+            {!isCodeExpired && (
+              <View style={styles.codeContainer}>
+                {code.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={(ref) => {
+                      inputRefs.current[index] = ref;
+                    }}
+                    style={[
+                      styles.codeInput,
+                      {
+                        borderColor: digit ? colors.tint : colors.icon + '40',
+                        backgroundColor: colors.card,
+                        color: colors.text,
+                      }
+                    ]}
+                    value={digit}
+                    onChangeText={(text) => handleCodeChange(text, index)}
+                    onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
+                    keyboardType="numeric"
+                    maxLength={6} // Allow paste
+                    selectTextOnFocus
+                    textAlign="center"
+                    autoComplete="off"
+                    textContentType="none"
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                  />
+                ))}
+              </View>
+            )}
 
             {/* Timer */}
             {timeLeft > 0 && (
@@ -294,7 +340,7 @@ export default function EmailVerificationModal({
             )}
 
             {/* Verify Button */}
-            {(!expiresAt || timeLeft === 0) ? (
+            {isCodeExpired ? (
               // Show Send New Code button when expired/no code
               <TouchableOpacity
                 style={[styles.verifyButton, { opacity: isResending ? 0.7 : 1 }]}
@@ -335,7 +381,7 @@ export default function EmailVerificationModal({
             )}
 
             {/* Resend Section - Only show when code is active */}
-            {expiresAt && timeLeft > 0 && (
+            {!isCodeExpired && (
               <View style={styles.resendContainer}>
                 <Text style={[styles.resendText, { color: colors.icon }]}>
                   Didn't receive the code?{' '}
@@ -369,14 +415,15 @@ export default function EmailVerificationModal({
             </Text>
           </View>
 
-          {/* Local Toast for Modal */}
-          <Toast
-            visible={localToast.visible}
-            message={localToast.message}
-            type={localToast.type}
-            onHide={hideLocalToast}
-          />
-        </View>
+            {/* Local Toast for Modal */}
+            <Toast
+              visible={localToast.visible}
+              message={localToast.message}
+              type={localToast.type}
+              onHide={hideLocalToast}
+            />
+          </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -389,13 +436,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
   container: {
-    width: '90%',
-    maxWidth: 400,
+    width: '95%',
+    maxWidth: 450,
+    minHeight: 200,
     borderRadius: 20,
     paddingVertical: 30,
     paddingHorizontal: 24,
     alignItems: 'center',
+    marginVertical: 20,
   },
   header: {
     width: '100%',
@@ -435,7 +490,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 20,
-    gap: 12,
+    gap: 8,
   },
   codeInput: {
     width: 45,
