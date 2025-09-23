@@ -1,7 +1,7 @@
 import { API_CONFIG, getApiUrl } from '@/constants/Api';
 import { getAuthToken, isAuthenticated } from '@/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { locationService } from '@/services/locationService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 /**
