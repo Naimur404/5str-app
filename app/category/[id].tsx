@@ -1,24 +1,24 @@
+import { CategoryBusinessSkeleton } from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Business, Category, getCategoryBusinesses } from '@/services/api';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { CategoryBusinessSkeleton } from '@/components/SkeletonLoader';
 
 export default function CategoryBusinessesScreen() {
   const { getCoordinatesForAPI } = useLocation();

@@ -149,13 +149,27 @@ export default function ProfileScreen() {
     loadUserData();
   }, []);
 
+  // Load recommendations when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      console.log('Loading personalized recommendations due to auth state change');
+      loadPersonalizedRecommendations();
+    }
+  }, [isAuthenticated, loading]);
+
   const loadPersonalizedRecommendations = async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      console.log('User not authenticated, skipping recommendations');
+      return;
+    }
     
     try {
+      console.log('Loading personalized recommendations...');
       setRecommendationsLoading(true);
       // Use default coordinates for now, you can get user's location from context
       const response = await getPersonalizedRecommendations(22.3569, 91.7832, 6);
+      
+      console.log('Recommendations response:', response);
       
       if (response.success && response.data) {
         // Handle both possible response structures
@@ -170,10 +184,15 @@ export default function ProfileScreen() {
           businessesArray = data.personalized_businesses;
         }
         
+        console.log('Setting recommendations:', businessesArray.length, 'businesses');
         setPersonalizedRecommendations(businessesArray);
+      } else {
+        console.log('No recommendations data received');
+        setPersonalizedRecommendations([]);
       }
     } catch (error) {
       console.error('Error loading personalized recommendations:', error);
+      setPersonalizedRecommendations([]);
     } finally {
       setRecommendationsLoading(false);
     }
@@ -225,12 +244,14 @@ export default function ProfileScreen() {
         setIsAuthenticated(false);
         setUser(null);
         setReviews([]);
+        setPersonalizedRecommendations([]); // Clear recommendations when not authenticated
       }
     } catch (error) {
       console.error('Error loading user data:', error);
       setIsAuthenticated(false);
       setUser(null);
       setReviews([]);
+      setPersonalizedRecommendations([]); // Clear recommendations on error
     } finally {
       setLoading(false);
     }
@@ -640,7 +661,12 @@ export default function ProfileScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.reviewsContainer}>
                   {reviews.slice(0, 3).map((review) => (
-                    <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.card }]}>
+                    <TouchableOpacity 
+                      key={review.id} 
+                      style={[styles.reviewCard, { backgroundColor: colors.card }]}
+                      onPress={() => router.push(`/reviews/edit/${review.id}` as any)}
+                      activeOpacity={0.7}
+                    >
                       <View style={styles.reviewHeader}>
                         <View style={styles.ratingContainer}>
                           {[...Array(5)].map((_, i) => (
@@ -659,10 +685,15 @@ export default function ProfileScreen() {
                       <Text style={[styles.reviewText, { color: colors.text }]} numberOfLines={3}>
                         {review.review_text}
                       </Text>
-                      <Text style={[styles.businessName, { color: colors.tint }]}>
-                        {review.business?.business_name || review.offering?.business_name}
-                      </Text>
-                    </View>
+                      <View style={styles.reviewFooter}>
+                        <Text style={[styles.businessName, { color: colors.tint }]} numberOfLines={1}>
+                          {review.business?.business_name || review.offering?.business_name}
+                        </Text>
+                        <View style={styles.editIndicator}>
+                          <Ionicons name="create-outline" size={14} color={colors.icon} />
+                        </View>
+                      </View>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </ScrollView>
@@ -938,9 +969,20 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
   },
+  reviewFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   businessName: {
     fontSize: 12,
     fontWeight: '600',
+    flex: 1,
+  },
+  editIndicator: {
+    padding: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   settingsContainer: {
     paddingHorizontal: 24,
