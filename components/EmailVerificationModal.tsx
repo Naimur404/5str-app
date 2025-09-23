@@ -1,11 +1,11 @@
+import Toast from '@/components/Toast';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
-import Toast from '@/components/Toast';
-import { verifyEmail, resendVerificationCode, EmailVerifyRequest, EmailResendRequest } from '@/services/api';
+import { EmailResendRequest, EmailVerifyRequest, resendVerificationCode, verifyEmail } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
