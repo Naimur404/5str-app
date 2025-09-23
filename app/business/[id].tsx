@@ -222,8 +222,24 @@ export default function BusinessDetailsScreen() {
       );
 
       if (response.success) {
-        setSimilarBusinesses(response.data.similar_businesses);
-        console.log(`✅ Loaded ${response.data.similar_businesses.length} similar businesses`);
+        // Remove duplicates and filter out the current business
+        const allSimilarBusinesses = response.data.similar_businesses || [];
+        
+        // Create a map to track unique businesses by ID
+        const uniqueBusinessesMap = new Map();
+        
+        allSimilarBusinesses.forEach((business: any) => {
+          // Skip if it's the current business or if we already have this business
+          if (business.id && business.id !== businessId && !uniqueBusinessesMap.has(business.id)) {
+            uniqueBusinessesMap.set(business.id, business);
+          }
+        });
+        
+        // Convert map back to array
+        const uniqueSimilarBusinesses = Array.from(uniqueBusinessesMap.values());
+        
+        setSimilarBusinesses(uniqueSimilarBusinesses);
+        console.log(`✅ Loaded ${uniqueSimilarBusinesses.length} unique similar businesses (filtered from ${allSimilarBusinesses.length} total)`);
       } else {
         console.log('❌ Failed to load similar businesses');
       }
@@ -1224,7 +1240,7 @@ export default function BusinessDetailsScreen() {
           
           {similarBusinesses.map((item, index) => (
             <View 
-              key={item.id?.toString() || index}
+              key={`similar-business-${item.id}-${index}`}
               style={{ 
                 marginTop: 16, 
                 backgroundColor: colors.card, 
