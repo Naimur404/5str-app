@@ -134,7 +134,7 @@ export default function EditReviewScreen() {
           >
             <Ionicons
               name={star <= currentRating ? 'star' : 'star-outline'}
-              size={18}
+              size={20}
               color={star <= currentRating ? '#FFD700' : colors.icon}
             />
           </TouchableOpacity>
@@ -766,15 +766,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   additionalRatings: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 12,
     marginTop: 16,
   },
   compactRatingSection: {
-    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    justifyContent: 'space-between',
+    padding: 16,
     borderRadius: 12,
     backgroundColor: 'rgba(99, 102, 241, 0.05)',
     borderWidth: 1,
@@ -783,19 +783,19 @@ const styles = StyleSheet.create({
   compactRatingHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: 8,
+    flex: 1,
   },
   compactRatingLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   compactStarsContainer: {
     flexDirection: 'row',
-    gap: 2,
+    gap: 4,
   },
   compactStarButton: {
-    padding: 1,
+    padding: 4,
   },
 
   // Content Card

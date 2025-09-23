@@ -92,7 +92,7 @@ export interface BatchTrackingResponse {
 class UserInteractionTracker {
   private batch: UserInteraction[] = [];
   private readonly batchSize: number = 10;
-  private readonly flushInterval: number = 180000; // 3 minutes
+  private readonly flushInterval: number = 300000; // 5 minutes
   private batchTimer: any = null;
   private isOnline: boolean = true;
   private sessionId: string = '';
@@ -237,16 +237,14 @@ class UserInteractionTracker {
     console.log('   Action:', action);
     console.log('   Timestamp:', new Date(interaction.timestamp).toISOString());
     console.log('   Current Batch Size:', this.batch.length + 1);
-    console.log('   Will Send Immediately:', this.isHighPriorityInteraction(action));
+    console.log('   Will Send in Bulk Only:', 'All interactions batched every 5 minutes');
     console.log('   Complete Interaction Object:', JSON.stringify(interaction, null, 2));
 
     // Add to batch
     this.batch.push(interaction);
 
-    // For high-priority interactions, send immediately
-    if (this.isHighPriorityInteraction(action)) {
-      await this.sendInteractionImmediately(interaction);
-    } else if (this.batch.length >= this.batchSize) {
+    // Send batch if it reaches the batch size limit
+    if (this.batch.length >= this.batchSize) {
       await this.flushBatch();
     }
 
@@ -254,33 +252,7 @@ class UserInteractionTracker {
     await this.storeInteractionLocally(interaction);
   }
 
-  /**
-   * Check if interaction should be sent immediately
-   */
-  private isHighPriorityInteraction(action: InteractionType): boolean {
-    return [
-      InteractionType.PHONE_CALL,
-      InteractionType.OFFER_USE,
-      InteractionType.REVIEW,
-      InteractionType.COLLECTION_ADD,
-    ].includes(action);
-  }
 
-  /**
-   * Send single interaction immediately
-   */
-  private async sendInteractionImmediately(interaction: UserInteraction): Promise<void> {
-    if (!this.isOnline) {
-      return; // Will be retried later
-    }
-
-    try {
-      await this.sendInteractionToAPI(interaction);
-      await this.removeInteractionFromLocal(interaction);
-    } catch (error) {
-      console.error('Failed to send immediate interaction:', error);
-    }
-  }
 
   /**
    * Flush current batch to server

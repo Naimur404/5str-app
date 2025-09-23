@@ -1,40 +1,37 @@
+import CustomAlert from '@/components/CustomAlert';
+import EditProfileModal from '@/components/EditProfileModal';
+import ProfileAvatar from '@/components/ProfileAvatar';
+import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
-    getAuthToken,
-    getUserProfile,
-    getUserReviews,
-    logout,
-    Review,
-    User,
-    updateProfile,
-    UpdateProfilePayload,
-    getPersonalizedRecommendations,
-    PersonalizedRecommendationsResponse
+  getAuthToken,
+  getPersonalizedRecommendations,
+  getUserProfile,
+  getUserReviews,
+  logout,
+  Review,
+  User
 } from '@/services/api';
 import cacheService from '@/services/cacheService';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
-    Image,
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import EditProfileModal from '@/components/EditProfileModal';
-import { useCustomAlert } from '@/hooks/useCustomAlert';
-import CustomAlert from '@/components/CustomAlert';
-import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
-import ProfileAvatar from '@/components/ProfileAvatar';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
 
 // Guest user data
 const guestUser = {
@@ -158,8 +155,27 @@ export default function ProfileScreen() {
   }, [isAuthenticated, loading]);
 
   const loadPersonalizedRecommendations = async () => {
+    // Double-check authentication before making API call
     if (!isAuthenticated) {
       console.log('User not authenticated, skipping recommendations');
+      setPersonalizedRecommendations([]);
+      setRecommendationsLoading(false);
+      return;
+    }
+
+    // Also check if we have a valid auth token
+    try {
+      const token = await getAuthToken();
+      if (!token) {
+        console.log('No auth token available, skipping recommendations');
+        setPersonalizedRecommendations([]);
+        setRecommendationsLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.log('Error checking auth token, skipping recommendations:', error);
+      setPersonalizedRecommendations([]);
+      setRecommendationsLoading(false);
       return;
     }
     
@@ -239,7 +255,9 @@ export default function ProfileScreen() {
         }
 
         // Load personalized recommendations for authenticated users
-        await loadPersonalizedRecommendations();
+        if (isAuthenticated) {
+          await loadPersonalizedRecommendations();
+        }
       } else {
         setIsAuthenticated(false);
         setUser(null);
