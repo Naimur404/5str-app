@@ -902,6 +902,8 @@ export default function HomeScreen() {
 
   // Refresh data when radius changes
   useEffect(() => {
+    console.log('🔍 useEffect[selectedRadius] triggered - selectedRadius:', selectedRadius, 'homeData exists:', !!homeData);
+    
     if (selectedRadius && homeData) { // Only run if we have initial data loaded
       console.log(`🔄 Radius changed to ${selectedRadius}km, refreshing data...`);
       setRadiusLoading(true);
@@ -915,8 +917,15 @@ export default function HomeScreen() {
       if (isUserAuthenticated) {
         loadMainRecommendations();
       }
+    } else {
+      console.log('🔍 useEffect[selectedRadius] - conditions not met, skipping refresh');
     }
   }, [selectedRadius]);
+
+  // Debug: Monitor showRadiusSelector state changes
+  useEffect(() => {
+    console.log('👁️ showRadiusSelector state changed to:', showRadiusSelector);
+  }, [showRadiusSelector]);
 
   // Clean up any stale login success flags when app loads (except fresh ones)
   const clearOldLoginFlags = async () => {
@@ -1157,11 +1166,22 @@ export default function HomeScreen() {
   const loadSavedRadius = async () => {
     try {
       const savedRadius = await AsyncStorage.getItem('lastSelectedRadius');
-      if (savedRadius) {
-        setSelectedRadius(parseInt(savedRadius));
+      console.log('📱 loadSavedRadius - savedRadius from AsyncStorage:', savedRadius);
+      console.log('📱 loadSavedRadius - current selectedRadius state:', selectedRadius);
+      
+      if (savedRadius && savedRadius !== selectedRadius.toString()) {
+        const radiusValue = parseInt(savedRadius);
+        console.log('📱 Setting saved radius from AsyncStorage:', radiusValue);
+        setSelectedRadius(radiusValue);
+      } else if (savedRadius) {
+        console.log('📱 Saved radius same as current, keeping:', selectedRadius);
+      } else {
+        console.log('📱 No saved radius found, using default 15km');
+        // Set default radius in AsyncStorage
+        await AsyncStorage.setItem('lastSelectedRadius', '15');
       }
     } catch (error) {
-      console.error('Error loading saved radius:', error);
+      console.error('❌ Error loading saved radius:', error);
     }
   };
 
@@ -1289,16 +1309,65 @@ export default function HomeScreen() {
   };
 
   const handleRadiusSelect = (radius: number) => {
-    if (radius !== selectedRadius) {
-      setSelectedRadius(radius);
-      setShowRadiusSelector(false);
-      // Don't show success message immediately - wait for data to load
-      // The success message will be shown when data finishes loading
-    }
+    console.log('🎯 handleRadiusSelect called with radius:', radius);
+    console.log('🎯 Current selectedRadius:', selectedRadius);
+    console.log('🎯 Will radius change?', radius !== selectedRadius);
+    
+    // Always update the state, regardless of current value
+    console.log('🔄 Forcing radius update to:', radius);
+    
+    // Update state immediately
+    setSelectedRadius(radius);
+    setShowRadiusSelector(false);
+    
+    // Save to AsyncStorage immediately
+    const saveImmediately = async () => {
+      try {
+        await AsyncStorage.setItem('lastSelectedRadius', radius.toString());
+        console.log('💾 Saved radius to AsyncStorage:', radius);
+        
+        // Verify it was saved
+        const verification = await AsyncStorage.getItem('lastSelectedRadius');
+        console.log('✅ Verification - AsyncStorage now contains:', verification);
+      } catch (error) {
+        console.error('❌ Error saving radius:', error);
+      }
+    };
+    
+    saveImmediately();
+    console.log('✅ Radius selection completed for:', radius);
   };
 
   const handleRadiusSelectorToggle = () => {
-    setShowRadiusSelector(!showRadiusSelector);
+    console.log('🔄 Radius selector toggle clicked - current state:', showRadiusSelector);
+    console.log('🔄 Current selectedRadius at toggle:', selectedRadius);
+    
+    const newState = !showRadiusSelector;
+    console.log('🔄 About to set showRadiusSelector to:', newState);
+    
+    // Update state with callback to ensure it's set
+    setShowRadiusSelector(prevState => {
+      console.log('🔄 setShowRadiusSelector callback - prevState:', prevState, '-> newState:', !prevState);
+      return !prevState;
+    });
+    
+    // Debug: Check AsyncStorage when toggling
+    const checkAsyncStorage = async () => {
+      try {
+        const storedRadius = await AsyncStorage.getItem('lastSelectedRadius');
+        console.log('🔍 AsyncStorage check - stored radius:', storedRadius);
+        
+        // TEMPORARY DEBUG: Clear AsyncStorage to test
+        // Uncomment the next line to clear AsyncStorage for testing
+        // await AsyncStorage.removeItem('lastSelectedRadius');
+        // console.log('🧹 DEBUG: Cleared AsyncStorage for testing');
+      } catch (error) {
+        console.error('Error checking AsyncStorage:', error);
+      }
+    };
+    checkAsyncStorage();
+    
+    console.log('✅ Toggle function completed');
   };
 
   const handleSearch = () => {
@@ -1990,63 +2059,11 @@ export default function HomeScreen() {
             </Text>
           </View>
         </TouchableOpacity>
+
+
       </LinearGradient>
 
-      {/* Radius Selector Section */}
-      <View style={[styles.radiusSelectorContainer, { backgroundColor: colors.background }]}>
-        <TouchableOpacity 
-          style={[styles.radiusToggle, { backgroundColor: colors.card }]}
-          onPress={handleRadiusSelectorToggle}
-          activeOpacity={0.7}
-        >
-          <View style={styles.radiusInfo}>
-            <Ionicons name="radio-button-on" size={16} color={colors.tint} />
-            <Text style={[styles.radiusText, { color: colors.text }]}>
-              Search Radius: {selectedRadius}km
-            </Text>
-          </View>
-          <Ionicons 
-            name={showRadiusSelector ? "chevron-up" : "chevron-down"} 
-            size={16} 
-            color={colors.icon} 
-          />
-        </TouchableOpacity>
 
-        {/* Expandable Radius Options */}
-        {showRadiusSelector && (
-          <View style={[styles.radiusOptions, { backgroundColor: colors.card }]}>
-            {radiusOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.radiusOption,
-                  selectedRadius === option.value && [
-                    styles.selectedRadiusOption, 
-                    { backgroundColor: colors.tint + '15' }
-                  ]
-                ]}
-                onPress={() => handleRadiusSelect(option.value)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.radiusOptionInfo}>
-                  <Text style={[
-                    styles.radiusOptionLabel, 
-                    { color: selectedRadius === option.value ? colors.tint : colors.text }
-                  ]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.radiusOptionDescription, { color: colors.icon }]}>
-                    {option.description}
-                  </Text>
-                </View>
-                {selectedRadius === option.value && (
-                  <Ionicons name="checkmark-circle" size={20} color={colors.tint} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
 
       {/* Scrollable Content */}
       <ScrollView
@@ -2406,6 +2423,111 @@ export default function HomeScreen() {
         buttons={alertConfig.buttons}
         onClose={hideAlert}
       />
+
+      {/* Floating Radius Selector - Modern Design */}
+      <View style={styles.floatingRadiusSelector}>
+        {/* Main Floating Button */}
+        <TouchableOpacity
+          style={[
+            styles.floatingRadiusButton,
+            { backgroundColor: colors.tint },
+            showRadiusSelector && styles.floatingRadiusButtonActive
+          ]}
+          onPress={() => {
+            console.log('🔘 Floating button pressed - current selectedRadius:', selectedRadius);
+            handleRadiusSelectorToggle();
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="location" size={18} color="white" />
+          <Text style={styles.floatingRadiusButtonText}>
+            {selectedRadius}km
+          </Text>
+        </TouchableOpacity>
+
+        {/* Floating Options Panel */}
+        {(() => {
+          console.log('📺 RENDERING CHECK: showRadiusSelector =', showRadiusSelector);
+          return showRadiusSelector;
+        })() && (
+          <>
+            {/* Backdrop */}
+            <TouchableOpacity
+              style={styles.floatingRadiusBackdrop}
+              activeOpacity={1}
+              onPress={() => {
+                console.log('📺 Backdrop pressed - closing panel');
+                setShowRadiusSelector(false);
+              }}
+            />
+            
+            {/* Options Panel */}
+            <View style={[styles.floatingRadiusPanel, { backgroundColor: colors.card }]}>
+              <View style={styles.floatingRadiusPanelHeader}>
+                <Text style={[styles.floatingRadiusPanelTitle, { color: colors.text }]}>Search Radius</Text>
+                <TouchableOpacity onPress={() => {
+                  console.log('📺 Close button pressed');
+                  setShowRadiusSelector(false);
+                }}>
+                  <Ionicons name="close" size={20} color={colors.icon} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.floatingRadiusOptions}>
+                {radiusOptions.map((option, index) => {
+                  const isSelected = selectedRadius === option.value;
+                  console.log(`🔍 Rendering option ${option.value}km - isSelected:`, isSelected);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={`radius-${option.value}`}
+                      style={[
+                        styles.floatingRadiusOption,
+                        isSelected && [
+                          styles.floatingRadiusOptionSelected,
+                          { backgroundColor: colors.tint + '15', borderColor: colors.tint }
+                        ],
+                        index === radiusOptions.length - 1 && styles.floatingRadiusOptionLast
+                      ]}
+                      onPress={() => {
+                        console.log('🔘 Radius option PRESSED:', {
+                          value: option.value,
+                          label: option.label,
+                          currentSelected: selectedRadius,
+                          isSelected: isSelected
+                        });
+                        handleRadiusSelect(option.value);
+                      }}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Increase touch area
+                    >
+                      <View style={styles.floatingRadiusOptionContent}>
+                        <View style={styles.floatingRadiusOptionMain}>
+                          <Text style={[
+                            styles.floatingRadiusOptionLabel,
+                            { color: isSelected ? colors.tint : colors.text }
+                          ]}>
+                            {option.label}
+                          </Text>
+                          <Text style={[styles.floatingRadiusOptionDesc, { color: colors.icon }]}>
+                            {option.description}
+                          </Text>
+                        </View>
+                        
+                        {isSelected ? (
+                          <Ionicons name="checkmark-circle" size={24} color={colors.tint} />
+                        ) : (
+                          <View style={[styles.floatingRadiusOptionCircle, { borderColor: colors.icon + '30' }]} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -3112,7 +3234,123 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 2,
   },
-  // Radius Selector Styles
+  // Modern Floating Radius Selector
+  floatingRadiusSelector: {
+    position: 'absolute',
+    bottom: 20, // Even lower position - very close to screen bottom
+    right: 20, // Slightly closer to edge for better reach
+    zIndex: 9999, // Higher zIndex to ensure it's on top
+  },
+  floatingRadiusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 26,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+    gap: 7,
+    minWidth: 90,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  floatingRadiusButtonActive: {
+    transform: [{ scale: 1.05 }],
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  floatingRadiusButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  floatingRadiusBackdrop: {
+    position: 'absolute',
+    top: -2000, // Large backdrop area
+    left: -2000,
+    right: -2000,
+    bottom: -100,
+    zIndex: 9998, // Lower than panel
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', // Semi-transparent backdrop
+  },
+  floatingRadiusPanel: {
+    position: 'absolute',
+    bottom: 70, // Adjusted position above the lower button
+    right: 0,
+    width: 300, // Wider panel
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 25, // Higher elevation than backdrop
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    zIndex: 9999, // Highest z-index
+  },
+  floatingRadiusPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  floatingRadiusPanelTitle: {
+    fontSize: 19,
+    fontWeight: '700',
+  },
+  floatingRadiusOptions: {
+    padding: 8,
+    zIndex: 10000, // Ensure options are above everything
+  },
+  floatingRadiusOption: {
+    borderRadius: 12,
+    marginVertical: 2,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    zIndex: 10001, // Individual option z-index
+  },
+  floatingRadiusOptionSelected: {
+    borderWidth: 2,
+  },
+  floatingRadiusOptionLast: {
+    marginBottom: 8,
+  },
+  floatingRadiusOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  floatingRadiusOptionMain: {
+    flex: 1,
+  },
+  floatingRadiusOptionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  floatingRadiusOptionDesc: {
+    fontSize: 13,
+    opacity: 0.7,
+  },
+  floatingRadiusOptionCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  // Original Radius Selector Styles (keep for backwards compatibility)
   radiusSelectorContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
