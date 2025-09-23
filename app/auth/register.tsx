@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,6 +19,7 @@ import {
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import EmailVerificationModal from '@/components/EmailVerificationModal';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -31,6 +33,9 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationExpiresAt, setVerificationExpiresAt] = useState('');
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
@@ -38,6 +43,22 @@ export default function RegisterScreen() {
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleVerificationSuccess = (user: any, token: string) => {
+    setShowVerificationModal(false);
+    showSuccess('Success', 'Email verified successfully! Welcome!');
+    setTimeout(() => {
+      router.replace('/(tabs)');
+    }, 1500);
+  };
+
+  const handleVerificationClose = () => {
+    setShowVerificationModal(false);
+  };
+
+  const handleVerificationError = (message: string) => {
+    showError('Verification Error', message);
   };
 
   const handleRegister = async () => {
@@ -72,13 +93,25 @@ export default function RegisterScreen() {
       const data = await register(requestData);
 
       if (data.success) {
-        showSuccess('Success', 'Registration successful! Welcome to 5str! You can now login.');
-        // Add a small delay to show the success message before navigation
-        setTimeout(() => {
-          router.replace('/auth/login');
-        }, 2000);
+        // Check if email verification is required
+        if (data.data?.verification_required) {
+          setVerificationEmail(email);
+          setVerificationExpiresAt(data.data.verification_expires_at || '');
+          setShowVerificationModal(true);
+        } else {
+          showSuccess('Success', 'Registration successful! Welcome! You can now login.');
+          // Add a small delay to show the success message before navigation
+          setTimeout(() => {
+            router.replace('/auth/login');
+          }, 2000);
+        }
       } else {
-        showError('Error', data.message || 'Registration failed');
+        if (data.status === 409) {
+          // Email already registered and verified
+          showError('Email Already Registered', data.message || 'This email is already registered. Please try logging in.');
+        } else {
+          showError('Error', data.message || 'Registration failed');
+        }
       }
     } catch (error) {
       showError('Error', 'Network error. Please try again.');
@@ -107,18 +140,19 @@ export default function RegisterScreen() {
             </TouchableOpacity>
             <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
             <Text style={[styles.subtitle, { color: colors.icon }]}>
-              Join 5str and discover amazing local businesses
+              Join us and discover amazing local businesses
             </Text>
           </View>
 
           {/* Logo/Brand */}
           <View style={styles.brandContainer}>
-            <LinearGradient
-              colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.tint] : ['#667eea', '#764ba2']}
-              style={styles.brandCircle}
-            >
-              <Text style={styles.brandText}>5str</Text>
-            </LinearGradient>
+            <View style={[styles.iconWrapper, { backgroundColor: colors.card }]}>
+              <Image 
+                source={require('@/assets/images/icon.png')} 
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
+            </View>
           </View>
 
           {/* Form */}
@@ -310,6 +344,15 @@ export default function RegisterScreen() {
         buttons={alertConfig.buttons}
         onClose={hideAlert}
       />
+
+      <EmailVerificationModal
+        visible={showVerificationModal}
+        email={verificationEmail}
+        expiresAt={verificationExpiresAt}
+        onSuccess={handleVerificationSuccess}
+        onClose={handleVerificationClose}
+        onError={handleVerificationError}
+      />
     </View>
   );
 }
@@ -346,17 +389,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  brandCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  iconWrapper: {
+    width: 70,
+    height: 70,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 10,
   },
-  brandText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
+  appIcon: {
+    width: 50,
+    height: 50,
   },
   formContainer: {
     marginBottom: 20,

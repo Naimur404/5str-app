@@ -159,7 +159,8 @@ const styles = StyleSheet.create({
     bottom: Platform.OS === 'ios' ? 50 : 30,
     left: 16,
     right: 16,
-    zIndex: 1000,
+    zIndex: 9999,
+    elevation: 9999,
   },
   toast: {
     flexDirection: 'row',

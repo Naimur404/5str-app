@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
+    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,6 +19,7 @@ import {
 } from 'react-native';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
+import EmailVerificationModal from '@/components/EmailVerificationModal';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -26,6 +28,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationExpiresAt, setVerificationExpiresAt] = useState('');
   const router = useRouter();
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
@@ -68,13 +73,46 @@ export default function LoginScreen() {
         // Navigate to home with a special parameter to trigger immediate success message
         router.replace('/(tabs)?loginSuccess=true' as any);
       } else {
-        showError('Error', data.message || 'Login failed');
+        // Check if email verification is required
+        if (data.verification_required) {
+          setVerificationEmail(email);
+          
+          if (data.verification_expired || !data.verification_expires_at) {
+            // Verification code has expired or doesn't exist, show modal directly
+            setVerificationExpiresAt('');
+            setShowVerificationModal(true);
+            // Don't show error alert here - let the modal handle the messaging
+          } else {
+            // Show verification modal with current expiration time
+            setVerificationExpiresAt(data.verification_expires_at || '');
+            setShowVerificationModal(true);
+            // Show a gentle info message that doesn't block the modal
+          }
+        } else {
+          showError('Error', data.message || 'Login failed');
+        }
       }
     } catch (error) {
       showError('Error', 'Network error. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerificationSuccess = (user: any, token: string) => {
+    setShowVerificationModal(false);
+    showSuccess('Email verified successfully! Welcome back!');
+    setTimeout(() => {
+      router.replace('/(tabs)');
+    }, 1500);
+  };
+
+  const handleVerificationClose = () => {
+    setShowVerificationModal(false);
+  };
+
+  const handleVerificationError = (message: string) => {
+    showError('Verification Error', message);
   };
 
   return (
@@ -97,12 +135,13 @@ export default function LoginScreen() {
 
           {/* Logo/Brand */}
           <View style={styles.brandContainer}>
-            <LinearGradient
-              colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.tint] : ['#667eea', '#764ba2']}
-              style={styles.brandCircle}
-            >
-              <Text style={styles.brandText}>5str</Text>
-            </LinearGradient>
+            <View style={[styles.iconWrapper, { backgroundColor: colors.card }]}>
+              <Image 
+                source={require('@/assets/images/icon.png')} 
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
+            </View>
           </View>
 
           {/* Form */}
@@ -244,6 +283,15 @@ export default function LoginScreen() {
         buttons={alertConfig.buttons}
         onClose={hideAlert}
       />
+
+      <EmailVerificationModal
+        visible={showVerificationModal}
+        email={verificationEmail}
+        expiresAt={verificationExpiresAt}
+        onSuccess={handleVerificationSuccess}
+        onClose={handleVerificationClose}
+        onError={handleVerificationError}
+      />
     </View>
   );
 }
@@ -276,17 +324,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  brandCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  iconWrapper: {
+    width: 90,
+    height: 90,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 12,
   },
-  brandText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
+  appIcon: {
+    width: 66,
+    height: 66,
   },
   formContainer: {
     marginBottom: 30,

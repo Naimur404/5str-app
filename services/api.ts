@@ -736,6 +736,28 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
       }
     }
     
+    if (response.status === 403) {
+      // Check if this is a login endpoint - don't throw for email verification responses
+      if (endpoint.includes('/login')) {
+        console.log('🔐 403 on login - Email verification required');
+        return {
+          success: false,
+          message: responseData?.message || 'Email verification required',
+          status: response.status,
+          verification_required: responseData?.verification_required || false,
+          verification_expires_at: responseData?.verification_expires_at || null,
+          verification_expired: responseData?.verification_expired || false
+        };
+      }
+      
+      // For other endpoints, return the error
+      return {
+        success: false,
+        message: responseData?.message || 'Forbidden',
+        status: response.status
+      };
+    }
+    
     if (response.status === 422) {
       return {
         success: false,
@@ -772,7 +794,21 @@ const makeApiCall = async (endpoint: string, options: RequestInit = {}, requireA
 };
 
 // API functions
-export const login = async (email: string, password: string): Promise<any> => {
+export interface LoginResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    token: string;
+    token_type: string;
+    user: User;
+  };
+  verification_required?: boolean;
+  verification_expires_at?: string | null;
+  verification_expired?: boolean;
+  status?: number;
+}
+
+export const login = async (email: string, password: string): Promise<LoginResponse> => {
   const response = await makeApiCall(API_CONFIG.ENDPOINTS.LOGIN, {
     method: 'POST',
     body: JSON.stringify({ email, password }),
@@ -785,7 +821,20 @@ export const login = async (email: string, password: string): Promise<any> => {
   return response;
 };
 
-export const register = async (userData: any): Promise<any> => {
+export interface RegisterResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    user_id: number;
+    email: string;
+    verification_expires_at: string;
+    verification_required: boolean;
+    token?: string;
+  };
+  status?: number;
+}
+
+export const register = async (userData: any): Promise<RegisterResponse> => {
   const response = await makeApiCall(API_CONFIG.ENDPOINTS.REGISTER, {
     method: 'POST',
     body: JSON.stringify(userData),
@@ -796,6 +845,76 @@ export const register = async (userData: any): Promise<any> => {
   }
   
   return response;
+};
+
+// Email Verification API Functions
+export interface EmailVerifyRequest {
+  email: string;
+  code: string;
+}
+
+export interface EmailVerifyResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    verified: boolean;
+    verified_at: string;
+    token: string;
+    token_type: string;
+    user: User;
+  };
+}
+
+export interface EmailResendRequest {
+  email: string;
+}
+
+export interface EmailResendResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    email: string;
+    verification_expires_at: string;
+  };
+  retry_after_seconds?: number;
+}
+
+export interface EmailStatusResponse {
+  success: boolean;
+  data: {
+    email: string;
+    is_verified: boolean;
+    verification_required: boolean;
+    verification_expires_at?: string;
+    is_expired?: boolean;
+    minutes_remaining?: number;
+  };
+}
+
+export const verifyEmail = async (verificationData: EmailVerifyRequest): Promise<EmailVerifyResponse> => {
+  const response = await makeApiCall(API_CONFIG.ENDPOINTS.EMAIL_VERIFY, {
+    method: 'POST',
+    body: JSON.stringify(verificationData),
+  }, false);
+
+  // If verification successful and token provided, store it
+  if (response.success && response.data?.token) {
+    await setAuthToken(response.data.token);
+  }
+  
+  return response;
+};
+
+export const resendVerificationCode = async (resendData: EmailResendRequest): Promise<EmailResendResponse> => {
+  return makeApiCall(API_CONFIG.ENDPOINTS.EMAIL_RESEND, {
+    method: 'POST',
+    body: JSON.stringify(resendData),
+  }, false);
+};
+
+export const checkEmailVerificationStatus = async (email: string): Promise<EmailStatusResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.EMAIL_STATUS}?email=${encodeURIComponent(email)}`;
+  return makeApiCall(url, {}, false);
 };
 
 export const getUserProfile = async (): Promise<UserResponse> => {
