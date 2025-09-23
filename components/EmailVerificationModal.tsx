@@ -294,83 +294,74 @@ export default function EmailVerificationModal({
             )}
 
             {/* Verify Button */}
-            <TouchableOpacity
-              style={[styles.verifyButton, { opacity: isVerifying ? 0.7 : 1 }]}
-              onPress={handleVerify}
-              disabled={isVerifying || code.join('').length !== 6 || (!expiresAt && timeLeft === 0)}
-            >
-              <LinearGradient
-                colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.buttonPrimary] : ['#667eea', '#764ba2']}
-                style={styles.verifyButtonGradient}
+            {(!expiresAt || timeLeft === 0) ? (
+              // Show Send New Code button when expired/no code
+              <TouchableOpacity
+                style={[styles.verifyButton, { opacity: isResending ? 0.7 : 1 }]}
+                onPress={handleResend}
+                disabled={isResending || retryAfter > 0}
               >
-                {isVerifying ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.verifyButtonText}>
-                    {(!expiresAt && timeLeft === 0) ? 'Request New Code First' : 'Verify Email'}
-                  </Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.buttonPrimary] : ['#667eea', '#764ba2']}
+                  style={styles.verifyButtonGradient}
+                >
+                  {isResending ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.verifyButtonText}>
+                      {retryAfter > 0 ? `Wait ${retryAfter}s` : 'Send New Code'}
+                    </Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              // Show Verify Email button when code is active
+              <TouchableOpacity
+                style={[styles.verifyButton, { opacity: isVerifying ? 0.7 : 1 }]}
+                onPress={handleVerify}
+                disabled={isVerifying || code.join('').length !== 6}
+              >
+                <LinearGradient
+                  colors={colors.buttonPrimary ? [colors.buttonPrimary, colors.buttonPrimary] : ['#667eea', '#764ba2']}
+                  style={styles.verifyButtonGradient}
+                >
+                  {isVerifying ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.verifyButtonText}>Verify Email</Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
 
-            {/* Resend Section */}
-            <View style={styles.resendContainer}>
-              {(!expiresAt || timeLeft === 0) ? (
-                // Show prominent resend when expired or no code
-                <>
-                  <Text style={[styles.resendText, { color: colors.icon }]}>
-                    {!expiresAt ? 'No active verification code.' : 'Code has expired.'}{' '}
+            {/* Resend Section - Only show when code is active */}
+            {expiresAt && timeLeft > 0 && (
+              <View style={styles.resendContainer}>
+                <Text style={[styles.resendText, { color: colors.icon }]}>
+                  Didn't receive the code?{' '}
+                </Text>
+                
+                {retryAfter > 0 ? (
+                  <Text style={[styles.retryAfter, { color: colors.icon }]}>
+                    Wait {retryAfter}s
                   </Text>
-                  
-                  {retryAfter > 0 ? (
-                    <Text style={[styles.retryAfter, { color: colors.icon }]}>
-                      Wait {retryAfter}s
-                    </Text>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={handleResend}
-                      disabled={isResending}
-                      style={[styles.resendButton, styles.prominentResend]}
-                    >
-                      {isResending ? (
-                        <ActivityIndicator size="small" color="white" />
-                      ) : (
-                        <Text style={[styles.resendLink, styles.prominentResendText]}>
-                          Send New Code
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </>
-              ) : (
-                // Normal resend when code is active
-                <>
-                  <Text style={[styles.resendText, { color: colors.icon }]}>
-                    Didn't receive the code?{' '}
-                  </Text>
-                  
-                  {retryAfter > 0 ? (
-                    <Text style={[styles.retryAfter, { color: colors.icon }]}>
-                      Wait {retryAfter}s
-                    </Text>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={handleResend}
-                      disabled={isResending}
-                      style={styles.resendButton}
-                    >
-                      {isResending ? (
-                        <ActivityIndicator size="small" color={colors.tint} />
-                      ) : (
-                        <Text style={[styles.resendLink, { color: colors.tint }]}>
-                          Resend Code
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-            </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleResend}
+                    disabled={isResending}
+                    style={styles.resendButton}
+                  >
+                    {isResending ? (
+                      <ActivityIndicator size="small" color={colors.tint} />
+                    ) : (
+                      <Text style={[styles.resendLink, { color: colors.tint }]}>
+                        Resend Code
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
 
             {/* Help Text */}
             <Text style={[styles.helpText, { color: colors.icon }]}>
