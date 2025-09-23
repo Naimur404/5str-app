@@ -674,6 +674,18 @@ export default function HomeScreen() {
   const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationBusiness[]>([]);
   const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+  const [selectedRadius, setSelectedRadius] = useState<number>(15); // Default 15km radius
+  const [showRadiusSelector, setShowRadiusSelector] = useState(false);
+  const [radiusLoading, setRadiusLoading] = useState(false); // Track radius change loading
+
+  // Available radius options
+  const radiusOptions = [
+    { value: 5, label: '5 km', description: 'Very Close' },
+    { value: 10, label: '10 km', description: 'Close' },
+    { value: 15, label: '15 km', description: 'Nearby' },
+    { value: 25, label: '25 km', description: 'Extended' },
+    { value: 50, label: '50 km', description: 'Wide Area' },
+  ];
 
   const handleWeatherUpdate = (weather: WeatherData) => {
     setCurrentWeather(weather);
@@ -858,7 +870,10 @@ export default function HomeScreen() {
     const initializeApp = async () => {
       console.log('🚀 HOME SCREEN: Initializing app...');
       
-      // First, try to preload cached data for instant display
+      // First load saved radius
+      await loadSavedRadius();
+      
+      // Then, try to preload cached data for instant display
       const cachedData = await cacheService.preloadCachedData();
       
       if (cachedData.homeData) {
@@ -884,6 +899,24 @@ export default function HomeScreen() {
     
     initializeApp();
   }, []);
+
+  // Refresh data when radius changes
+  useEffect(() => {
+    if (selectedRadius && homeData) { // Only run if we have initial data loaded
+      console.log(`🔄 Radius changed to ${selectedRadius}km, refreshing data...`);
+      setRadiusLoading(true);
+      setLoading(true);
+      // Clear current data to show skeleton animation
+      setHomeData(null);
+      saveSelectedRadius(selectedRadius);
+      fetchHomeData();
+      
+      // Also reload recommendations with new radius if user is authenticated
+      if (isUserAuthenticated) {
+        loadMainRecommendations();
+      }
+    }
+  }, [selectedRadius]);
 
   // Clean up any stale login success flags when app loads (except fresh ones)
   const clearOldLoginFlags = async () => {
@@ -1051,25 +1084,25 @@ export default function HomeScreen() {
       // Get coordinates from LocationContext (instant, no permission delays!)
       const coordinates = getCoordinatesForAPI();
       
-      // Try to get cached data first
+      // Try to get cached data first (but check if radius changed)
       const cachedData = await cacheService.getHomeData(coordinates);
-      if (cachedData) {
-        console.log('Using cached home data');
+      if (cachedData && !hasRadiusChanged()) {
+        console.log('Using cached home data with same radius');
         setHomeData(cachedData);
         setLoading(false);
         setRefreshing(false);
         return;
       }
 
-      console.log('Fetching fresh home data');
-      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=15`;
+      console.log(`Fetching fresh home data with ${selectedRadius}km radius`);
+      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=${selectedRadius}`;
       const data: HomeResponse = await fetchWithJsonValidation(url);
 
       if (data.success) {
         setHomeData(data.data);
         // Cache the new data
         await cacheService.setHomeData(data.data, coordinates);
-        console.log('Home data cached for 5 minutes');
+        console.log(`Home data cached for ${selectedRadius}km radius`);
       } else {
         showAlert({
           type: 'error',
@@ -1093,6 +1126,42 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      // Show success message when radius loading completes
+      if (radiusLoading) {
+        showSuccess(`Search radius updated to ${selectedRadius}km`);
+      }
+      setRadiusLoading(false);
+    }
+  };
+
+  // Check if radius has changed since last cache
+  const hasRadiusChanged = async () => {
+    try {
+      const lastRadius = await AsyncStorage.getItem('lastSelectedRadius');
+      return lastRadius !== selectedRadius.toString();
+    } catch (error) {
+      return true; // If error, assume radius changed to force fresh data
+    }
+  };
+
+  // Save selected radius
+  const saveSelectedRadius = async (radius: number) => {
+    try {
+      await AsyncStorage.setItem('lastSelectedRadius', radius.toString());
+    } catch (error) {
+      console.error('Error saving selected radius:', error);
+    }
+  };
+
+  // Load saved radius on app start
+  const loadSavedRadius = async () => {
+    try {
+      const savedRadius = await AsyncStorage.getItem('lastSelectedRadius');
+      if (savedRadius) {
+        setSelectedRadius(parseInt(savedRadius));
+      }
+    } catch (error) {
+      console.error('Error loading saved radius:', error);
     }
   };
 
@@ -1102,12 +1171,12 @@ export default function HomeScreen() {
       // Get coordinates from LocationContext
       const coordinates = getCoordinatesForAPI();
       
-      console.log('🔄 Fetching fresh home data for new location:', coordinates);
+      console.log(`🔄 Fetching fresh home data for new location with ${selectedRadius}km radius:`, coordinates);
       
       // Force clear any existing cache first
       await cacheService.forceRefreshHomeData();
       
-      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=15`;
+      const url = `${getApiUrl(API_CONFIG.ENDPOINTS.HOME)}?latitude=${coordinates.latitude}&longitude=${coordinates.longitude}&radius=${selectedRadius}`;
       console.log('🌐 API URL:', url);
       
       const data: HomeResponse = await fetchWithJsonValidation(url);
@@ -1149,6 +1218,7 @@ export default function HomeScreen() {
       });
     } finally {
       setLoading(false);
+      setRadiusLoading(false);
     }
   };
 
@@ -1216,6 +1286,19 @@ export default function HomeScreen() {
       // Handle external URLs if needed
       console.log('External URL:', banner.link_url);
     }
+  };
+
+  const handleRadiusSelect = (radius: number) => {
+    if (radius !== selectedRadius) {
+      setSelectedRadius(radius);
+      setShowRadiusSelector(false);
+      // Don't show success message immediately - wait for data to load
+      // The success message will be shown when data finishes loading
+    }
+  };
+
+  const handleRadiusSelectorToggle = () => {
+    setShowRadiusSelector(!showRadiusSelector);
   };
 
   const handleSearch = () => {
@@ -1707,7 +1790,7 @@ export default function HomeScreen() {
             <View style={styles.attractionDetailItem}>
               <Ionicons name="time-outline" size={12} color={colors.icon} />
               <Text style={[styles.attractionDetailText, { color: colors.icon }]}>
-                {/* {formatDuration(item.estimated_duration_minutes)} */}
+                {formatDuration(item.estimated_duration_minutes)}
               </Text>
             </View>
             
@@ -1734,7 +1817,7 @@ export default function HomeScreen() {
     return iconMap[slug] || 'business';
   };
 
-  if (loading && !homeData || isLocationChanging) {
+  if ((loading && !homeData) || isLocationChanging || radiusLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style="light" />
@@ -1804,6 +1887,13 @@ export default function HomeScreen() {
 
         {/* Skeleton Content */}
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {radiusLoading && (
+            <View style={styles.radiusLoadingIndicator}>
+              <Text style={[styles.radiusLoadingText, { color: colors.text }]}>
+                🔄 Updating search radius to {selectedRadius}km...
+              </Text>
+            </View>
+          )}
           <HomePageSkeleton colors={colors} />
         </ScrollView>
       </View>
@@ -1901,6 +1991,62 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
       </LinearGradient>
+
+      {/* Radius Selector Section */}
+      <View style={[styles.radiusSelectorContainer, { backgroundColor: colors.background }]}>
+        <TouchableOpacity 
+          style={[styles.radiusToggle, { backgroundColor: colors.card }]}
+          onPress={handleRadiusSelectorToggle}
+          activeOpacity={0.7}
+        >
+          <View style={styles.radiusInfo}>
+            <Ionicons name="radio-button-on" size={16} color={colors.tint} />
+            <Text style={[styles.radiusText, { color: colors.text }]}>
+              Search Radius: {selectedRadius}km
+            </Text>
+          </View>
+          <Ionicons 
+            name={showRadiusSelector ? "chevron-up" : "chevron-down"} 
+            size={16} 
+            color={colors.icon} 
+          />
+        </TouchableOpacity>
+
+        {/* Expandable Radius Options */}
+        {showRadiusSelector && (
+          <View style={[styles.radiusOptions, { backgroundColor: colors.card }]}>
+            {radiusOptions.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.radiusOption,
+                  selectedRadius === option.value && [
+                    styles.selectedRadiusOption, 
+                    { backgroundColor: colors.tint + '15' }
+                  ]
+                ]}
+                onPress={() => handleRadiusSelect(option.value)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.radiusOptionInfo}>
+                  <Text style={[
+                    styles.radiusOptionLabel, 
+                    { color: selectedRadius === option.value ? colors.tint : colors.text }
+                  ]}>
+                    {option.label}
+                  </Text>
+                  <Text style={[styles.radiusOptionDescription, { color: colors.icon }]}>
+                    {option.description}
+                  </Text>
+                </View>
+                {selectedRadius === option.value && (
+                  <Ionicons name="checkmark-circle" size={20} color={colors.tint} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
 
       {/* Scrollable Content */}
       <ScrollView
@@ -2965,6 +3111,77 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     marginLeft: 2,
+  },
+  // Radius Selector Styles
+  radiusSelectorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  radiusToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  radiusInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  radiusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  radiusOptions: {
+    marginTop: 8,
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  radiusOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginVertical: 2,
+  },
+  selectedRadiusOption: {
+    borderWidth: 1,
+  },
+  radiusOptionInfo: {
+    flex: 1,
+  },
+  radiusOptionLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  radiusOptionDescription: {
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  radiusLoadingIndicator: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  radiusLoadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+    opacity: 0.8,
   },
 });
 
