@@ -500,12 +500,38 @@ export interface FavoriteBusiness {
   logo_image: string;
 }
 
+export interface FavoriteAttraction {
+  id: number;
+  name: string;
+  slug: string;
+  type: string;
+  category: string;
+  address: string;
+  city: string;
+  area: string;
+  overall_rating: string;
+  total_reviews: number;
+  total_likes: number;
+  is_free: boolean;
+  entry_fee: number;
+  currency: string;
+  estimated_duration_minutes: number;
+  difficulty_level: string;
+  cover_image: string;
+  is_verified: boolean;
+  is_featured: boolean;
+}
+
 export interface Favorite {
   id: number;
-  type: 'offering' | 'business';
+  type: 'offering' | 'business' | 'attraction';
+  interaction_type?: string;
   favorited_at: string;
+  notes?: string;
+  user_rating?: number;
   offering?: FavoriteOffering;
   business?: FavoriteBusiness;
+  attraction?: FavoriteAttraction;
 }
 
 export interface FavoritesResponse {

@@ -24,7 +24,7 @@ import { useToastGlobal } from '@/contexts/ToastContext';
 import { FavouritesPageSkeleton } from '@/components/SkeletonLoader';
 import SmartImage, { BusinessLogo, OfferingImage } from '@/components/SmartImage';
 
-const filterOptions = ['All', 'Businesses', 'Offerings'];
+const filterOptions = ['All', 'Businesses', 'Offerings', 'Attractions'];
 
 export default function FavouritesScreen() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
@@ -157,10 +157,14 @@ export default function FavouritesScreen() {
       filtered = filtered.filter((item: Favorite) => {
         const name = item.type === 'business' 
           ? item.business?.business_name || ''
-          : item.offering?.name || '';
+          : item.type === 'offering'
+          ? item.offering?.name || ''
+          : item.attraction?.name || '';
         const category = item.type === 'business'
           ? item.business?.category_name || ''
-          : item.offering?.offering_type || '';
+          : item.type === 'offering'
+          ? item.offering?.offering_type || ''
+          : item.attraction?.category || '';
         
         return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                category.toLowerCase().includes(searchQuery.toLowerCase());
@@ -173,6 +177,7 @@ export default function FavouritesScreen() {
       filtered = filtered.filter((item: Favorite) => {
         if (filterType === 'businesses') return item.type === 'business';
         if (filterType === 'offerings') return item.type === 'offering';
+        if (filterType === 'attractions') return item.type === 'attraction';
         return true;
       });
     }
@@ -228,19 +233,54 @@ export default function FavouritesScreen() {
       const businessId = favorite.offering.business_id;
       const offeringId = favorite.offering.id;
       router.push(`/offering/${businessId}/${offeringId}` as any);
+    } else if (favorite.type === 'attraction' && favorite.attraction) {
+      // Navigate to attraction details: /attraction/1
+      router.push(`/attraction/${favorite.attraction.id}` as any);
     }
   };
 
   const renderFavoriteItem = ({ item }: { item: Favorite }) => {
     const isBusinessFavorite = item.type === 'business';
-    const name = isBusinessFavorite ? item.business?.business_name : item.offering?.name;
-    const category = isBusinessFavorite ? item.business?.category_name : item.offering?.offering_type;
-    const rating = isBusinessFavorite ? item.business?.overall_rating : item.offering?.average_rating;
-    const reviewCount = isBusinessFavorite ? item.business?.total_reviews : item.offering?.total_reviews;
-    const image = isBusinessFavorite ? item.business?.logo_image : item.offering?.image_url;
-    const priceRange = isBusinessFavorite ? 
-      `${'$'.repeat(item.business?.price_range || 1)}` : 
-      item.offering?.price_range;
+    const isOfferingFavorite = item.type === 'offering';
+    const isAttractionFavorite = item.type === 'attraction';
+    
+    const name = isBusinessFavorite 
+      ? item.business?.business_name 
+      : isOfferingFavorite
+      ? item.offering?.name
+      : item.attraction?.name;
+      
+    const category = isBusinessFavorite 
+      ? item.business?.category_name 
+      : isOfferingFavorite
+      ? item.offering?.offering_type
+      : item.attraction?.category;
+      
+    const rating = isBusinessFavorite 
+      ? item.business?.overall_rating 
+      : isOfferingFavorite
+      ? item.offering?.average_rating
+      : item.attraction?.overall_rating;
+      
+    const reviewCount = isBusinessFavorite 
+      ? item.business?.total_reviews 
+      : isOfferingFavorite
+      ? item.offering?.total_reviews
+      : item.attraction?.total_reviews;
+      
+    const image = isBusinessFavorite 
+      ? item.business?.logo_image 
+      : isOfferingFavorite
+      ? item.offering?.image_url
+      : item.attraction?.cover_image;
+      
+    const priceRange = isBusinessFavorite 
+      ? `${'$'.repeat(item.business?.price_range || 1)}`
+      : isOfferingFavorite
+      ? item.offering?.price_range
+      : item.attraction?.is_free 
+        ? 'Free'
+        : `${item.attraction?.entry_fee} ${item.attraction?.currency}`;
 
     return (
       <TouchableOpacity 
@@ -258,9 +298,17 @@ export default function FavouritesScreen() {
                 height={80}
                 borderRadius={12}
               />
-            ) : (
+            ) : isOfferingFavorite ? (
               <OfferingImage
                 source={image}
+                width={80}
+                height={80}
+                borderRadius={12}
+              />
+            ) : (
+              <SmartImage
+                source={image}
+                type="general"
                 width={80}
                 height={80}
                 borderRadius={12}
@@ -309,12 +357,30 @@ export default function FavouritesScreen() {
                 </Text>
               </View>
             )}
+            
+            {isAttractionFavorite && item.attraction?.area && (
+              <View style={styles.locationContainer}>
+                <Ionicons name="location-outline" size={12} color={colors.icon} />
+                <Text style={[styles.locationText, { color: colors.icon }]} numberOfLines={1}>
+                  {item.attraction.area}, {item.attraction.city}
+                </Text>
+              </View>
+            )}
+
+            {isAttractionFavorite && item.attraction?.estimated_duration_minutes && (
+              <View style={styles.locationContainer}>
+                <Ionicons name="time-outline" size={12} color={colors.icon} />
+                <Text style={[styles.locationText, { color: colors.icon }]} numberOfLines={1}>
+                  ~{Math.round(item.attraction.estimated_duration_minutes / 60)}h duration
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.favoriteActions}>
             <View style={[styles.typeBadge, { backgroundColor: colors.buttonPrimary + '20' }]}>
               <Text style={[styles.typeBadgeText, { color: colors.buttonPrimary }]}>
-                {isBusinessFavorite ? 'Business' : 'Item'}
+                {isBusinessFavorite ? 'Business' : isOfferingFavorite ? 'Item' : 'Attraction'}
               </Text>
             </View>
           </View>
