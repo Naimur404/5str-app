@@ -1525,7 +1525,7 @@ export default function HomeScreen() {
             {item.business_name}
           </Text>
           <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
-            {item.category_name}{item.subcategory_name ? ` • ${item.subcategory_name}` : ''}
+            {item.category_name || item.category?.name || 'Category'}{item.subcategory_name ? ` • ${item.subcategory_name}` : ''}
           </Text>
           {item.landmark && (
             <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
