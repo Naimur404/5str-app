@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import CustomAlert from '@/components/CustomAlert';
+import ProfileAvatar from '@/components/ProfileAvatar';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
-import CustomAlert from '@/components/CustomAlert';
-import { Review, voteReview, removeVote, getAuthToken } from '@/services/api';
+import { getAuthToken, removeVote, Review, voteReview } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import ProfileAvatar from '@/components/ProfileAvatar';
+import React, { useState } from 'react';
+import {
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 interface ReviewCardProps {
   review: Review;
@@ -177,13 +177,17 @@ const ReviewCard = React.memo(function ReviewCard({ review, onVoteUpdate, flat =
   };
 
   return (
-    <View style={[
-      flat ? styles.reviewCardFlat : styles.reviewCard, 
-      { 
-        backgroundColor: colorScheme === 'dark' ? '#1f2937' : colors.card, 
-        borderColor: colors.border
-      }
-    ]}>
+    <TouchableOpacity 
+      style={[
+        flat ? styles.reviewCardFlat : styles.reviewCard, 
+        { 
+          backgroundColor: colorScheme === 'dark' ? '#1f2937' : colors.card, 
+          borderColor: colors.border
+        }
+      ]}
+      onPress={() => router.push(`/reviews/${localReview.id}` as any)}
+      activeOpacity={0.7}
+    >
       <View style={styles.reviewHeader}>
         <View style={styles.reviewUser}>
           <ProfileAvatar
@@ -301,7 +305,7 @@ const ReviewCard = React.memo(function ReviewCard({ review, onVoteUpdate, flat =
         buttons={alertConfig.buttons}
         onClose={hideAlert}
       />
-    </View>
+    </TouchableOpacity>
   );
 });
 

@@ -1099,7 +1099,12 @@ export default function BusinessDetailsScreen() {
             Customer Reviews ({reviews.length})
           </Text>
           {reviews.map((item) => (
-            <View key={item.id} style={[styles.reviewCard, { backgroundColor: colors.card }]}>
+            <TouchableOpacity 
+              key={item.id} 
+              style={[styles.reviewCard, { backgroundColor: colors.card }]}
+              onPress={() => router.push(`/reviews/${item.id}` as any)}
+              activeOpacity={0.7}
+            >
               {/* Review Header */}
               <View style={styles.reviewHeader}>
                 <View style={styles.reviewUser}>
@@ -1176,7 +1181,7 @@ export default function BusinessDetailsScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       ) : (
