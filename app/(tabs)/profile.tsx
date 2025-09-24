@@ -520,17 +520,31 @@ export default function ProfileScreen() {
               />
               <View style={styles.userInfo}>
                 <Text style={styles.userName}>{currentUser.name}</Text>
-                {currentUser.email && (
-                  <Text style={styles.userEmail}>{currentUser.email}</Text>
+                {currentUser.email ? (
+                  <View style={styles.emailRow}>
+                    <Text style={styles.userEmail}>{currentUser.email}</Text>
+                    <View style={styles.badgeContainer}>
+                      <View style={styles.levelBadge}>
+                        <Text style={styles.levelBadgeText}>{currentUser.user_level?.level_name || 'Guest'}</Text>
+                      </View>
+                      {isAuthenticated && (
+                        <View style={styles.pointsBadge}>
+                          <Ionicons name="star" size={12} color="#FFD700" />
+                          <Text style={styles.pointsBadgeText}>{currentUser.total_points}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.userStats}>
+                    <Text style={styles.userLevel}>{currentUser.user_level?.level_name || 'Guest'}</Text>
+                    {isAuthenticated && (
+                      <Text style={styles.userJoinDate}>
+                        {currentUser.total_points} points
+                      </Text>
+                    )}
+                  </View>
                 )}
-                <View style={styles.userStats}>
-                  <Text style={styles.userLevel}>{currentUser.user_level?.level_name || 'Guest'}</Text>
-                  {isAuthenticated && (
-                    <Text style={styles.userJoinDate}>
-                      {currentUser.total_points} points
-                    </Text>
-                  )}
-                </View>
               </View>
             </View>
           </LinearGradient>
@@ -864,6 +878,42 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'white',
     opacity: 0.8,
+  },
+  emailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  levelBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  levelBadgeText: {
+    fontSize: 11,
+    color: 'white',
+    fontWeight: '600',
+  },
+  pointsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,215,0,0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 3,
+  },
+  pointsBadgeText: {
+    fontSize: 10,
+    color: '#FFD700',
+    fontWeight: '600',
   },
   statsContainer: {
     flexDirection: 'row',
