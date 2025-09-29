@@ -18,6 +18,7 @@ import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -34,7 +35,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 
 // Animated Trending Badge Component
 const AnimatedTrendingBadge = React.memo(() => {
