@@ -34,6 +34,48 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+
+// Animated Trending Badge Component
+const AnimatedTrendingBadge = React.memo(() => {
+  const pulseAnimation = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    const animate = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnimation, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnimation, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    };
+    animate();
+  }, []);
+
+  return (
+    <Animated.View 
+      style={[
+        styles.enhancedTrendingBadge, 
+        { backgroundColor: '#FF6B35' },
+        {
+          transform: [{ scale: pulseAnimation }]
+        }
+      ]}
+    >
+      <Ionicons name="trending-up" size={12} color="white" />
+      <Text style={styles.enhancedTrendingText}>HOT</Text>
+      <View style={styles.trendingPulse} />
+    </Animated.View>
+  );
+});
 
 // Dynamic Hero Section Component with Time-Based Themes
 const DynamicHeroSection = React.memo(({ 
@@ -1449,8 +1491,10 @@ export default function HomeScreen() {
     <TouchableOpacity 
       style={styles.serviceItem}
       onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         router.push(`/category/${item.id}?name=${encodeURIComponent(item.name)}&color=${encodeURIComponent(item.color_code)}`);
       }}
+      activeOpacity={0.8}
     >
       <View style={[styles.serviceIcon, { backgroundColor: item.color_code + '20' }]}>
         <Ionicons 
@@ -1508,42 +1552,72 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity 
         style={[styles.businessCard, { backgroundColor: colors.card }]}
-        onPress={onPressWithTracking}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPressWithTracking();
+        }}
+        activeOpacity={0.85}
       >
-        <Image source={{ uri: getBusinessImage() }} style={styles.businessImage} />
+        <View style={styles.businessImageContainer}>
+          <Image source={{ uri: getBusinessImage() }} style={styles.businessImage} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.1)']}
+            style={styles.businessImageGradient}
+          />
+          {/* Featured Medal positioned on image */}
+          {section === 'featured_businesses' && (
+            <View style={[styles.featuredMedal, { backgroundColor: '#FFD700' }]}>
+              <Ionicons name="medal" size={10} color="white" />
+            </View>
+          )}
+        </View>
         
-        {/* Trending Badge for trending businesses */}
+        {/* Enhanced Trending Badge for trending businesses */}
         {section === 'trending_businesses' && item.trend_score && parseFloat(item.trend_score) > 20 && (
-          <View style={[styles.trendingBadge, { backgroundColor: '#FF6B35' }]}>
-            <Ionicons name="trending-up" size={10} color="white" />
-            <Text style={styles.trendingText}>🔥</Text>
-          </View>
+          <AnimatedTrendingBadge />
         )}
         
         <View style={styles.businessInfo}>
           <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
             {item.business_name}
           </Text>
-          <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
-            {item.category_name || item.category?.name || 'Category'}{item.subcategory_name ? ` • ${item.subcategory_name}` : ''}
-          </Text>
-          {item.landmark && (
-            <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
-              {item.landmark}
+          <View style={styles.businessCategoryContainer}>
+            <View style={[styles.categoryDot, { backgroundColor: colors.tint }]} />
+            <Text style={[styles.businessCategory, { color: colors.icon }]} numberOfLines={1}>
+              {item.category_name || item.category?.name || 'Category'}
             </Text>
+          </View>
+          {item.subcategory_name && (
+            <Text style={[styles.businessSubcategory, { color: colors.icon }]} numberOfLines={1}>
+              {item.subcategory_name}
+            </Text>
+          )}
+          {item.landmark && (
+            <View style={styles.businessLandmarkContainer}>
+              <Ionicons name="location-outline" size={10} color={colors.icon} />
+              <Text style={[styles.businessLandmark, { color: colors.icon }]} numberOfLines={1}>
+                {item.landmark}
+              </Text>
+            </View>
           )}
           <View style={styles.businessMeta}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={12} color="#FFD700" />
               <Text style={[styles.rating, { color: colors.text }]}>{item.overall_rating}</Text>
+              <View style={[styles.ratingBackground, { backgroundColor: '#FFD700' + '10' }]} />
             </View>
             <View style={styles.metaRight}>
               {distanceText && (
-                <Text style={[styles.distance, { color: colors.icon }]}>{distanceText}</Text>
+                <View style={styles.distanceContainer}>
+                  <Ionicons name="walk-outline" size={10} color={colors.icon} />
+                  <Text style={[styles.distance, { color: colors.icon }]}>{distanceText}</Text>
+                </View>
               )}
-              <Text style={[styles.priceRange, { color: colors.icon }]}>
-                {'$'.repeat(item.price_range)}
-              </Text>
+              <View style={styles.priceContainer}>
+                <Text style={[styles.priceRange, { color: colors.tint }]}>
+                  {'$'.repeat(item.price_range)}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -1566,8 +1640,11 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity 
         style={[styles.businessCard, styles.recommendationCard, { backgroundColor: colors.card }]}
-        onPress={onPressWithTracking}
-        activeOpacity={0.7}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPressWithTracking();
+        }}
+        activeOpacity={0.8}
       >
         <Image 
           source={{ uri: getImageUrl(item.images?.logo) || getFallbackImageUrl('business') }} 
@@ -1810,13 +1887,22 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity 
         style={[styles.attractionCard, { backgroundColor: colors.card }]}
-        onPress={onPressWithTracking}
-        activeOpacity={0.7}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPressWithTracking();
+        }}
+        activeOpacity={0.8}
       >
-        <Image 
-          source={{ uri: getImageUrl(item.cover_image_url) || getFallbackImageUrl('general') }} 
-          style={styles.attractionImage}
-        />
+        <View style={styles.attractionImageContainer}>
+          <Image 
+            source={{ uri: getImageUrl(item.cover_image_url) || getFallbackImageUrl('general') }} 
+            style={styles.attractionImage}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.15)']}
+            style={styles.attractionImageGradient}
+          />
+        </View>
         
         {/* Free/Paid Badge */}
         <View style={[styles.priceBadge, { backgroundColor: item.is_free ? '#22C55E' : '#3B82F6' }]}>
@@ -2110,8 +2196,11 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <TouchableOpacity 
             style={[styles.recommendationsBanner, { backgroundColor: colors.card }]}
-            onPress={handleRecommendationsPress}
-            activeOpacity={0.7}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              handleRecommendationsPress();
+            }}
+            activeOpacity={0.8}
           >
             <View style={styles.recommendationsBannerContent}>
               <View style={[styles.recommendationsIcon, { backgroundColor: colors.tint }]}>
@@ -2134,9 +2223,18 @@ export default function HomeScreen() {
         {homeData?.top_services && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Services</Text>
-              <TouchableOpacity onPress={handleViewAllTopServices}>
+              <View style={styles.sectionHeaderContent}>
+                <View style={[styles.sectionIcon, { backgroundColor: colors.tint + '15' }]}>
+                  <Ionicons name="grid" size={16} color={colors.tint} />
+                </View>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Services</Text>
+              </View>
+              <TouchableOpacity 
+                style={[styles.viewAllButton, { backgroundColor: colors.tint + '10' }]}
+                onPress={handleViewAllTopServices}
+              >
                 <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.tint} />
               </TouchableOpacity>
             </View>
             <View style={styles.servicesGrid}>
@@ -2209,9 +2307,21 @@ export default function HomeScreen() {
         {homeData?.trending_businesses && homeData.trending_businesses.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Now</Text>
-              <TouchableOpacity onPress={handleViewAllTrending}>
-                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              <View style={styles.sectionHeaderContent}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#FF6B35' + '15' }]}>
+                  <Ionicons name="trending-up" size={16} color="#FF6B35" />
+                </View>
+                <View>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Trending Now</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.icon }]}>What's popular today</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={[styles.viewAllButton, { backgroundColor: '#FF6B35' + '10' }]}
+                onPress={handleViewAllTrending}
+              >
+                <Text style={[styles.viewAll, { color: '#FF6B35' }]}>View All</Text>
+                <Ionicons name="chevron-forward" size={14} color="#FF6B35" />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -2229,9 +2339,21 @@ export default function HomeScreen() {
         {homeData?.popular_nearby && homeData.popular_nearby.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Services Nearby</Text>
-              <TouchableOpacity onPress={handleViewAllPopularNearby}>
-                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              <View style={styles.sectionHeaderContent}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#22C55E' + '15' }]}>
+                  <Ionicons name="location" size={16} color="#22C55E" />
+                </View>
+                <View>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Popular Services Nearby</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.icon }]}>Highly rated in your area</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={[styles.viewAllButton, { backgroundColor: '#22C55E' + '10' }]}
+                onPress={handleViewAllPopularNearby}
+              >
+                <Text style={[styles.viewAll, { color: '#22C55E' }]}>View All</Text>
+                <Ionicons name="chevron-forward" size={14} color="#22C55E" />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -2269,9 +2391,21 @@ export default function HomeScreen() {
         {homeData?.featured_businesses && homeData.featured_businesses.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Businesses</Text>
-              <TouchableOpacity onPress={handleViewAllFeaturedBusinesses}>
-                <Text style={[styles.viewAll, { color: colors.tint }]}>View All</Text>
+              <View style={styles.sectionHeaderContent}>
+                <View style={[styles.sectionIcon, { backgroundColor: '#8B5CF6' + '15' }]}>
+                  <Ionicons name="star" size={16} color="#8B5CF6" />
+                </View>
+                <View>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Featured Businesses</Text>
+                  <Text style={[styles.sectionSubtitle, { color: colors.icon }]}>Handpicked for you</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                style={[styles.viewAllButton, { backgroundColor: '#8B5CF6' + '10' }]}
+                onPress={handleViewAllFeaturedBusinesses}
+              >
+                <Text style={[styles.viewAll, { color: '#8B5CF6' }]}>View All</Text>
+                <Ionicons name="chevron-forward" size={14} color="#8B5CF6" />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -2694,16 +2828,42 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  sectionHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  sectionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
+    marginBottom: 2,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    opacity: 0.7,
   },
   sectionDescription: {
     fontSize: 13,
     opacity: 0.8,
     lineHeight: 16,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
   },
   viewAll: {
     fontSize: 13,
@@ -2807,61 +2967,124 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  businessImageContainer: {
+    position: 'relative',
   },
   businessImage: {
     width: '100%',
     height: 90,
   },
+  businessImageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 30,
+  },
   businessInfo: {
-    padding: 10,
+    padding: 12,
   },
   businessName: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 3,
-    lineHeight: 16,
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+    lineHeight: 18,
+    letterSpacing: 0.2,
+  },
+  businessCategoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  categoryDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginRight: 6,
   },
   businessCategory: {
     fontSize: 11,
-    marginBottom: 2,
-    opacity: 0.7,
+    fontWeight: '500',
+    opacity: 0.8,
+  },
+  businessSubcategory: {
+    fontSize: 10,
+    marginBottom: 4,
+    marginLeft: 10,
+    opacity: 0.6,
+    fontStyle: 'italic',
+  },
+  businessLandmarkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   businessLandmark: {
-    fontSize: 11,
-    marginBottom: 6,
+    fontSize: 10,
+    marginLeft: 4,
     opacity: 0.7,
+    fontWeight: '400',
   },
   businessMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 2,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
+    position: 'relative',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  ratingBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 6,
   },
   rating: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    zIndex: 1,
   },
   metaRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+  },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   distance: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: '600',
     opacity: 0.8,
+  },
+  priceContainer: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   priceRange: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   offerCard: {
     width: 220,
@@ -2976,6 +3199,74 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     marginLeft: 2,
+  },
+  enhancedTrendingBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 2,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  enhancedTrendingText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: '800',
+    marginLeft: 3,
+    letterSpacing: 0.5,
+  },
+  trendingPulse: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+    opacity: 0.3,
+  },
+  popularityBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  featuredMedal: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   // National Brand Styles
   nationalBrandCard: {
@@ -3148,16 +3439,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
     marginBottom: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  attractionImageContainer: {
+    position: 'relative',
   },
   attractionImage: {
     width: '100%',
     height: 120,
     resizeMode: 'cover',
+  },
+  attractionImageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
   },
   attractionInfo: {
     padding: 12,

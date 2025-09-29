@@ -44,10 +44,15 @@ const SkeletonBox = React.memo(({ width, height, borderRadius = 8, backgroundCol
     };
   }, [shimmerAnimation]);
 
-  // Create a smooth shimmer effect with sin wave
+  // Create a sophisticated shimmer effect with translucent wave
   const opacity = shimmerAnimation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.4, 0.8, 0.4], // Smooth wave transition
+    inputRange: [0, 0.3, 0.7, 1],
+    outputRange: [0.3, 0.9, 0.9, 0.3], // Enhanced wave transition with plateau
+  });
+  
+  const translateX = shimmerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-100, 100],
   });
 
   return (
