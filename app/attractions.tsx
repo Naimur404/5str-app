@@ -86,7 +86,7 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, onPress, co
               </Text>
             </View>
             
-            {attraction.distance && (
+            {attraction.distance != null && typeof attraction.distance === 'number' && !isNaN(attraction.distance) && (
               <Text style={[styles.distanceText, { color: colors.tint }]}>
                 {formatDistance(attraction.distance)}
               </Text>

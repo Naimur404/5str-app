@@ -21,6 +21,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { Colors } from '@/constants/Colors';
 import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
+import { formatDistance } from '@/utils/distanceUtils';
+import { BusinessListSkeleton } from '@/components/SkeletonLoader';
 
 interface BusinessCardProps {
   business: Business;
@@ -65,9 +67,9 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, colors }
             </Text>
           </View>
           
-          {business.distance_km && (
+          {business.distance_km != null && typeof business.distance_km === 'number' && !isNaN(business.distance_km) && (
             <Text style={[styles.distanceText, { color: colors.buttonPrimary }]}>
-              {business.distance_km}
+              {formatDistance(business.distance_km)}
             </Text>
           )}
         </View>
@@ -308,12 +310,7 @@ export default function DynamicSectionScreen() {
 
       {/* Businesses List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.buttonPrimary} />
-          <Text style={[styles.loadingText, { color: colors.icon }]}>
-            Loading {displaySectionName.toLowerCase()}...
-          </Text>
-        </View>
+        <BusinessListSkeleton colors={colors} />
       ) : filteredBusinesses.length > 0 ? (
         <FlatList
           data={filteredBusinesses}
@@ -333,7 +330,15 @@ export default function DynamicSectionScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.loadingMore}>
-                <ActivityIndicator size="small" color={colors.buttonPrimary} />
+                <View style={[styles.businessCard, { backgroundColor: colors.card }]}>
+                  <View style={styles.businessRow}>
+                    <View style={[styles.businessImageContainer, { backgroundColor: colors.icon + '20' }]} />
+                    <View style={styles.businessContent}>
+                      <View style={[styles.businessMainInfo, { backgroundColor: colors.icon + '15', height: 16 }]} />
+                      <View style={[styles.categoryName, { backgroundColor: colors.icon + '10', height: 14, width: '60%' }]} />
+                    </View>
+                  </View>
+                </View>
               </View>
             ) : null
           }

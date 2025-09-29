@@ -5,7 +5,17 @@
  * @param distanceKm - Distance value in kilometers
  * @returns Formatted distance string
  */
-export const formatDistance = (distanceKm: number): string => {
+export const formatDistance = (distanceKm: number | undefined | null): string => {
+  // Handle invalid values
+  if (distanceKm == null || typeof distanceKm !== 'number' || isNaN(distanceKm)) {
+    return 'N/A';
+  }
+  
+  // Handle negative values
+  if (distanceKm < 0) {
+    return 'N/A';
+  }
+  
   if (distanceKm >= 1) {
     return `${distanceKm.toFixed(1)}km`;
   } else {
@@ -19,7 +29,10 @@ export const formatDistance = (distanceKm: number): string => {
  * @param distanceKm - Distance value in kilometers
  * @returns Formatted distance string with accessibility context
  */
-export const formatDistanceWithContext = (distanceKm: number): string => {
+export const formatDistanceWithContext = (distanceKm: number | undefined | null): string => {
   const distance = formatDistance(distanceKm);
+  if (distance === 'N/A') {
+    return 'Distance unavailable';
+  }
   return `${distance} away`;
 };
