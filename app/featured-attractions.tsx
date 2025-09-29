@@ -56,7 +56,11 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, onPress, co
   };
 
   // Get difficulty color
-  const getDifficultyColor = (level: string) => {
+  const getDifficultyColor = (level: string | null | undefined) => {
+    if (!level || typeof level !== 'string') {
+      return colors.icon;
+    }
+    
     switch (level.toLowerCase()) {
       case 'easy':
         return '#22C55E'; // Green
@@ -134,12 +138,14 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, onPress, co
             </Text>
           </View>
           
-          <View style={styles.attractionDetailItem}>
-            <Ionicons name="fitness-outline" size={14} color={getDifficultyColor(attraction.difficulty_level)} />
-            <Text style={[styles.attractionDetailText, { color: getDifficultyColor(attraction.difficulty_level) }]}>
-              {attraction.difficulty_level}
-            </Text>
-          </View>
+          {attraction.difficulty_level && (
+            <View style={styles.attractionDetailItem}>
+              <Ionicons name="fitness-outline" size={14} color={getDifficultyColor(attraction.difficulty_level)} />
+              <Text style={[styles.attractionDetailText, { color: getDifficultyColor(attraction.difficulty_level) }]}>
+                {attraction.difficulty_level}
+              </Text>
+            </View>
+          )}
           
           <View style={styles.attractionDetailItem}>
             <Ionicons name="people-outline" size={14} color={colors.icon} />
