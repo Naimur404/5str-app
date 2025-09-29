@@ -24,6 +24,7 @@ import React, { useEffect, useState } from 'react';
 import {
     Dimensions,
     Image,
+    Modal,
     ScrollView,
     StyleSheet,
     Text,
@@ -36,8 +37,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ReviewCard from '@/components/ReviewCard';
 import ProfileAvatar from '@/components/ProfileAvatar';
 import { OfferDetailsSkeleton } from '@/components/SkeletonLoader';
+import SmartImage from '@/components/SmartImage';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('screen'); // Use 'screen' instead of 'window' for full screen including status bar
 
 export default function OfferingDetailsScreen() {
   const [offering, setOffering] = useState<Offering | null>(null);
@@ -49,6 +51,10 @@ export default function OfferingDetailsScreen() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
+  const [showImageHint, setShowImageHint] = useState(true);
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -66,6 +72,15 @@ export default function OfferingDetailsScreen() {
       checkAuthenticationAndLoadData();
     }
   }, [businessId, offeringId]);
+
+  useEffect(() => {
+    // Hide the image hint after 4 seconds
+    const timer = setTimeout(() => {
+      setShowImageHint(false);
+    }, 4000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const checkAuthenticationAndLoadData = async () => {
     try {
@@ -337,6 +352,14 @@ export default function OfferingDetailsScreen() {
     }
   };
 
+  const openImageModal = (images: string[], index: number = 0) => {
+    console.log('openImageModal called with:', images, index);
+    setCurrentImages(images);
+    setSelectedImageIndex(index);
+    setShowImageModal(true);
+    setShowImageHint(false); // Hide hint when user clicks
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -376,19 +399,16 @@ export default function OfferingDetailsScreen() {
           source={{ uri: getImageUrl(offering.image_url) || getFallbackImageUrl('offering') }} 
           style={styles.heroImage} 
         />
+        <TouchableOpacity 
+          style={styles.heroImageTouchOverlay}
+          onPress={() => openImageModal([getImageUrl(offering.image_url) || getFallbackImageUrl('offering')], 0)}
+          activeOpacity={0.9}
+        />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.heroOverlay}
+          pointerEvents="none"
         >
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="chevron-back" size={24} color="white" />
-          </TouchableOpacity>
-          
-
-          
           <View style={styles.heroContent}>
             <Text style={styles.offeringName}>{offering.name}</Text>
             <Text style={styles.offeringType}>
@@ -410,6 +430,24 @@ export default function OfferingDetailsScreen() {
             </View>
           </View>
         </LinearGradient>
+        
+        {/* Back button positioned absolutely outside the TouchableOpacity */}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={24} color="white" />
+        </TouchableOpacity>
+        
+        {/* Image hint overlay */}
+        {showImageHint && (
+          <View style={styles.imageHintOverlay}>
+            <View style={styles.imageHintContainer}>
+              <Ionicons name="finger-print-outline" size={16} color="white" />
+              <Text style={styles.imageHintText}>Tap for full image</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Quick Actions Bar */}
@@ -612,11 +650,20 @@ export default function OfferingDetailsScreen() {
                     <View style={styles.reviewImages}>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
                         {item.images.map((imageUri: string, index: number) => (
-                          <TouchableOpacity key={index} activeOpacity={0.8}>
+                          <TouchableOpacity 
+                            key={index} 
+                            activeOpacity={0.8}
+                            onPress={() => openImageModal(item.images || [], index)}
+                            style={styles.reviewImageContainer}
+                          >
                             <Image
                               source={{ uri: imageUri }}
                               style={styles.reviewImage}
                             />
+                            {/* Small expand icon for review images */}
+                            <View style={styles.reviewImageOverlay}>
+                              <Ionicons name="expand-outline" size={16} color="white" />
+                            </View>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>
@@ -667,6 +714,68 @@ export default function OfferingDetailsScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Image Viewer Modal */}
+      <Modal 
+        visible={showImageModal} 
+        animationType="fade" 
+        transparent={true}
+        statusBarTranslucent={true}
+        presentationStyle="overFullScreen"
+      >
+        <StatusBar style="light" backgroundColor="rgba(0, 0, 0, 0.7)" />
+        <View style={styles.imageModalOverlay}>
+          <View style={styles.imageModalContainer}>
+            
+            {currentImages.length > 0 && (
+              <View style={styles.imageModalContent}>
+                <TouchableOpacity 
+                  style={styles.imageModalCloseButton}
+                  onPress={() => setShowImageModal(false)}
+                >
+                  <Ionicons name="close" size={24} color="white" />
+                </TouchableOpacity>
+                
+                <View style={styles.swipeContainer}>
+                  <SmartImage
+                    source={currentImages[selectedImageIndex]}
+                    type="general"
+                    width={width - 40}
+                    height={300}
+                    style={styles.modalImage}
+                  />
+                </View>
+                
+                {currentImages.length > 1 && (
+                  <View style={styles.imageCounterContainer}>
+                    <View style={styles.navigationButtons}>
+                      <TouchableOpacity 
+                        style={[styles.navButton, { opacity: selectedImageIndex > 0 ? 1 : 0.3 }]}
+                        onPress={() => selectedImageIndex > 0 && setSelectedImageIndex(selectedImageIndex - 1)}
+                        disabled={selectedImageIndex === 0}
+                      >
+                        <Ionicons name="chevron-back" size={24} color="white" />
+                      </TouchableOpacity>
+                      
+                      <Text style={styles.imageCounter}>
+                        {selectedImageIndex + 1} of {currentImages.length}
+                      </Text>
+                      
+                      <TouchableOpacity 
+                        style={[styles.navButton, { opacity: selectedImageIndex < currentImages.length - 1 ? 1 : 0.3 }]}
+                        onPress={() => selectedImageIndex < currentImages.length - 1 && setSelectedImageIndex(selectedImageIndex + 1)}
+                        disabled={selectedImageIndex === currentImages.length - 1}
+                      >
+                        <Ionicons name="chevron-forward" size={24} color="white" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       <CustomAlert
         visible={alertConfig.visible}
@@ -729,10 +838,13 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
   },
   backButton: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -1051,6 +1163,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 4,
   },
+  reviewImageContainer: {
+    position: 'relative',
+  },
+  reviewImageOverlay: {
+    position: 'absolute',
+    top: 4,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
+    padding: 4,
+  },
   reviewFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1084,5 +1207,115 @@ const styles = StyleSheet.create({
   },
   helpfulCount: {
     fontSize: 12,
+  },
+  // Image Modal Styles
+  heroImageContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  heroImageTouchOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  imageModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  imageModalContent: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  imageModalCloseButton: {
+    position: 'absolute',
+    top: -40,
+    right: 10,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  modalImage: {
+    borderRadius: 16,
+  },
+  imageCounterContainer: {
+    marginTop: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  imageCounter: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  navigationButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  navButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageHintOverlay: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    alignItems: 'flex-end',
+    zIndex: 5,
+  },
+  imageHintContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+  },
+  imageHintText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

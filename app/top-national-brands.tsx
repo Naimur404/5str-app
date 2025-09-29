@@ -24,7 +24,7 @@ import {
 
 const { width } = Dimensions.get('window');
 
-type ItemType = 'ice_cream' | 'biscuits_snacks' | 'beverages' | 'food_processing';
+type ItemType = 'ice_cream' | 'biscuits_snacks' | 'beverages' | 'food_processing' | 'food_beverage';
 
 interface CategoryTab {
   id: ItemType;
@@ -67,6 +67,14 @@ const CATEGORY_TABS: CategoryTab[] = [
     icon: 'restaurant',
     color: '#66BB6A',
     description: 'Major food processing and manufacturing companies'
+  },
+  {
+    id: 'food_beverage',
+    name: 'Food & Beverage',
+    displayName: 'Food & Beverage',
+    icon: 'restaurant-outline',
+    color: '#9C27B0',
+    description: 'Leading food & beverage chains, restaurants, and hospitality brands'
   }
 ];
 
@@ -165,7 +173,9 @@ export default function TopNationalBrandsScreen() {
     }
 
     try {
-      const response = await getNationalBusinesses(activeTab, page, 20, 'featured');
+      // Handle new food_beverage category - send as food_&_beverages to API
+      const apiCategory = activeTab === 'food_beverage' ? 'food_&_beverages' : activeTab;
+      const response = await getNationalBusinesses(apiCategory as any, page, 20, 'featured');
       
       if (response.success) {
         const newBusinesses = response.data.businesses;
