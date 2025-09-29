@@ -110,7 +110,7 @@ export default function OfferDetailsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
       <StatusBar style="light" />
       
       {/* Hero Section with Background */}
@@ -142,8 +142,8 @@ export default function OfferDetailsScreen() {
           </View>
 
           <View style={styles.heroContent}>
-            <Text style={styles.offerTitle}>{offer.title}</Text>
-            <Text style={styles.offerSubtitle}>{offer.description}</Text>
+            <Text style={styles.offerTitle} numberOfLines={2}>{offer.title}</Text>
+            <Text style={styles.offerSubtitle} numberOfLines={3}>{offer.description}</Text>
             
             <View style={styles.heroMeta}>
               <View style={styles.validityInfo}>
@@ -162,8 +162,6 @@ export default function OfferDetailsScreen() {
           </View>
         </LinearGradient>
       </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Business Info */}
         <View style={styles.content}>
           <TouchableOpacity 
@@ -283,8 +281,7 @@ export default function OfferDetailsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -313,7 +310,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     padding: 20,
     paddingTop: 50,
   },
@@ -321,6 +318,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 20,
   },
   backButton: {
     width: 40,
@@ -347,7 +345,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   heroContent: {
+    flex: 1,
     justifyContent: 'flex-end',
+    paddingBottom: 20,
   },
   offerTitle: {
     color: 'white',
@@ -367,6 +367,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+    flexShrink: 1,
   },
   heroMeta: {
     flexDirection: 'row',
@@ -397,9 +398,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
-  },
-  scrollView: {
-    flex: 1,
   },
   content: {
     padding: 20,
