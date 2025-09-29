@@ -1,43 +1,41 @@
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useCustomAlert } from '@/hooks/useCustomAlert';
 import CustomAlert from '@/components/CustomAlert';
-import { getImageUrl, getFallbackImageUrl } from '@/utils/imageUtils';
-import {
-    addToFavorites,
-    getOfferingDetails,
-    getOfferingReviews,
-    getUserFavorites,
-    getUserProfile,
-    isAuthenticated,
-    Offering,
-    removeFromFavorites,
-    Review,
-    deleteReview
-} from '@/services/api';
+import ProfileAvatar from '@/components/ProfileAvatar';
+import { OfferDetailsSkeleton } from '@/components/SkeletonLoader';
+import SmartImage from '@/components/SmartImage';
+import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/contexts/LocationContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import {
+  addToFavorites,
+  deleteReview,
+  getOfferingDetails,
+  getOfferingReviews,
+  getUserFavorites,
+  getUserProfile,
+  isAuthenticated,
+  Offering,
+  removeFromFavorites,
+  Review
+} from '@/services/api';
+import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Alert,
-    Share
+  Dimensions,
+  Image,
+  Modal,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import ReviewCard from '@/components/ReviewCard';
-import ProfileAvatar from '@/components/ProfileAvatar';
-import { OfferDetailsSkeleton } from '@/components/SkeletonLoader';
-import SmartImage from '@/components/SmartImage';
 
 const { width, height } = Dimensions.get('screen'); // Use 'screen' instead of 'window' for full screen including status bar
 
