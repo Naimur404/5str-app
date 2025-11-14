@@ -5,6 +5,15 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { login } from '@/services/api';
+// Conditional import for Google Sign-In (Expo Go compatibility)
+let signInWithGoogle: any;
+try {
+  const googleSignInModule = require('../services/googleSignIn');
+  signInWithGoogle = googleSignInModule.signInWithGoogle;
+} catch (error) {
+  console.log('Google Sign-In not available in Expo Go');
+}
+
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +37,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationExpiresAt, setVerificationExpiresAt] = useState('');
@@ -113,6 +123,62 @@ export default function LoginScreen() {
 
   const handleVerificationError = (message: string) => {
     showError('Verification Error', message);
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (!signInWithGoogle) {
+      showError('Google Sign-In Unavailable', 'Google Sign-In is not available in Expo Go. Please use a development build or production app to test this feature.');
+      return;
+    }
+    
+    setGoogleLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      
+      if (result.success) {
+        // Check user role - only allow users with role "user" to access the app
+        if (result.user?.role === 'super-admin') {
+          showError(
+            'Access Denied', 
+            'Super admin accounts cannot access this application. Please use the admin portal instead.'
+          );
+          return;
+        }
+
+        // Only allow users with role "user"
+        if (result.user?.role !== 'user') {
+          showError(
+            'Access Denied', 
+            'Only user accounts can access this application. Please contact support if you believe this is an error.'
+          );
+          return;
+        }
+
+        // Store user data if needed
+        if (result.user) {
+          await AsyncStorage.setItem('user_data', JSON.stringify(result.user));
+        }
+
+        // Set login success flag with timestamp and navigate immediately
+        await AsyncStorage.setItem('loginSuccess', 'true');
+        await AsyncStorage.setItem('loginSuccessTime', Date.now().toString());
+        
+        // Show success message
+        showSuccess('Google Sign-In successful! Welcome back!');
+        
+        // Navigate to home
+        setTimeout(() => {
+          router.replace('/(tabs)?loginSuccess=true' as any);
+        }, 1000);
+      } else {
+        showError('Google Sign-In Failed', result.error || 'Something went wrong. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Google Sign-In error:', error);
+      showError('Error', error.message || 'Google Sign-In failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -242,11 +308,20 @@ export default function LoginScreen() {
 
             {/* Social Login */}
             <View style={styles.socialContainer}>
-              <TouchableOpacity style={[styles.socialButton, { 
-                borderColor: colors.icon + '40',
-                backgroundColor: colors.card
-              }]}>
-                <Ionicons name="logo-google" size={24} color="#EA4335" />
+              <TouchableOpacity 
+                style={[styles.socialButton, { 
+                  borderColor: colors.icon + '40',
+                  backgroundColor: colors.card,
+                  opacity: signInWithGoogle ? 1 : 0.5
+                }]}
+                onPress={handleGoogleSignIn}
+                disabled={googleLoading || !signInWithGoogle}
+              >
+                {googleLoading ? (
+                  <ActivityIndicator color="#EA4335" size="small" />
+                ) : (
+                  <Ionicons name="logo-google" size={24} color="#EA4335" />
+                )}
               </TouchableOpacity>
               <TouchableOpacity style={[styles.socialButton, { 
                 borderColor: colors.icon + '40',

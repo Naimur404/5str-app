@@ -847,6 +847,49 @@ export const login = async (email: string, password: string): Promise<LoginRespo
   return response;
 };
 
+// Google Sign-In Interfaces
+export interface GoogleSignInRequest {
+  token: string;
+}
+
+export interface GoogleSignInResponse {
+  success: boolean;
+  message?: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    google_id: string;
+    avatar: string;
+    phone: string | null;
+    profile_image: string | null;
+    current_latitude: number | null;
+    current_longitude: number | null;
+    city: string | null;
+    total_points: number;
+    total_reviews_written: number;
+    trust_level: number;
+    is_active: boolean;
+    email_verified_at: string;
+    role?: string; // Add role property
+  };
+  token: string;
+  token_type: string;
+}
+
+export const googleSignIn = async (idToken: string): Promise<GoogleSignInResponse> => {
+  const response = await makeApiCall('/api/v1/auth/google/token', {
+    method: 'POST',
+    body: JSON.stringify({ token: idToken }),
+  }, false);
+  
+  if (response.success && response.token) {
+    await setAuthToken(response.token);
+  }
+  
+  return response;
+};
+
 export interface RegisterResponse {
   success: boolean;
   message?: string;
