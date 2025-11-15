@@ -91,16 +91,19 @@ export interface BatchTrackingResponse {
  */
 class UserInteractionTracker {
   private batch: UserInteraction[] = [];
-  private readonly batchSize: number = 10;
-  private readonly flushInterval: number = 300000; // 5 minutes
+  private readonly batchSize: number = 50; // Increased batch size since we send less frequently
+  private readonly flushInterval: number = 6 * 60 * 60 * 1000; // 6 hours (4 times per day)
   private batchTimer: any = null;
   private isOnline: boolean = true;
   private sessionId: string = '';
   private userLoginTime: number | null = null;
   private readonly minDelayAfterLogin: number = 2 * 60 * 1000; // 2 minutes in milliseconds
+  private batchSendCount: number = 0; // Track how many times batch has been sent today
+  private lastResetDate: string = ''; // Track the last date we reset the counter
 
   constructor() {
     this.initializeSession();
+    this.initializeDailyCounter();
     this.setupBatchTimer();
     this.setupNetworkListeners();
     // Clear old pending interactions on app startup to avoid invalid business IDs
@@ -116,6 +119,67 @@ class UserInteractionTracker {
    */
   private initializeSession(): void {
     this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Initialize daily counter for batch sends
+   */
+  private async initializeDailyCounter(): Promise<void> {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      const storedDate = await AsyncStorage.getItem('batch_send_date');
+      const storedCount = await AsyncStorage.getItem('batch_send_count');
+
+      if (storedDate === today && storedCount) {
+        // Same day, use stored count
+        this.batchSendCount = parseInt(storedCount, 10);
+        this.lastResetDate = today;
+        console.log(`📊 Batch send counter: ${this.batchSendCount}/4 for today`);
+      } else {
+        // New day, reset counter
+        this.batchSendCount = 0;
+        this.lastResetDate = today;
+        await AsyncStorage.setItem('batch_send_date', today);
+        await AsyncStorage.setItem('batch_send_count', '0');
+        console.log('🔄 New day detected, reset batch send counter to 0');
+      }
+    } catch (error) {
+      console.error('Failed to initialize daily counter:', error);
+      this.batchSendCount = 0;
+      this.lastResetDate = new Date().toISOString().split('T')[0];
+    }
+  }
+
+  /**
+   * Check if we can send batch (max 4 times per day)
+   */
+  private async canSendBatchToday(): Promise<boolean> {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Reset counter if it's a new day
+    if (this.lastResetDate !== today) {
+      await this.initializeDailyCounter();
+    }
+
+    if (this.batchSendCount >= 4) {
+      console.log('⏸️ Batch send limit reached (4/4 for today). Will send tomorrow.');
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Increment batch send counter
+   */
+  private async incrementBatchSendCount(): Promise<void> {
+    try {
+      this.batchSendCount++;
+      await AsyncStorage.setItem('batch_send_count', this.batchSendCount.toString());
+      console.log(`📊 Batch sent: ${this.batchSendCount}/4 for today`);
+    } catch (error) {
+      console.error('Failed to increment batch send count:', error);
+    }
   }
 
   /**
@@ -237,7 +301,8 @@ class UserInteractionTracker {
     console.log('   Action:', action);
     console.log('   Timestamp:', new Date(interaction.timestamp).toISOString());
     console.log('   Current Batch Size:', this.batch.length + 1);
-    console.log('   Will Send in Bulk Only:', 'All interactions batched every 5 minutes');
+    console.log('   Batch Sends Today:', `${this.batchSendCount}/4`);
+    console.log('   Will Send:', 'Maximum 4 times per day (every 6 hours)');
     console.log('   Complete Interaction Object:', JSON.stringify(interaction, null, 2));
 
     // Add to batch
@@ -267,12 +332,19 @@ class UserInteractionTracker {
       return;
     }
 
+    // Check if we've reached daily limit (4 times per day)
+    const canSendToday = await this.canSendBatchToday();
+    if (!canSendToday) {
+      console.log('⏸️ Skipping batch flush: Daily limit reached (4/4)');
+      console.log(`📦 Current batch size: ${this.batch.length} interactions (will send tomorrow)`);
+      return;
+    }
+
     // Check authentication before attempting to send batch
     const canSend = await this.canSendTrackingData();
     if (!canSend) {
       console.log('⏸️ Skipping batch flush: User not authenticated or timing restriction');
-      // Clear the batch since we can't send it and don't want to accumulate
-      this.batch = [];
+      // Don't clear the batch, keep it for next attempt
       return;
     }
 
@@ -281,11 +353,14 @@ class UserInteractionTracker {
 
     console.log('🚀 Flushing batch of interactions:', {
       count: batchToSend.length,
+      sendNumber: `${this.batchSendCount + 1}/4 today`,
       interactions: batchToSend.map(i => ({ business_id: i.business_id, action: i.action }))
     });
 
     try {
       await this.sendBatchToAPI(batchToSend);
+      // Increment the daily counter after successful send
+      await this.incrementBatchSendCount();
       // Remove sent interactions from local storage
       for (const interaction of batchToSend) {
         await this.removeInteractionFromLocal(interaction);
