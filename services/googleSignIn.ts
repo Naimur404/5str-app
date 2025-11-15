@@ -1,62 +1,21 @@
-// Conditional imports for Expo Go compatibility
-let GoogleSignin: any;
-let statusCodes: any;
-let isSuccessResponse: any;
-let isErrorWithCode: any;
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { setAuthToken } from './api';
 
-try {
-  const googleSignInModule = require('@react-native-google-signin/google-signin');
-  GoogleSignin = googleSignInModule.GoogleSignin;
-  statusCodes = googleSignInModule.statusCodes;
-  isSuccessResponse = googleSignInModule.isSuccessResponse;
-  isErrorWithCode = googleSignInModule.isErrorWithCode;
-} catch (error) {
-  console.log('Google Sign-In module not available (Expo Go)');
-}
+// API Configuration
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.5str.xyz';
+const GOOGLE_TOKEN_ENDPOINT = '/api/auth/google/token';
 
-import { googleSignIn } from './api';
+// Google OAuth Configuration
+const GOOGLE_WEB_CLIENT_ID = '511722915060-rgd4pfrkf0cjhd3447kdid1b272dcneg.apps.googleusercontent.com'; // Web client (for iOS and token verification)
+const GOOGLE_ANDROID_CLIENT_ID = '511722915060-4vdb2tujgcvjkcnetcioqba4itm9m4n5.apps.googleusercontent.com'; // Android client
 
-// Google Sign-In Configuration
-const WEB_CLIENT_ID = '511722915060-rgd4pfrkf0cjhd3447kdid1b272dcneg.apps.googleusercontent.com';
-
-// Check if Google Sign-In module is available (returns false in Expo Go)
-const isGoogleSignInAvailable = (): boolean => {
-  try {
-    return GoogleSignin && typeof GoogleSignin.configure === 'function';
-  } catch (error) {
-    return false;
-  }
-};
-
-export const initializeGoogleSignIn = async () => {
-  if (!isGoogleSignInAvailable()) {
-    console.log('Google Sign-In not available (running in Expo Go or module not linked)');
-    return;
-  }
-  
-  try {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    await GoogleSignin.configure({
-      webClientId: WEB_CLIENT_ID,
-      offlineAccess: false,
-      hostedDomain: '',
-      forceCodeForRefreshToken: true,
-    });
-    console.log('Google Sign-In initialized successfully');
-  } catch (error) {
-    console.error('Google Sign-In initialization error:', error);
-    throw error;
-  }
-};
-
+// Response Interfaces
 export interface GoogleSignInResult {
   success: boolean;
   user?: {
     id: number;
     name: string;
     email: string;
-    google_id: string;
-    avatar: string;
     phone: string | null;
     profile_image: string | null;
     current_latitude: number | null;
@@ -65,110 +24,180 @@ export interface GoogleSignInResult {
     total_points: number;
     total_reviews_written: number;
     trust_level: number;
+    email_verified_at: string | null;
     is_active: boolean;
-    email_verified_at: string;
-    role?: string; // Add role property
+    google_id: string;
+    avatar: string;
+    role?: string;
   };
   token?: string;
+  token_type?: string;
   error?: string;
 }
 
-export const signInWithGoogle = async (): Promise<GoogleSignInResult> => {
-  // Check if Google Sign-In is available (won't work in Expo Go)
-  if (!isGoogleSignInAvailable()) {
-    return {
-      success: false,
-      error: 'Google Sign-In not available in Expo Go. Please use a development build or production app.'
-    };
-  }
+interface GoogleTokenResponse {
+  success: boolean;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+    profile_image: string | null;
+    current_latitude: number | null;
+    current_longitude: number | null;
+    city: string | null;
+    total_points: number;
+    total_reviews_written: number;
+    trust_level: number;
+    email_verified_at: string | null;
+    is_active: boolean;
+    google_id: string;
+    avatar: string;
+  };
+  token: string;
+  token_type: string;
+  message?: string;
+}
 
+/**
+ * Initialize Google Sign-In
+ * Must be called before using signInWithGoogle
+ */
+export const initializeGoogleSignIn = async (): Promise<void> => {
   try {
-    // Initialize Google Sign-In if not already done
-    await initializeGoogleSignIn();
+    GoogleSignin.configure({
+      webClientId: GOOGLE_WEB_CLIENT_ID, // Still needed for ID token
+      offlineAccess: true, // To get ID token
+      scopes: ['profile', 'email'],
+    });
+    console.log('Google Sign-In configured successfully');
+  } catch (error) {
+    console.error('Error configuring Google Sign-In:', error);
+    throw error;
+  }
+};
 
-    // Check if device has Google Play Services
+/**
+ * Check if Google Sign-In is available
+ */
+export const isGoogleSignInAvailable = (): boolean => {
+  return true; // Native Google Sign-In is always available in development builds
+};
+const verifyGoogleToken = async (idToken: string): Promise<GoogleTokenResponse> => {
+  try {
+    console.log('Sending Google ID token to backend...');
+
+    const response = await fetch(`${API_BASE_URL}${GOOGLE_TOKEN_ENDPOINT}`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token: idToken }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Token verification error:', errorText);
+      throw new Error(`Authentication failed: ${response.status}`);
+    }
+
+    const data: GoogleTokenResponse = await response.json();
+    
+    if (!data.success || !data.token || !data.user) {
+      throw new Error(data.message || 'Invalid response from server');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error verifying Google token:', error);
+    throw error;
+  }
+};
+
+/**
+ * Sign in with Google using native Google Sign-In SDK
+ * Gets Google ID token and sends it to backend for verification
+ */
+export const signInWithGoogle = async (): Promise<GoogleSignInResult> => {
+  try {
+    console.log('Starting Google Sign-In flow...');
+
+    // Ensure Google Sign-In is configured
+    initializeGoogleSignIn();
+
+    // Check for play services on Android
     await GoogleSignin.hasPlayServices();
 
-    // Sign in with Google
+    // Sign out first to force account selection every time
+    try {
+      await GoogleSignin.signOut();
+    } catch (signOutError) {
+      // Ignore if user wasn't signed in
+      console.log('No previous sign-in to clear');
+    }
+
+    // Sign in with Google - will show account picker
     const response = await GoogleSignin.signIn();
 
-    if (isSuccessResponse(response)) {
-      const { user, idToken } = response.data;
-      
-      if (!idToken) {
-        return {
-          success: false,
-          error: 'Failed to get Google ID token'
-        };
-      }
+    console.log('Google Sign-In successful, user info:', {
+      email: response.data?.user.email,
+      name: response.data?.user.name,
+    });
 
-      console.log('Google Sign-In successful:', {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        photo: user.photo,
-      });
+    // Get the ID token from response
+    const idToken = response.data?.idToken;
 
-      // Send the ID token to your Laravel API
-      try {
-        const apiResponse = await googleSignIn(idToken);
-        
-        if (apiResponse.success) {
-          return {
-            success: true,
-            user: apiResponse.user,
-            token: apiResponse.token
-          };
-        } else {
-          return {
-            success: false,
-            error: apiResponse.message || 'Authentication failed'
-          };
-        }
-      } catch (apiError: any) {
-        console.error('API authentication error:', apiError);
-        return {
-          success: false,
-          error: apiError.message || 'Server authentication failed'
-        };
-      }
-
-    } else {
-      // Sign in was cancelled or failed
+    if (!idToken) {
+      console.error('No ID token in response:', response);
       return {
         success: false,
-        error: 'Google Sign-In was cancelled'
+        error: 'No authentication token received from Google'
       };
     }
+
+    console.log('Got Google ID token, sending to backend...');
+
+    // Send the ID token to backend for verification
+    const authData = await verifyGoogleToken(idToken);
+
+    // Store the authentication token
+    await setAuthToken(authData.token);
+
+    console.log('Backend authentication successful:', {
+      id: authData.user.id,
+      name: authData.user.name,
+      email: authData.user.email,
+    });
+
+    return {
+      success: true,
+      user: authData.user,
+      token: authData.token,
+      token_type: authData.token_type
+    };
 
   } catch (error: any) {
     console.error('Google Sign-In error:', error);
 
-    if (isErrorWithCode(error)) {
-      switch (error.code) {
-        case statusCodes.SIGN_IN_CANCELLED:
-          return {
-            success: false,
-            error: 'Google Sign-In was cancelled'
-          };
-        case statusCodes.IN_PROGRESS:
-          return {
-            success: false,
-            error: 'Google Sign-In is already in progress'
-          };
-        case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-          return {
-            success: false,
-            error: 'Google Play Services not available'
-          };
-        default:
-          return {
-            success: false,
-            error: `Google Sign-In error: ${error.code}`
-          };
-      }
+    // Handle specific Google Sign-In errors
+    if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      return {
+        success: false,
+        error: 'Google Sign-In was cancelled'
+      };
+    } else if (error.code === statusCodes.IN_PROGRESS) {
+      return {
+        success: false,
+        error: 'Google Sign-In is already in progress'
+      };
+    } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      return {
+        success: false,
+        error: 'Google Play Services not available or outdated'
+      };
     }
-
+    
     return {
       success: false,
       error: error.message || 'Google Sign-In failed'
@@ -176,43 +205,27 @@ export const signInWithGoogle = async (): Promise<GoogleSignInResult> => {
   }
 };
 
+/**
+ * Sign out from Google account
+ */
 export const signOutFromGoogle = async (): Promise<void> => {
-  if (!isGoogleSignInAvailable()) {
-    console.log('Google Sign-In not available');
-    return;
-  }
-  
   try {
     await GoogleSignin.signOut();
-    console.log('Google Sign-Out successful');
+    console.log('Successfully signed out from Google');
   } catch (error) {
-    console.error('Google Sign-Out error:', error);
+    console.error('Error signing out from Google:', error);
   }
 };
 
-export const isGoogleSignedIn = async (): Promise<boolean> => {
-  if (!isGoogleSignInAvailable()) {
-    return false;
-  }
-  
-  try {
-    const user = await GoogleSignin.getCurrentUser();
-    return user !== null;
-  } catch (error) {
-    console.error('Error checking Google Sign-In status:', error);
-    return false;
-  }
-};
-
+/**
+ * Get current Google user info (if already signed in)
+ */
 export const getCurrentGoogleUser = async () => {
-  if (!isGoogleSignInAvailable()) {
-    return null;
-  }
-  
   try {
-    return await GoogleSignin.getCurrentUser();
+    const userInfo = await GoogleSignin.signInSilently();
+    return userInfo.data;
   } catch (error) {
-    console.error('Error getting current Google user:', error);
+    console.error('Error getting current user:', error);
     return null;
   }
 };

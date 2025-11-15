@@ -5,15 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { login } from '@/services/api';
-// Conditional import for Google Sign-In (Expo Go compatibility)
-let signInWithGoogle: any;
-try {
-  const googleSignInModule = require('../services/googleSignIn');
-  signInWithGoogle = googleSignInModule.signInWithGoogle;
-} catch (error) {
-  console.log('Google Sign-In not available in Expo Go');
-}
-
+import { signInWithGoogle } from '@/services/googleSignIn';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -126,11 +118,6 @@ export default function LoginScreen() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!signInWithGoogle) {
-      showError('Google Sign-In Unavailable', 'Google Sign-In is not available in Expo Go. Please use a development build or production app to test this feature.');
-      return;
-    }
-    
     setGoogleLoading(true);
     try {
       const result = await signInWithGoogle();
@@ -145,8 +132,8 @@ export default function LoginScreen() {
           return;
         }
 
-        // Only allow users with role "user"
-        if (result.user?.role !== 'user') {
+        // Only allow users with role "user" (or undefined/null for Google users without role set)
+        if (result.user?.role && result.user.role !== 'user') {
           showError(
             'Access Denied', 
             'Only user accounts can access this application. Please contact support if you believe this is an error.'
@@ -311,11 +298,10 @@ export default function LoginScreen() {
               <TouchableOpacity 
                 style={[styles.socialButton, { 
                   borderColor: colors.icon + '40',
-                  backgroundColor: colors.card,
-                  opacity: signInWithGoogle ? 1 : 0.5
+                  backgroundColor: colors.card
                 }]}
                 onPress={handleGoogleSignIn}
-                disabled={googleLoading || !signInWithGoogle}
+                disabled={googleLoading}
               >
                 {googleLoading ? (
                   <ActivityIndicator color="#EA4335" size="small" />
