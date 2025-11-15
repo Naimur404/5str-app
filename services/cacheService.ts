@@ -46,7 +46,7 @@ class CacheService {
 
   // Cache durations
   private readonly CACHE_DURATIONS = {
-    HOME_DATA: 5 * 60 * 1000, // 5 minutes
+    HOME_DATA: 60 * 60 * 1000, // 1 hour
     USER_PROFILE: 2 * 60 * 60 * 1000, // 2 hours
     PROFILE_PAGE_DATA: 2 * 60 * 60 * 1000 // 2 hours
   };
@@ -173,25 +173,39 @@ class CacheService {
       const cached = await this.getCache<HomeDataCache>(this.CACHE_KEYS.HOME_DATA);
       
       if (!cached) {
+        console.log('📍 No cached home data found');
         return null;
       }
 
-      // Check if coordinates have changed at all (even slightly)
-      const latDiff = Math.abs(cached.coordinates.latitude - currentCoordinates.latitude);
-      const lngDiff = Math.abs(cached.coordinates.longitude - currentCoordinates.longitude);
+      // Calculate distance between cached location and current location
+      const distance = this.calculateDistance(
+        cached.coordinates.latitude,
+        cached.coordinates.longitude,
+        currentCoordinates.latitude,
+        currentCoordinates.longitude
+      );
+
+      console.log('📍 Distance from cached location:', {
+        cachedLocation: cached.coordinates,
+        currentLocation: currentCoordinates,
+        distanceKm: distance.toFixed(2)
+      });
       
-      // If coordinates changed by any amount, invalidate cache
-      if (latDiff > 0.0001 || lngDiff > 0.0001) { // About 10 meters precision
-        console.log('📍 Location coordinates changed, invalidating home cache:', {
-          old: cached.coordinates,
-          new: currentCoordinates,
-          latDiff,
-          lngDiff
-        });
+      // If user moved more than 1km, invalidate cache
+      if (distance > 1) {
+        console.log(`📍 User moved ${distance.toFixed(2)}km (>1km threshold), invalidating home cache`);
         await this.removeCache(this.CACHE_KEYS.HOME_DATA);
         return null;
       }
 
+      // Check if cache has expired (1 hour)
+      if (Date.now() > cached.expiresAt) {
+        console.log('⏰ Home data cache expired (1 hour), clearing');
+        await this.removeCache(this.CACHE_KEYS.HOME_DATA);
+        return null;
+      }
+
+      console.log(`✅ Using cached home data (within 1km, age: ${Math.round((Date.now() - cached.timestamp) / 60000)} minutes)`);
       return cached.data;
     } catch (error) {
       console.error('Error getting home data cache:', error);
