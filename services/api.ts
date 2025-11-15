@@ -111,6 +111,13 @@ export interface Review {
     name: string;
     profile_image: string | null;
     trust_level: number;
+    total_points?: number;
+    user_level?: {
+      level: number;
+      title: string;
+      icon: string;
+      color: string;
+    };
   };
   business?: {
     id: number;
@@ -176,6 +183,119 @@ export interface ReviewsResponse {
     };
   };
 }
+
+// Public User Profile Interfaces
+export interface PublicUserProfile {
+  id: number;
+  name: string;
+  profile_image: string | null;
+  city: string;
+  trust_level: number;
+  total_points?: number;
+  total_reviews_written: number;
+  is_verified_reviewer: boolean;
+  member_since: string;
+  is_active: boolean;
+  points_range?: string;
+  user_level: {
+    level: number;
+    title: string;
+    icon: string;
+    color: string;
+  };
+  achievements: Array<{
+    name: string;
+    icon: string;
+    description: string;
+  }>;
+}
+
+export interface PublicUserStatistics {
+  total_reviews: number;
+  total_helpful_votes_received: number;
+  total_businesses_reviewed: number;
+  total_offerings_reviewed: number;
+  average_rating_given: number;
+}
+
+export interface PublicUserSubmissions {
+  business_submissions?: number;
+  approved_business_submissions?: number;
+  attraction_submissions?: number;
+  approved_attraction_submissions?: number;
+  offering_submissions?: number;
+  approved_offering_submissions?: number;
+  total_submissions: number;
+  total_approved_submissions: number;
+}
+
+export interface PublicUserCollections {
+  total_collections?: number;
+  public_collections: number;
+  total_collection_followers: number;
+}
+
+export interface PublicUserPointsBreakdown {
+  review: {
+    total_points: number;
+    total_activities: number;
+  };
+  helpful_vote: {
+    total_points: number;
+    total_activities: number;
+  };
+  submission: {
+    total_points: number;
+    total_activities: number;
+  };
+  collection: {
+    total_points: number;
+    total_activities: number;
+  };
+}
+
+export interface PublicUserReview {
+  id: number;
+  overall_rating: number;
+  title: string | null;
+  review_text: string;
+  helpful_count: number;
+  created_at: string;
+  review_type: 'business' | 'offering';
+  business?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  offering?: {
+    id: number;
+    name: string;
+    business_name: string;
+  };
+}
+
+export interface PublicUserCollection {
+  id: number;
+  name: string;
+  description: string;
+  businesses_count: number;
+  is_featured: boolean;
+  updated_at: string;
+}
+
+export interface PublicUserProfileResponse {
+  success: boolean;
+  data: {
+    profile: PublicUserProfile;
+    statistics: PublicUserStatistics;
+    submissions: PublicUserSubmissions;
+    collections: PublicUserCollections;
+    recent_reviews: PublicUserReview[];
+    recent_collections: PublicUserCollection[];
+    points_breakdown: PublicUserPointsBreakdown | null;
+  };
+}
+
 
 export interface Category {
   id: number;
@@ -1018,6 +1138,10 @@ export const updateProfile = async (payload: UpdateProfilePayload): Promise<User
 
 export const getUserReviews = async (page: number = 1): Promise<ReviewsResponse> => {
   return makeApiCall(`${API_CONFIG.ENDPOINTS.USER_REVIEWS}?page=${page}`, {}, true);
+};
+
+export const getPublicUserProfile = async (userId: number): Promise<PublicUserProfileResponse> => {
+  return makeApiCall(`${API_CONFIG.ENDPOINTS.PUBLIC_USER_PROFILE}/${userId}/profile`, {}, false);
 };
 
 export const getCategoryBusinesses = async (

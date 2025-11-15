@@ -69,6 +69,7 @@ export const API_CONFIG = {
     OFFERING_SUBMISSION: '/api/v1/submissions/offering',
     MY_SUBMISSIONS: '/api/v1/submissions/my-submissions',
     SUBMISSION_DETAILS: '/api/v1/submissions', // Type and ID appended in service
+    PUBLIC_USER_PROFILE: '/api/v1/users', // User ID appended: /api/v1/users/{userId}/profile
   }
 };
 

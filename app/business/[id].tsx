@@ -1165,14 +1165,35 @@ export default function BusinessDetailsScreen() {
               {/* Review Header */}
               <View style={styles.reviewHeader}>
                 <View style={styles.reviewUser}>
-                  <View style={[styles.userAvatar, { backgroundColor: colors.icon + '15' }]}>
-                    <Text style={[styles.userInitial, { color: colors.icon }]}>
-                      {item.user?.name?.charAt(0)?.toUpperCase() || 'A'}
-                    </Text>
-                  </View>
-                  <View>
+                  {item.user?.profile_image ? (
+                    <Image 
+                      source={{ uri: getImageUrl(item.user.profile_image) }}
+                      style={styles.userAvatar}
+                      defaultSource={require('@/assets/images/icon.png')}
+                    />
+                  ) : (
+                    <View style={[styles.userAvatar, { backgroundColor: colors.icon + '15' }]}>
+                      <Text style={[styles.userInitial, { color: colors.icon }]}>
+                        {item.user?.name?.charAt(0)?.toUpperCase() || 'A'}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
                     <View style={styles.userNameRow}>
-                      <Text style={[styles.userName, { color: colors.text }]}>{item.user?.name || 'Anonymous'}</Text>
+                      <TouchableOpacity onPress={() => router.push(`/user/${item.user?.id}` as any)}>
+                        <Text style={[styles.userName, { color: colors.tint }]}>{item.user?.name || 'Anonymous'}</Text>
+                      </TouchableOpacity>
+                      {item.user?.user_level && (
+                        <View style={[styles.userLevelBadge, { 
+                          backgroundColor: (item.user.user_level.color || '#9C27B0') + '20', 
+                          borderColor: item.user.user_level.color || '#9C27B0' 
+                        }]}>
+                          <Text style={{ fontSize: 10 }}>{item.user.user_level.icon}</Text>
+                          <Text style={[styles.userLevelText, { color: item.user.user_level.color || '#9C27B0' }]}>
+                            {item.user.user_level.title}
+                          </Text>
+                        </View>
+                      )}
                       {item.user?.trust_level && (
                         <View style={[styles.trustLevelBadge, { backgroundColor: colors.tint + '20', borderColor: colors.tint }]}>
                           <Ionicons name="shield-checkmark" size={12} color={colors.tint} />
@@ -1181,23 +1202,31 @@ export default function BusinessDetailsScreen() {
                           </Text>
                         </View>
                       )}
+                      {item.user?.total_points !== undefined && item.user.total_points > 0 && (
+                        <View style={[styles.pointsBadge, { backgroundColor: '#FFD700' + '20', borderColor: '#FFD700' }]}>
+                          <Ionicons name="star" size={12} color="#FFD700" />
+                          <Text style={[styles.pointsText, { color: '#FFD700' }]}>
+                            {item.user.total_points} pts
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={[styles.reviewDate, { color: colors.icon }]}>
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </Text>
+                    <View style={styles.reviewMetaRow}>
+                      <Text style={[styles.reviewDate, { color: colors.icon }]}>
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </Text>
+                      <View style={styles.reviewRating}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Ionicons
+                            key={star}
+                            name={star <= (item.overall_rating || 0) ? 'star' : 'star-outline'}
+                            size={12}
+                            color={star <= (item.overall_rating || 0) ? '#FFD700' : colors.icon}
+                          />
+                        ))}
+                      </View>
+                    </View>
                   </View>
-                </View>
-                
-                {/* Rating Stars */}
-                <View style={styles.reviewRating}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Ionicons
-                      key={star}
-                      name={star <= (item.overall_rating || 0) ? 'star' : 'star-outline'}
-                      size={16}
-                      color={star <= (item.overall_rating || 0) ? '#FFD700' : colors.icon}
-                    />
-                  ))}
                 </View>
               </View>
 
@@ -2244,6 +2273,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   userAvatar: {
     width: 40,
@@ -2251,6 +2281,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   userInitial: {
     color: 'white',
@@ -2267,6 +2298,19 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 2,
   },
+  userLevelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 3,
+  },
+  userLevelText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   trustLevelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2280,8 +2324,26 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
+  pointsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 3,
+  },
+  pointsText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   reviewDate: {
     fontSize: 12,
+  },
+  reviewMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   reviewRating: {
     flexDirection: 'row',
