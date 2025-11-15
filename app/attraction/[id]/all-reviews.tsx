@@ -5,12 +5,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import {
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import ProfileAvatar from '../../../components/ProfileAvatar';
 import { AllReviewsSkeleton } from '../../../components/SkeletonLoader';
@@ -19,11 +19,11 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { useToastGlobal } from '../../../contexts/ToastContext';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
 import {
-    getAttractionDetails,
-    getAttractionReviews,
-    isAuthenticated,
-    voteAttractionReviewHelpful,
-    voteAttractionReviewNotHelpful
+  getAttractionDetails,
+  getAttractionReviews,
+  isAuthenticated,
+  voteAttractionReviewHelpful,
+  voteAttractionReviewNotHelpful
 } from '../../../services/api';
 import { AttractionDetailResponse, AttractionReview } from '../../../types/api';
 
