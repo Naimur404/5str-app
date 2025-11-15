@@ -1375,8 +1375,8 @@ export interface BusinessSubmissionPointsBreakdown {
 export interface BusinessSubmissionData {
   id: number;
   user_id: number;
-  submission_type: string;
-  status: string;
+  submission_type: 'business';
+  status: 'pending' | 'approved' | 'rejected';
   name: string;
   description: string;
   category: string;
@@ -1393,6 +1393,59 @@ export interface BusinessSubmissionData {
   admin_notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AttractionSubmissionData {
+  id: number;
+  user_id: number;
+  submission_type: 'attraction';
+  status: 'pending' | 'approved' | 'rejected';
+  name: string;
+  description: string;
+  category: string;
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  images: string[];
+  additional_info: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OfferingSubmissionData {
+  id: number;
+  user_id: number;
+  submission_type: 'offering';
+  status: 'pending' | 'approved' | 'rejected';
+  business_id: number;
+  business_name: string;
+  name: string;
+  description: string;
+  offering_type: string;
+  price: number | null;
+  currency: string;
+  images: string[];
+  additional_info: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type SubmissionData = BusinessSubmissionData | AttractionSubmissionData | OfferingSubmissionData;
+
+// Simplified submission data for list view
+export interface SubmissionListItem {
+  id: number;
+  type: 'business' | 'attraction' | 'offering';
+  name: string;
+  status: 'pending' | 'approved' | 'rejected';
+  city: string;
+  address: string;
+  submitted_at: string;
+  reviewed_at: string | null;
+  admin_notes: string | null;
 }
 
 export interface BusinessSubmissionResponse {
@@ -1429,15 +1482,13 @@ export interface BusinessCategoriesResponse {
 
 export interface MySubmissionsResponse {
   success: boolean;
-  message: string;
+  message?: string;
   data: {
-    submissions: BusinessSubmissionData[];
-    pagination: {
-      current_page: number;
-      per_page: number;
-      total: number;
-      last_page: number;
-    };
+    submissions: SubmissionListItem[];
+    total_count: number;
+    pending_count: number;
+    approved_count: number;
+    rejected_count: number;
   };
 }
 
@@ -1445,6 +1496,6 @@ export interface SubmissionDetailsResponse {
   success: boolean;
   message: string;
   data: {
-    submission: BusinessSubmissionData;
+    submission: SubmissionData;
   };
 }

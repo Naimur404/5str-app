@@ -2303,12 +2303,13 @@ export const getMySubmissions = async (
 };
 
 /**
- * Get details of a specific business submission
+ * Get details of a specific submission
  */
 export const getSubmissionDetails = async (
+  type: 'business' | 'attraction' | 'offering',
   submissionId: number
 ): Promise<SubmissionDetailsResponse> => {
-  const url = `${API_CONFIG.ENDPOINTS.SUBMISSION_DETAILS}/${submissionId}`;
+  const url = `${API_CONFIG.ENDPOINTS.SUBMISSION_DETAILS}/${type}/${submissionId}`;
   return makeApiCall(url, {}, true); // Requires authentication
 };
 

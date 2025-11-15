@@ -3,7 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { getMySubmissions, isAuthenticated } from '@/services/api';
-import { BusinessSubmissionData } from '@/types/api';
+import { SubmissionListItem } from '@/types/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 
 type FilterType = 'all' | 'pending' | 'approved' | 'rejected';
+type SubmissionTypeFilter = 'all' | 'business' | 'attraction' | 'offering';
 
 export default function MySubmissionsScreen() {
   const router = useRouter();
@@ -29,15 +30,27 @@ export default function MySubmissionsScreen() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [submissions, setSubmissions] = useState<BusinessSubmissionData[]>([]);
+  const [allSubmissions, setAllSubmissions] = useState<SubmissionListItem[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionListItem[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [typeFilter, setTypeFilter] = useState<SubmissionTypeFilter>('all');
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
-    checkAuthAndLoadData();
-  }, [filter]);
+    checkAuth();
+  }, []);
 
-  const checkAuthAndLoadData = async () => {
+  useEffect(() => {
+    if (authenticated) {
+      loadSubmissions();
+    }
+  }, [authenticated]);
+
+  useEffect(() => {
+    filterSubmissions();
+  }, [filter, typeFilter, allSubmissions]);
+
+  const checkAuth = async () => {
     try {
       const auth = await isAuthenticated();
       setAuthenticated(auth);
@@ -53,10 +66,7 @@ export default function MySubmissionsScreen() {
           ],
         });
         setLoading(false);
-        return;
       }
-
-      loadSubmissions();
     } catch (error) {
       console.error('Error checking authentication:', error);
       setLoading(false);
@@ -66,14 +76,18 @@ export default function MySubmissionsScreen() {
   const loadSubmissions = async () => {
     try {
       setLoading(true);
-      const status = filter !== 'all' ? filter : undefined;
-      const response = await getMySubmissions('business', status);
+      // Fetch all submissions without filters
+      const response = await getMySubmissions(undefined, undefined);
 
-      if (response.success) {
-        setSubmissions(response.data.submissions);
+      if (response.success && response.data?.submissions) {
+        const submissionsData = Array.isArray(response.data.submissions) ? response.data.submissions : [];
+        setAllSubmissions(submissionsData);
+      } else {
+        setAllSubmissions([]);
       }
     } catch (error) {
       console.error('Error loading submissions:', error);
+      setAllSubmissions([]); // Set empty array on error
       showAlert({
         type: 'error',
         title: 'Error',
@@ -83,6 +97,22 @@ export default function MySubmissionsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterSubmissions = () => {
+    let filtered = [...allSubmissions];
+
+    // Filter by status
+    if (filter !== 'all') {
+      filtered = filtered.filter(submission => submission.status === filter);
+    }
+
+    // Filter by type
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(submission => submission.type === typeFilter);
+    }
+
+    setSubmissions(filtered);
   };
 
   const onRefresh = async () => {
@@ -117,9 +147,36 @@ export default function MySubmissionsScreen() {
     }
   };
 
-  const renderSubmissionCard = (submission: BusinessSubmissionData) => {
+  const getSubmissionTypeLabel = (type: string) => {
+    switch (type) {
+      case 'business':
+        return 'Business';
+      case 'attraction':
+        return 'Attraction';
+      case 'offering':
+        return 'Offering';
+      default:
+        return type;
+    }
+  };
+
+  const getSubmissionTypeIcon = (type: string) => {
+    switch (type) {
+      case 'business':
+        return 'business';
+      case 'attraction':
+        return 'location';
+      case 'offering':
+        return 'pricetag';
+      default:
+        return 'document';
+    }
+  };
+
+  const renderSubmissionCard = (submission: SubmissionListItem) => {
     const statusColor = getStatusColor(submission.status);
     const statusIcon = getStatusIcon(submission.status);
+    const typeIcon = getSubmissionTypeIcon(submission.type);
 
     return (
       <TouchableOpacity
@@ -130,40 +187,52 @@ export default function MySubmissionsScreen() {
           console.log('View submission:', submission.id);
         }}
       >
-        {/* Status Badge */}
-        <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
-          <Ionicons name={statusIcon as any} size={16} color={statusColor} />
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {submission.status.toUpperCase()}
-          </Text>
+        {/* Header with Status and Type */}
+        <View style={styles.cardHeader}>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
+            <Ionicons name={statusIcon as any} size={16} color={statusColor} />
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {submission.status.toUpperCase()}
+            </Text>
+          </View>
+          <View style={[styles.typeBadge, { backgroundColor: colors.tint + '20' }]}>
+            <Ionicons name={typeIcon as any} size={14} color={colors.tint} />
+            <Text style={[styles.typeText, { color: colors.tint }]}>
+              {getSubmissionTypeLabel(submission.type)}
+            </Text>
+          </View>
         </View>
 
-        {/* Business Info */}
+        {/* Submission Info */}
         <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
           {submission.name}
         </Text>
-        <Text style={[styles.category, { color: colors.icon }]}>{submission.category}</Text>
+
+        {/* Location Info */}
+        <View style={styles.locationRow}>
+          <Ionicons name="location" size={14} color={colors.icon} />
+          <Text style={[styles.locationText, { color: colors.icon }]} numberOfLines={2}>
+            {submission.city}, {submission.address}
+          </Text>
+        </View>
 
         {/* Details */}
         <View style={styles.detailsRow}>
           <View style={styles.detailItem}>
-            <Ionicons name="location" size={14} color={colors.icon} />
-            <Text style={[styles.detailText, { color: colors.icon }]} numberOfLines={1}>
-              {submission.city}
-            </Text>
-          </View>
-          <View style={styles.detailItem}>
             <Ionicons name="calendar" size={14} color={colors.icon} />
             <Text style={[styles.detailText, { color: colors.icon }]}>
-              {new Date(submission.created_at).toLocaleDateString()}
+              {new Date(submission.submitted_at).toLocaleDateString()}
             </Text>
           </View>
+          {submission.reviewed_at && (
+            <View style={styles.detailItem}>
+              <Ionicons name="checkmark-done" size={14} color={colors.icon} />
+              <Text style={[styles.detailText, { color: colors.icon }]}>
+                Reviewed
+              </Text>
+            </View>
+          )}
         </View>
-
-        {/* Description */}
-        <Text style={[styles.description, { color: colors.text }]} numberOfLines={2}>
-          {submission.description}
-        </Text>
 
         {/* Admin Notes (if rejected) */}
         {submission.status === 'rejected' && submission.admin_notes && (
@@ -171,16 +240,6 @@ export default function MySubmissionsScreen() {
             <Ionicons name="alert-circle" size={14} color="#F44336" />
             <Text style={[styles.adminNotesText, { color: '#F44336' }]} numberOfLines={2}>
               {submission.admin_notes}
-            </Text>
-          </View>
-        )}
-
-        {/* Images Count */}
-        {submission.images && submission.images.length > 0 && (
-          <View style={styles.imagesCount}>
-            <Ionicons name="images" size={14} color={colors.tint} />
-            <Text style={[styles.imagesCountText, { color: colors.tint }]}>
-              {submission.images.length} image{submission.images.length > 1 ? 's' : ''}
             </Text>
           </View>
         )}
@@ -253,7 +312,7 @@ export default function MySubmissionsScreen() {
           <ActivityIndicator size="large" color={colors.tint} />
           <Text style={[styles.loadingText, { color: colors.icon }]}>Loading submissions...</Text>
         </View>
-      ) : submissions.length === 0 ? (
+      ) : !submissions || submissions.length === 0 ? (
         <ScrollView
           contentContainerStyle={styles.emptyContainer}
           refreshControl={
@@ -291,14 +350,16 @@ export default function MySubmissionsScreen() {
         >
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
-              <Text style={[styles.statNumber, { color: colors.text }]}>{submissions.length}</Text>
+              <Text style={[styles.statNumber, { color: colors.text }]}>
+                {submissions?.length || 0}
+              </Text>
               <Text style={[styles.statLabel, { color: colors.icon }]}>
                 {filter === 'all' ? 'Total' : filter.charAt(0).toUpperCase() + filter.slice(1)}
               </Text>
             </View>
           </View>
 
-          {submissions.map(renderSubmissionCard)}
+          {submissions?.map(renderSubmissionCard)}
         </ScrollView>
       )}
 
@@ -429,28 +490,50 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    marginBottom: 12,
     gap: 4,
   },
   statusText: {
     fontSize: 11,
     fontWeight: 'bold',
   },
+  typeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
+  },
+  typeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
   businessName: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  category: {
-    fontSize: 14,
     marginBottom: 8,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  locationText: {
+    fontSize: 12,
+    flex: 1,
   },
   detailsRow: {
     flexDirection: 'row',
@@ -467,11 +550,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     flex: 1,
   },
-  description: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
   adminNotes: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -484,15 +562,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     flex: 1,
     lineHeight: 16,
-  },
-  imagesCount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
-  },
-  imagesCountText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
 });
