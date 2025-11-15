@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { locationService, UserLocation } from '../services/locationService';
 
