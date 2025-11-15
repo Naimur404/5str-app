@@ -115,6 +115,11 @@ export default function MySubmissionsScreen() {
     setSubmissions(filtered);
   };
 
+  const handleSubmissionPress = async (submission: SubmissionListItem) => {
+    // Navigate to submission details page
+    router.push(`/submission-details?id=${submission.id}&type=${submission.type}` as any);
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadSubmissions();
@@ -182,10 +187,7 @@ export default function MySubmissionsScreen() {
       <TouchableOpacity
         key={submission.id}
         style={[styles.submissionCard, { backgroundColor: colors.card }]}
-        onPress={() => {
-          // Navigate to submission details (optional)
-          console.log('View submission:', submission.id);
-        }}
+        onPress={() => handleSubmissionPress(submission)}
       >
         {/* Header with Status and Type */}
         <View style={styles.cardHeader}>
@@ -381,7 +383,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 50,
-    paddingBottom: 16,
+    paddingBottom: 20,
     paddingHorizontal: 20,
   },
   headerTop: {
@@ -390,38 +392,45 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    padding: 4,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: 'white',
   },
   filterContainer: {
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowRadius: 8,
     elevation: 2,
   },
   filterTab: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
+    paddingVertical: 10,
+    borderRadius: 25,
+    marginRight: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
   },
   activeFilterTab: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   filterTabText: {
     fontSize: 14,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   loadingContainer: {
     flex: 1,
@@ -431,6 +440,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
@@ -444,18 +454,19 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 10,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
+    fontWeight: '400',
   },
   scrollView: {
     flex: 1,
@@ -466,101 +477,111 @@ const styles = StyleSheet.create({
   },
   statsBar: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 20,
     gap: 12,
   },
   statItem: {
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   statLabel: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 13,
+    marginTop: 4,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   submissionCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    gap: 5,
   },
   statusText: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
     gap: 4,
   },
   typeText: {
     fontSize: 11,
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
   businessName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 10,
+    letterSpacing: 0.3,
   },
   locationRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: 12,
   },
   locationText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
+    lineHeight: 18,
+    fontWeight: '500',
   },
   detailsRow: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 8,
+    marginTop: 4,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     flex: 1,
   },
   detailText: {
     fontSize: 12,
     flex: 1,
+    fontWeight: '500',
   },
   adminNotes: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 6,
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 8,
+    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 12,
   },
   adminNotesText: {
     fontSize: 12,
     flex: 1,
-    lineHeight: 16,
+    lineHeight: 18,
+    fontWeight: '500',
   },
 });
