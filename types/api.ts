@@ -1338,3 +1338,113 @@ export interface UserVisitedAttractionsResponse {
     prev_page_url: string | null;
   };
 }
+
+// Business Submission Types
+export interface BusinessSubmissionOpeningHour {
+  day: string;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+}
+
+export interface BusinessSubmissionRequest {
+  name: string;
+  description: string;
+  category: string;
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  email?: string;
+  website?: string;
+  opening_hours: BusinessSubmissionOpeningHour[];
+  images?: string[]; // base64 encoded images
+  additional_info?: string;
+}
+
+export interface BusinessSubmissionPointsBreakdown {
+  base_points: number;
+  description_bonus: number;
+  image_bonus: number;
+  additional_info_bonus: number;
+  complete_contact_bonus: number;
+  total_points: number;
+}
+
+export interface BusinessSubmissionData {
+  id: number;
+  user_id: number;
+  submission_type: string;
+  status: string;
+  name: string;
+  description: string;
+  category: string;
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  phone: string;
+  email: string | null;
+  website: string | null;
+  opening_hours: BusinessSubmissionOpeningHour[];
+  images: string[];
+  additional_info: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessSubmissionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    submission: BusinessSubmissionData;
+    points: {
+      points_earned: number;
+      total_points: number;
+      breakdown: BusinessSubmissionPointsBreakdown;
+    };
+    level: {
+      current_level: number;
+      level_name: string;
+      progress_to_next_level: number;
+      level_up: boolean;
+    };
+  };
+}
+
+export interface BusinessCategory {
+  id: number;
+  name: string;
+  slug: string;
+  icon_image: string | null;
+  description: string | null;
+}
+
+export interface BusinessCategoriesResponse {
+  success: boolean;
+  data: BusinessCategory[];
+}
+
+export interface MySubmissionsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    submissions: BusinessSubmissionData[];
+    pagination: {
+      current_page: number;
+      per_page: number;
+      total: number;
+      last_page: number;
+    };
+  };
+}
+
+export interface SubmissionDetailsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    submission: BusinessSubmissionData;
+  };
+}

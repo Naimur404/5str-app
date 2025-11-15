@@ -62,6 +62,11 @@ export const API_CONFIG = {
     ATTRACTION_INTERACTIONS_BOOKMARKED: '/api/v1/attraction-interactions/bookmarked',
     ATTRACTION_INTERACTIONS_VISITED: '/api/v1/attraction-interactions/visited',
     ATTRACTION_INTERACTIONS_STATUS: '/api/v1/attraction-interactions/status',
+    // Business Submission Endpoints
+    BUSINESS_CATEGORIES_LIST: '/api/v1/businesses/categories',
+    BUSINESS_SUBMISSION: '/api/v1/submissions/business',
+    MY_SUBMISSIONS: '/api/v1/submissions/my-submissions',
+    SUBMISSION_DETAILS: '/api/v1/submissions/business',
   }
 };
 

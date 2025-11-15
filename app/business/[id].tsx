@@ -3,6 +3,7 @@ import BusinessImageGallery from '@/components/BusinessImageGallery';
 import BusinessMapView from '@/components/BusinessMapView';
 import CustomAlert from '@/components/CustomAlert';
 import { BusinessDetailsSkeleton, SimilarBusinessesSkeleton } from '@/components/SkeletonLoader';
+import SubmitBusinessModal from '@/components/SubmitBusinessModal';
 import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -64,6 +65,7 @@ export default function BusinessDetailsScreen() {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
+  const [showSubmitBusinessModal, setShowSubmitBusinessModal] = useState(false);
   const [similarBusinesses, setSimilarBusinesses] = useState<any[]>([]);
   const [similarBusinessesLoading, setSimilarBusinessesLoading] = useState(false);
 
@@ -1555,6 +1557,37 @@ export default function BusinessDetailsScreen() {
         )}
       </View>
 
+      {/* Missing Business Info Banner */}
+      <TouchableOpacity 
+        style={[styles.missingBusinessBanner, { backgroundColor: colors.tint + '15' }]}
+        onPress={() => {
+          if (!isUserAuthenticated) {
+            showAlert({
+              type: 'info',
+              title: 'Sign In Required',
+              message: 'Please sign in to submit a business',
+              buttons: [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+              ]
+            });
+          } else {
+            setShowSubmitBusinessModal(true);
+          }
+        }}
+      >
+        <Ionicons name="business" size={20} color={colors.tint} />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.missingBusinessTitle, { color: colors.tint }]}>
+            Missing business information?
+          </Text>
+          <Text style={[styles.missingBusinessSubtitle, { color: colors.text }]}>
+            Help us improve by submitting a business • Earn points!
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.tint} />
+      </TouchableOpacity>
+
       {/* Modern Tab Navigation */}
       <View style={[styles.tabContainer, { backgroundColor: colors.background }]}>
         <View style={[styles.tabBar, { backgroundColor: colors.card }]}>
@@ -1646,6 +1679,16 @@ export default function BusinessDetailsScreen() {
             message,
             buttons: [{ text: 'OK' }]
           });
+        }}
+      />
+
+      {/* Submit Business Modal */}
+      <SubmitBusinessModal
+        visible={showSubmitBusinessModal}
+        onClose={() => setShowSubmitBusinessModal(false)}
+        onSuccess={(message) => {
+          showSuccess(message);
+          setShowSubmitBusinessModal(false);
         }}
       />
 
@@ -2681,5 +2724,25 @@ const styles = StyleSheet.create({
   voteText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  // Missing Business Banner styles
+  missingBusinessBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 12,
+    gap: 12,
+  },
+  missingBusinessTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  missingBusinessSubtitle: {
+    fontSize: 12,
+    opacity: 0.8,
   },
 });

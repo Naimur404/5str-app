@@ -322,6 +322,14 @@ export default function ProfileScreen() {
         type: 'navigation' as const,
         onPress: () => router.push('/reviews' as any),
       },
+      {
+        id: 'my-submissions',
+        title: 'My Submissions',
+        subtitle: 'View your business submissions',
+        icon: 'document-text-outline',
+        type: 'navigation' as const,
+        onPress: () => router.push('/my-submissions' as any),
+      },
     ] : []),
     {
       id: 'notifications',

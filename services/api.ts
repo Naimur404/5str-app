@@ -15,6 +15,9 @@ import {
   AttractionReviewSubmissionResponse,
   AttractionReviewVoteResponse,
   AttractionsListResponse,
+  BusinessCategoriesResponse,
+  BusinessSubmissionRequest,
+  BusinessSubmissionResponse,
   CategoriesResponse,
   CollectionActionResponse,
   CollectionItemResponse,
@@ -22,11 +25,13 @@ import {
   CollectionsResponse,
   CreateCollectionRequest,
   FeaturedAttractionsResponse,
+  MySubmissionsResponse,
   NotificationActionResponse,
   NotificationsResponse,
   PopularAttractionsResponse,
   PopularCollectionsResponse,
   SearchCollectionsResponse,
+  SubmissionDetailsResponse,
   TodayTrendingResponse,
   TopService,
   UpdateCollectionRequest,
@@ -2247,3 +2252,63 @@ export const getUserVisitedAttractions = async (
   const url = `${API_CONFIG.ENDPOINTS.ATTRACTION_INTERACTIONS_VISITED}?page=${page}&per_page=${perPage}`;
   return makeApiCall(url, {}, true); // Requires authentication
 };
+
+// ==================== Business Submission APIs ====================
+
+/**
+ * Get all business categories for submission
+ */
+export const getBusinessCategories = async (): Promise<BusinessCategoriesResponse> => {
+  const url = API_CONFIG.ENDPOINTS.BUSINESS_CATEGORIES_LIST;
+  return makeApiCall(url, {}, false); // Public endpoint
+};
+
+/**
+ * Submit a new business for admin review
+ */
+export const submitBusiness = async (
+  data: BusinessSubmissionRequest
+): Promise<BusinessSubmissionResponse> => {
+  const url = API_CONFIG.ENDPOINTS.BUSINESS_SUBMISSION;
+  return makeApiCall(
+    url,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    true // Requires authentication
+  );
+};
+
+/**
+ * Get current user's business submissions
+ */
+export const getMySubmissions = async (
+  type?: string,
+  status?: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<MySubmissionsResponse> => {
+  let url = `${API_CONFIG.ENDPOINTS.MY_SUBMISSIONS}?page=${page}&limit=${limit}`;
+  
+  if (type) {
+    url += `&type=${type}`;
+  }
+  
+  if (status) {
+    url += `&status=${status}`;
+  }
+  
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
+/**
+ * Get details of a specific business submission
+ */
+export const getSubmissionDetails = async (
+  submissionId: number
+): Promise<SubmissionDetailsResponse> => {
+  const url = `${API_CONFIG.ENDPOINTS.SUBMISSION_DETAILS}/${submissionId}`;
+  return makeApiCall(url, {}, true); // Requires authentication
+};
+
