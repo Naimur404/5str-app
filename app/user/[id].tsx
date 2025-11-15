@@ -1,5 +1,5 @@
-import { Colors } from '@/constants/Colors';
 import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
+import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getPublicUserProfile, PublicUserProfileResponse } from '@/services/api';
 import { getImageUrl } from '@/utils/imageUtils';
@@ -18,7 +18,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
