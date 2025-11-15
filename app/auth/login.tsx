@@ -276,52 +276,49 @@ export default function LoginScreen() {
             {/* Continue as Guest Button */}
             <TouchableOpacity
               style={[styles.guestButton, { 
-                borderColor: colors.icon + '40',
-                backgroundColor: colors.card
+                borderColor: colors.icon + '30',
+                backgroundColor: 'transparent'
               }]}
               onPress={() => router.replace('/(tabs)' as any)}
             >
+              <Ionicons name="person-outline" size={20} color={colors.icon} style={{ marginRight: 8 }} />
               <Text style={[styles.guestButtonText, { color: colors.text }]}>
-                Continue as Guest
+                Skip and Browse as Guest
               </Text>
             </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={[styles.divider, { backgroundColor: colors.icon + '30' }]} />
-              <Text style={[styles.dividerText, { color: colors.icon }]}>OR</Text>
+              <Text style={[styles.dividerText, { color: colors.icon }]}>OR CONTINUE WITH</Text>
               <View style={[styles.divider, { backgroundColor: colors.icon + '30' }]} />
             </View>
 
-            {/* Social Login */}
-            <View style={styles.socialContainer}>
-              <TouchableOpacity 
-                style={[styles.socialButton, { 
-                  borderColor: colors.icon + '40',
-                  backgroundColor: colors.card
-                }]}
-                onPress={handleGoogleSignIn}
-                disabled={googleLoading}
-              >
-                {googleLoading ? (
-                  <ActivityIndicator color="#EA4335" size="small" />
-                ) : (
-                  <Ionicons name="logo-google" size={24} color="#EA4335" />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.socialButton, { 
-                borderColor: colors.icon + '40',
-                backgroundColor: colors.card
-              }]}>
-                <Ionicons name="logo-apple" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.socialButton, { 
-                borderColor: colors.icon + '40',
-                backgroundColor: colors.card
-              }]}>
-                <Ionicons name="logo-facebook" size={24} color="#1877F2" />
-              </TouchableOpacity>
-            </View>
+            {/* Google Sign In Button */}
+            <TouchableOpacity 
+              style={[styles.googleButton, { 
+                borderColor: colors.icon + '20',
+                backgroundColor: '#FFFFFF',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
+              }]}
+              onPress={handleGoogleSignIn}
+              disabled={googleLoading}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#4285F4" size="small" />
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={22} color="#EA4335" />
+                  <Text style={[styles.googleButtonText, { color: '#000000' }]}>
+                    Continue with Google
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Sign Up Link */}
@@ -442,7 +439,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   guestButton: {
-    paddingVertical: 16,
+    flexDirection: 'row',
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -450,7 +448,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   guestButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
   },
   dividerContainer: {
@@ -464,21 +462,24 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 16,
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
-  socialContainer: {
+  googleButton: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 30,
-  },
-  socialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 30,
+    gap: 12,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   signupContainer: {
     flexDirection: 'row',
