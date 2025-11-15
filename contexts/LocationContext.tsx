@@ -1,5 +1,24 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react';
+import { Alert } from 'react-native';
 import { locationService, UserLocation } from '../services/locationService';
+
+// Bangladesh boundaries (approximate)
+const BANGLADESH_BOUNDS = {
+  minLat: 20.670883,  // Southernmost point
+  maxLat: 26.631945,  // Northernmost point
+  minLng: 88.028336,  // Westernmost point
+  maxLng: 92.673668,  // Easternmost point
+};
+
+// Function to check if coordinates are within Bangladesh
+const isLocationInBangladesh = (latitude: number, longitude: number): boolean => {
+  return (
+    latitude >= BANGLADESH_BOUNDS.minLat &&
+    latitude <= BANGLADESH_BOUNDS.maxLat &&
+    longitude >= BANGLADESH_BOUNDS.minLng &&
+    longitude <= BANGLADESH_BOUNDS.maxLng
+  );
+};
 
 interface LocationContextType {
   location: UserLocation | null;
@@ -112,6 +131,35 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       const result = await locationService.requestLocationUpdate();
       
       if (result.success && result.location) {
+        // Check if the detected location is within Bangladesh
+        if (!isLocationInBangladesh(result.location.latitude, result.location.longitude)) {
+          console.warn('⚠️ Detected location is outside Bangladesh');
+          Alert.alert(
+            'Location Outside Bangladesh',
+            'Your GPS location appears to be outside Bangladesh. This app provides services within Bangladesh only.\n\nPlease select a location from Bangladesh districts using the location selector at the top of the screen.',
+            [
+              {
+                text: 'OK',
+                style: 'default',
+              },
+            ]
+          );
+          
+          // Use default location instead
+          const defaultLocation = locationService.getCoordinatesForAPI();
+          setLocation({
+            ...defaultLocation,
+            timestamp: Date.now(),
+            source: 'default',
+          });
+          setLocationAge(0);
+          
+          return {
+            success: false,
+            message: 'Location is outside Bangladesh. Using default location.'
+          };
+        }
+        
         setLocation(result.location);
         setLocationAge(locationService.getLocationAge());
         console.log('✅ LocationProvider: Location updated successfully');
@@ -147,16 +195,40 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     // Use ref for immediate access to manual location
     const currentManualLocation = manualLocationRef.current;
     
+    let coordinates;
     if (currentManualLocation) {
       console.log('🎯 Using manual location for API:', currentManualLocation);
-      return {
+      coordinates = {
         latitude: currentManualLocation.latitude,
         longitude: currentManualLocation.longitude,
       };
+    } else {
+      coordinates = locationService.getCoordinatesForAPI();
+      console.log('📡 Using service location for API:', coordinates);
     }
-    const serviceCoords = locationService.getCoordinatesForAPI();
-    console.log('📡 Using service location for API:', serviceCoords);
-    return serviceCoords;
+    
+    // Check if location is within Bangladesh
+    if (!isLocationInBangladesh(coordinates.latitude, coordinates.longitude)) {
+      console.warn('⚠️ Location is outside Bangladesh bounds');
+      Alert.alert(
+        'Location Outside Bangladesh',
+        'Your current location is outside Bangladesh. Please select a location from Bangladesh districts to access local businesses and services.\n\nYou can select a location from the location selector at the top of the screen.',
+        [
+          {
+            text: 'OK',
+            style: 'default',
+          },
+        ]
+      );
+      
+      // Return default Chittagong location
+      return {
+        latitude: 22.3569,
+        longitude: 91.7832,
+      };
+    }
+    
+    return coordinates;
   }, []); // Remove manualLocation dependency since we're using ref
 
   const setManualLocation = useCallback((location: { name: string; latitude: number; longitude: number; division?: string }) => {
