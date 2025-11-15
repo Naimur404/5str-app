@@ -361,7 +361,76 @@ export default function MySubmissionsScreen() {
             </View>
           </View>
 
-          {submissions?.map(renderSubmissionCard)}
+          {submissions?.map((submission, index) => {
+            const statusColor = getStatusColor(submission.status);
+            const statusIcon = getStatusIcon(submission.status);
+            const typeIcon = getSubmissionTypeIcon(submission.type);
+
+            return (
+              <TouchableOpacity
+                key={`${submission.type}-${submission.id}-${index}`}
+                style={[styles.submissionCard, { backgroundColor: colors.card }]}
+                onPress={() => handleSubmissionPress(submission)}
+              >
+                {/* Header with Status and Type */}
+                <View style={styles.cardHeader}>
+                  <View style={[styles.statusBadge, { backgroundColor: statusColor + '20' }]}>
+                    <Ionicons name={statusIcon as any} size={16} color={statusColor} />
+                    <Text style={[styles.statusText, { color: statusColor }]}>
+                      {submission.status.toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={[styles.typeBadge, { backgroundColor: colors.tint + '20' }]}>
+                    <Ionicons name={typeIcon as any} size={14} color={colors.tint} />
+                    <Text style={[styles.typeText, { color: colors.tint }]}>
+                      {getSubmissionTypeLabel(submission.type)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Submission Info */}
+                <Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+                  {submission.name}
+                </Text>
+
+                {/* Location Info */}
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={14} color={colors.icon} />
+                  <Text style={[styles.locationText, { color: colors.icon }]} numberOfLines={2}>
+                    {submission.city}, {submission.address}
+                  </Text>
+                </View>
+
+                {/* Details */}
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="calendar" size={14} color={colors.icon} />
+                    <Text style={[styles.detailText, { color: colors.icon }]}>
+                      {new Date(submission.submitted_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  {submission.reviewed_at && (
+                    <View style={styles.detailItem}>
+                      <Ionicons name="checkmark-done" size={14} color={colors.icon} />
+                      <Text style={[styles.detailText, { color: colors.icon }]}>
+                        Reviewed
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Admin Notes (if rejected) */}
+                {submission.status === 'rejected' && submission.admin_notes && (
+                  <View style={[styles.adminNotes, { backgroundColor: '#F44336' + '10' }]}>
+                    <Ionicons name="alert-circle" size={14} color="#F44336" />
+                    <Text style={[styles.adminNotesText, { color: '#F44336' }]} numberOfLines={2}>
+                      {submission.admin_notes}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       )}
 
