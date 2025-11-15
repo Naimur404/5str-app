@@ -1,10 +1,8 @@
 import SmartImage from '@/components/SmartImage';
-import SubmitAttractionModal from '@/components/SubmitAttractionModal';
 import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useToastGlobal } from '@/contexts/ToastContext';
-import { getAttractions, isAuthenticated, submitAttraction } from '@/services/api';
+import { getAttractions } from '@/services/api';
 import { AttractionListItem } from '@/types/api';
 import { formatDistance } from '@/utils/distanceUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,15 +11,14 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface AttractionCardProps {
