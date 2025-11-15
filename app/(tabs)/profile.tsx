@@ -4,6 +4,7 @@ import ProfileAvatar from '@/components/ProfileAvatar';
 import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useToastGlobal } from '@/contexts/ToastContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
   getAuthToken,
@@ -86,6 +87,7 @@ export default function ProfileScreen() {
   const { colorScheme, themePreference, setThemePreference, isDarkMode, isAutoMode } = useTheme();
   const colors = Colors[colorScheme];
   const { alertConfig, showConfirm, showAlert, hideAlert } = useCustomAlert();
+  const { showSuccess } = useToastGlobal();
 
   // Helper function to render business image with fallback
   const renderBusinessImage = (business: any) => {
@@ -157,13 +159,14 @@ export default function ProfileScreen() {
         const cachedData = await cacheService.getProfilePageData();
         if (cachedData) {
           console.log('✅ Using cached profile page data');
+          console.log('✅ Cached recommendations count:', cachedData.recommendations?.length || 0);
           // Ensure user_level exists
           if (!cachedData.user.user_level) {
             cachedData.user.user_level = guestUser.user_level;
           }
           setUser(cachedData.user);
           setReviews(cachedData.reviews);
-          setPersonalizedRecommendations(cachedData.recommendations);
+          setPersonalizedRecommendations(cachedData.recommendations || []);
           setLoading(false);
           return; // Exit early, use cached data
         }
@@ -195,8 +198,9 @@ export default function ProfileScreen() {
 
         // Load personalized recommendations for authenticated users
         let recommendationsData: any[] = [];
-        if (isAuthenticated && userData) {
+        if (token && userData) {
           try {
+            console.log('🔄 Loading personalized recommendations...');
             const response = await getPersonalizedRecommendations(22.3569, 91.7832, 6);
             
             if (response.success && response.data) {
@@ -206,18 +210,28 @@ export default function ProfileScreen() {
                 recommendationsData = Object.values(data.businesses);
               } else if (data.personalized_businesses) {
                 recommendationsData = data.personalized_businesses;
+              } else if (Array.isArray(data)) {
+                recommendationsData = data;
               }
               
+              console.log('✅ Personalized recommendations loaded:', recommendationsData.length);
               setPersonalizedRecommendations(recommendationsData);
+            } else {
+              console.log('⚠️ No recommendations data in response');
+              setPersonalizedRecommendations([]);
             }
           } catch (error) {
-            console.error('Error loading recommendations:', error);
+            console.error('❌ Error loading recommendations:', error);
+            setPersonalizedRecommendations([]);
           }
+        } else {
+          console.log('⚠️ Skipping recommendations - no token or userData');
         }
 
         // Cache all profile page data for 2 hours
         if (userData) {
           await cacheService.setProfilePageData(userData, reviewsData, recommendationsData);
+          console.log('✅ Profile page data cached including recommendations:', recommendationsData.length);
         }
       } else {
         setIsAuthenticated(false);
@@ -260,6 +274,10 @@ export default function ProfileScreen() {
         setUser(null);
         setReviews([]);
         setPersonalizedRecommendations([]);
+        
+        // Show success message
+        showSuccess('Successfully signed out');
+        
         router.replace('/auth/login' as any);
       }
     );
@@ -595,14 +613,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
               
-              {loading ? (
-                <View style={styles.recommendationsLoading}>
-                  <ActivityIndicator size="small" color={colors.tint} />
-                  <Text style={[styles.loadingText, { color: colors.icon }]}>
-                    Loading recommendations...
-                  </Text>
-                </View>
-              ) : personalizedRecommendations.length > 0 ? (
+              {personalizedRecommendations.length > 0 ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <View style={styles.recommendationsContainer}>
                     {personalizedRecommendations.slice(0, 4).map((business: any) => (
