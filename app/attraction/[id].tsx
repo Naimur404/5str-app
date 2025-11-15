@@ -619,14 +619,23 @@ export default function AttractionDetailScreen() {
           <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Opening Hours</Text>
             <View>
-              {Object.entries(attraction.schedule.opening_hours).map(([day, hours]: [string, any]) => (
-                <View key={day} style={styles.infoRow}>
-                  <Ionicons name="time-outline" size={20} color={colors.tint} />
-                  <Text style={[styles.infoText, { color: colors.text }]}>
-                    {day.charAt(0).toUpperCase() + day.slice(1)}: {hours?.open || 'Closed'} - {hours?.close || 'Closed'}
-                  </Text>
-                </View>
-              ))}
+              {Object.entries(attraction.schedule.opening_hours).map(([day, hours]: [string, any]) => {
+                // Handle both string format ("4.00 PM - 8.00 PM") and object format ({ open: "...", close: "..." })
+                const displayHours = typeof hours === 'string' 
+                  ? hours 
+                  : hours?.open && hours?.close 
+                    ? `${hours.open} - ${hours.close}` 
+                    : 'Closed';
+                
+                return (
+                  <View key={day} style={styles.infoRow}>
+                    <Ionicons name="time-outline" size={20} color={colors.tint} />
+                    <Text style={[styles.infoText, { color: colors.text }]}>
+                      {day.charAt(0).toUpperCase() + day.slice(1)}: {displayHours}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
