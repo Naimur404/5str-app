@@ -1363,6 +1363,39 @@ export interface BusinessSubmissionRequest {
   additional_info?: string;
 }
 
+export interface AttractionSubmissionRequest {
+  name: string;
+  description: string;
+  type: string;
+  address: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  entry_fee?: number;
+  visiting_hours?: AttractionVisitingHour[];
+  best_time_to_visit?: string;
+  facilities?: string[];
+  images?: string[]; // base64 encoded images
+  additional_info?: string;
+}
+
+export interface AttractionVisitingHour {
+  day: string;
+  open_time: string;
+  close_time: string;
+  is_closed: boolean;
+}
+
+export interface AttractionSubmissionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    submission_id: number;
+    status: string;
+    estimated_review_time: string;
+  };
+}
+
 export interface BusinessSubmissionPointsBreakdown {
   base_points: number;
   description_bonus: number;

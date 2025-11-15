@@ -14,6 +14,8 @@ import {
   AttractionReviewSubmissionRequest,
   AttractionReviewSubmissionResponse,
   AttractionReviewVoteResponse,
+  AttractionSubmissionRequest,
+  AttractionSubmissionResponse,
   AttractionsListResponse,
   BusinessCategoriesResponse,
   BusinessSubmissionRequest,
@@ -2270,6 +2272,23 @@ export const submitBusiness = async (
   data: BusinessSubmissionRequest
 ): Promise<BusinessSubmissionResponse> => {
   const url = API_CONFIG.ENDPOINTS.BUSINESS_SUBMISSION;
+  return makeApiCall(
+    url,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    true // Requires authentication
+  );
+};
+
+/**
+ * Submit a new attraction for review
+ */
+export const submitAttraction = async (
+  data: AttractionSubmissionRequest
+): Promise<AttractionSubmissionResponse> => {
+  const url = API_CONFIG.ENDPOINTS.ATTRACTION_SUBMISSION;
   return makeApiCall(
     url,
     {

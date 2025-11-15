@@ -4,6 +4,7 @@ import CustomAlert from '@/components/CustomAlert';
 import { RecordVisitModal } from '@/components/RecordVisitModal';
 import { AttractionDetailsSkeleton } from '@/components/SkeletonLoader';
 import SmartImage from '@/components/SmartImage';
+import SubmitAttractionModal from '@/components/SubmitAttractionModal';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToastGlobal } from '@/contexts/ToastContext';
@@ -14,6 +15,7 @@ import {
   getAttractionDetails,
   getAttractionReviews,
   isAuthenticated,
+  submitAttraction,
   voteAttractionReviewHelpful,
   voteAttractionReviewNotHelpful
 } from '@/services/api';
@@ -84,6 +86,7 @@ export default function AttractionDetailScreen() {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [votingReviewId, setVotingReviewId] = useState<number | null>(null);
   const [showRecordVisitModal, setShowRecordVisitModal] = useState(false);
+  const [showSubmitAttractionModal, setShowSubmitAttractionModal] = useState(false);
 
   // Attraction interactions hook
   const attractionInteractionHook = useAttractionInteraction(parseInt(id as string));
@@ -300,6 +303,39 @@ export default function AttractionDetailScreen() {
     fetchAttractionReviews();
   };
 
+  const handleSubmitAttraction = async (data: any) => {
+    try {
+      const response = await submitAttraction(data);
+      
+      if (response.success) {
+        setShowSubmitAttractionModal(false);
+        showSuccess(response.message || 'Attraction submitted successfully!');
+      } else {
+        showError(response.message || 'Failed to submit attraction');
+      }
+    } catch (error: any) {
+      console.error('Error submitting attraction:', error);
+      showError(error?.message || 'Failed to submit attraction');
+    }
+  };
+
+  const handleSubmitAttractionPress = async () => {
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      showAlert({
+        type: 'info',
+        title: 'Sign In Required',
+        message: 'Please sign in to submit an attraction',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+        ]
+      });
+      return;
+    }
+    setShowSubmitAttractionModal(true);
+  };
+
   const openImageModal = (index: number) => {
     setSelectedImageIndex(index);
     setShowImageModal(true);
@@ -409,6 +445,25 @@ export default function AttractionDetailScreen() {
           </View>
         </LinearGradient>
       </View>
+
+      {/* Submit Missing Attraction Banner */}
+      <TouchableOpacity
+        style={[styles.submitAttractionTopBanner, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '40' }]}
+        onPress={handleSubmitAttractionPress}
+      >
+        <View style={[styles.submitTopIcon, { backgroundColor: colors.tint }]}>
+          <Ionicons name="add-circle" size={20} color="white" />
+        </View>
+        <View style={styles.submitTopContent}>
+          <Text style={[styles.submitTopTitle, { color: colors.text }]}>
+            Missing an attraction?
+          </Text>
+          <Text style={[styles.submitTopText, { color: colors.icon }]}>
+            Help others discover new places
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.tint} />
+      </TouchableOpacity>
 
       {/* Action Buttons */}
       <View style={[styles.quickActions, { backgroundColor: colors.card }]}>
@@ -764,6 +819,25 @@ export default function AttractionDetailScreen() {
           )
         )}
 
+        {/* Submit Attraction Banner */}
+        <TouchableOpacity
+          style={[styles.submitBanner, { backgroundColor: colors.tint + '15', borderColor: colors.tint }]}
+          onPress={handleSubmitAttractionPress}
+        >
+          <View style={[styles.submitBannerIcon, { backgroundColor: colors.tint }]}>
+            <Ionicons name="add-circle" size={24} color="white" />
+          </View>
+          <View style={styles.submitBannerContent}>
+            <Text style={[styles.submitBannerTitle, { color: colors.text }]}>
+              Missing an attraction?
+            </Text>
+            <Text style={[styles.submitBannerText, { color: colors.icon }]}>
+              Help others by submitting a new attraction
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.tint} />
+        </TouchableOpacity>
+
         {/* Pricing & Hours */}
         <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Pricing & Information</Text>
@@ -916,6 +990,23 @@ export default function AttractionDetailScreen() {
         onClose={() => setShowRecordVisitModal(false)}
         attractionId={parseInt(id as string)}
         attractionName={attraction?.name || 'Attraction'}
+      />
+
+      <SubmitAttractionModal
+        visible={showSubmitAttractionModal}
+        onClose={() => setShowSubmitAttractionModal(false)}
+        onSubmit={handleSubmitAttraction}
+        initialData={
+          attraction
+            ? {
+                name: attraction.name,
+                address: attraction.location?.address,
+                city: attraction.location?.city,
+                latitude: attraction.location?.latitude,
+                longitude: attraction.location?.longitude,
+              }
+            : undefined
+        }
       />
 
       <CustomAlert
@@ -1686,5 +1777,64 @@ const styles = StyleSheet.create({
   viewAllReviewsText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  submitBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    gap: 12,
+  },
+  submitBannerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitBannerContent: {
+    flex: 1,
+  },
+  submitBannerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  submitBannerText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  submitAttractionTopBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 8,
+    marginTop: 8,
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  submitTopIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitTopContent: {
+    flex: 1,
+  },
+  submitTopTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  submitTopText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
