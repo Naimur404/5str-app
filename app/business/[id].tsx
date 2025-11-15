@@ -12,22 +12,22 @@ import { useToastGlobal } from '@/contexts/ToastContext';
 import { useBusinessTracking } from '@/hooks/useBusinessTracking';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import {
-    addToFavorites,
-    deleteReview,
-    DetailedBusiness,
-    getAuthToken,
-    getBusinessDetails,
-    getBusinessOfferings,
-    getBusinessOffers,
-    getBusinessReviews,
-    getSimilarBusinesses,
-    getUserFavorites,
-    getUserProfile,
-    isAuthenticated,
-    Offering,
-    removeFromFavorites,
-    Review,
-    submitOffering
+  addToFavorites,
+  deleteReview,
+  DetailedBusiness,
+  getAuthToken,
+  getBusinessDetails,
+  getBusinessOfferings,
+  getBusinessOffers,
+  getBusinessReviews,
+  getSimilarBusinesses,
+  getUserFavorites,
+  getUserProfile,
+  isAuthenticated,
+  Offering,
+  removeFromFavorites,
+  Review,
+  submitOffering
 } from '@/services/api';
 import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,16 +36,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    FlatList,
-    Image,
-    Linking,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
