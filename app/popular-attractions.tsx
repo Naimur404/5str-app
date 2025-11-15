@@ -23,8 +23,8 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const cardWidth = width - 32; // Account for padding
-const imageHeight = 120; // Reduced from 160
+const cardWidth = (width - 48) / 2; // 2 columns: 16 + 8 + 8 + 16 = 48
+const imageHeight = 120;
 
 interface AttractionCardProps {
   attraction: FeaturedAttraction;
@@ -43,7 +43,10 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, onPress, co
   };
 
   // Format estimated duration
-  const formatDuration = (minutes: number) => {
+  const formatDuration = (minutes: number | null | undefined) => {
+    if (!minutes || minutes === 0) {
+      return null;
+    }
     if (minutes < 60) {
       return `${minutes}min`;
     }
@@ -59,99 +62,98 @@ const AttractionCard: React.FC<AttractionCardProps> = ({ attraction, onPress, co
   const getDifficultyColor = (level: string) => {
     switch (level.toLowerCase()) {
       case 'easy':
-        return '#22C55E'; // Green
+        return '#22C55E';
       case 'moderate':
-        return '#F59E0B'; // Amber
+        return '#F59E0B';
       case 'hard':
-        return '#EF4444'; // Red
+        return '#EF4444';
       default:
         return colors.icon;
     }
   };
 
+  const duration = formatDuration(attraction.estimated_duration_minutes);
+
   return (
     <TouchableOpacity 
-      style={[styles.attractionCard, { backgroundColor: colors.card }]}
+      style={[styles.attractionCard, { backgroundColor: colors.card, width: cardWidth }]}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <Image 
         source={{ uri: getImageUrl(attraction.cover_image_url) || getFallbackImageUrl('general') }} 
-        style={[styles.attractionImage, { height: imageHeight }]}
+        style={styles.attractionImage}
       />
       
-      {/* Free/Paid Badge */}
-      <View style={[styles.priceBadge, { backgroundColor: attraction.is_free ? '#22C55E' : '#3B82F6' }]}>
-        <Text style={styles.priceBadgeText}>
-          {attraction.is_free ? 'FREE' : `${attraction.currency} ${attraction.entry_fee}`}
-        </Text>
-      </View>
-
       {/* Popular Badge */}
-      <View style={[styles.popularBadge, { backgroundColor: '#FF6B35' }]}>
-        <Ionicons name="trending-up" size={10} color="white" />
+      <View style={styles.popularBadge}>
+        <Ionicons name="trending-up" size={8} color="white" />
         <Text style={styles.popularBadgeText}>Popular</Text>
       </View>
       
       <View style={styles.attractionContent}>
-        <View style={styles.attractionMainInfo}>
-          <Text style={[styles.attractionName, { color: colors.text }]} numberOfLines={2}>
-            {attraction.name}
-          </Text>
-          <Text style={[styles.attractionCategory, { color: colors.icon }]} numberOfLines={1}>
-            {attraction.category} • {attraction.subcategory}
-          </Text>
+        {/* Title */}
+        <Text style={[styles.attractionName, { color: colors.text }]} numberOfLines={2}>
+          {attraction.name}
+        </Text>
+        
+        {/* Location */}
+        <View style={styles.locationRow}>
+          <Ionicons name="location-outline" size={10} color={colors.icon} />
           <Text style={[styles.attractionLocation, { color: colors.icon }]} numberOfLines={1}>
-            <Ionicons name="location-outline" size={12} color={colors.icon} />
-            {' '}{attraction.area}, {attraction.city}
+            {attraction.area}, {attraction.city}
           </Text>
         </View>
-        
-        <View style={styles.attractionMeta}>
+
+        {/* Category and Rating Row */}
+        <View style={styles.categoryRatingRow}>
+          <Text style={[styles.attractionCategory, { color: colors.icon }]} numberOfLines={1}>
+            {attraction.category}
+          </Text>
           <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={14} color="#FFD700" />
+            <Ionicons name="star" size={10} color="#FFD700" />
             <Text style={[styles.rating, { color: colors.text }]}>
               {typeof attraction.overall_rating === 'string' ? parseFloat(attraction.overall_rating).toFixed(1) : attraction.overall_rating.toFixed(1)}
             </Text>
-            <Text style={[styles.reviewCount, { color: colors.icon }]}>
-              ({attraction.total_reviews})
-            </Text>
-          </View>
-          
-          <Text style={[styles.distance, { color: colors.buttonPrimary }]}>
-            {formatDistance(attraction.distance_km || attraction.distance || 0)}
-          </Text>
-        </View>
-
-        {/* Additional attraction info */}
-        <View style={styles.attractionDetails}>
-          <View style={styles.attractionDetailItem}>
-            <Ionicons name="time-outline" size={14} color={colors.icon} />
-            <Text style={[styles.attractionDetailText, { color: colors.icon }]}>
-              {formatDuration(attraction.estimated_duration_minutes)}
-            </Text>
-          </View>
-          
-          <View style={styles.attractionDetailItem}>
-            <Ionicons name="fitness-outline" size={14} color={getDifficultyColor(attraction.difficulty_level)} />
-            <Text style={[styles.attractionDetailText, { color: getDifficultyColor(attraction.difficulty_level) }]}>
-              {attraction.difficulty_level}
-            </Text>
-          </View>
-          
-          <View style={styles.attractionDetailItem}>
-            <Ionicons name="people-outline" size={14} color={colors.icon} />
-            <Text style={[styles.attractionDetailText, { color: colors.icon }]}>
-              {attraction.total_views} views
-            </Text>
           </View>
         </View>
 
-        {attraction.description && (
-          <Text style={[styles.attractionDescription, { color: colors.icon }]} numberOfLines={2}>
-            {attraction.description}
-          </Text>
-        )}
+        {/* Info Pills */}
+        <View style={styles.infoPillsRow}>
+          {duration && (
+            <View style={[styles.infoPill, { backgroundColor: colors.icon + '15' }]}>
+              <Ionicons name="time-outline" size={9} color={colors.icon} />
+              <Text style={[styles.infoPillText, { color: colors.icon }]}>{duration}</Text>
+            </View>
+          )}
+          
+          {attraction.difficulty_level && (
+            <View style={[styles.infoPill, { backgroundColor: getDifficultyColor(attraction.difficulty_level) + '20' }]}>
+              <Ionicons name="fitness-outline" size={9} color={getDifficultyColor(attraction.difficulty_level)} />
+              <Text style={[styles.infoPillText, { color: getDifficultyColor(attraction.difficulty_level) }]}>
+                {attraction.difficulty_level}
+              </Text>
+            </View>
+          )}
+
+          {attraction.total_views > 0 && (
+            <View style={[styles.infoPill, { backgroundColor: colors.icon + '15' }]}>
+              <Ionicons name="eye-outline" size={9} color={colors.icon} />
+              <Text style={[styles.infoPillText, { color: colors.icon }]}>
+                {attraction.total_views > 999 ? `${(attraction.total_views / 1000).toFixed(1)}k` : attraction.total_views}
+              </Text>
+            </View>
+          )}
+
+          {(attraction.distance_km || attraction.distance) && (
+            <View style={[styles.infoPill, { backgroundColor: colors.buttonPrimary + '20' }]}>
+              <Ionicons name="navigate-outline" size={9} color={colors.buttonPrimary} />
+              <Text style={[styles.infoPillText, { color: colors.buttonPrimary }]}>
+                {formatDistance(attraction.distance_km || attraction.distance || 0)}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -343,6 +345,8 @@ const PopularAttractionsScreen: React.FC = () => {
         data={attractions || []}
         renderItem={renderAttraction}
         keyExtractor={(item, index) => item?.id ? item.id.toString() : `attraction-${index}`}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -357,7 +361,6 @@ const PopularAttractionsScreen: React.FC = () => {
         onEndReachedThreshold={0.3}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
-        // FlatList performance props
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={10}
@@ -400,121 +403,98 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-    paddingBottom: 80, // Reduced from 100
+    paddingBottom: 80,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   attractionCard: {
-    width: cardWidth,
-    borderRadius: 12, // Reduced from 16
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 }, // Reduced shadow
-    shadowOpacity: 0.08, // Reduced from 0.1
-    shadowRadius: 4, // Reduced from 8
-    elevation: 3, // Reduced from 4
-    marginBottom: 12, // Reduced from 16
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   attractionImage: {
     width: '100%',
-    height: 120, // Reduced from 160
+    height: imageHeight,
     resizeMode: 'cover',
   },
   attractionContent: {
-    padding: 12, // Reduced from 16
-  },
-  attractionMainInfo: {
-    marginBottom: 8, // Reduced from 12
+    padding: 8,
+    gap: 6,
   },
   attractionName: {
-    fontSize: 16, // Reduced from 18
+    fontSize: 13,
     fontWeight: '700',
-    marginBottom: 3, // Reduced from 4
-    lineHeight: 20, // Reduced from 24
+    lineHeight: 16,
   },
-  attractionCategory: {
-    fontSize: 13, // Reduced from 14
-    marginBottom: 3, // Reduced from 4
-    opacity: 0.7,
-  },
-  attractionLocation: {
-    fontSize: 13, // Reduced from 14
-    opacity: 0.7,
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 2,
   },
-  attractionMeta: {
+  attractionLocation: {
+    fontSize: 11,
+    opacity: 0.7,
+    flex: 1,
+  },
+  categoryRatingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8, // Reduced from 12
+  },
+  attractionCategory: {
+    fontSize: 11,
+    opacity: 0.7,
+    flex: 1,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 2,
   },
   rating: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  reviewCount: {
-    fontSize: 12,
-    marginLeft: 4,
-    opacity: 0.7,
-  },
-  distance: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
   },
-  attractionDetails: {
+  infoPillsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8, // Reduced from 12
+    flexWrap: 'wrap',
+    gap: 4,
   },
-  attractionDetailItem: {
+  infoPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3, // Reduced from 4
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
-  attractionDetailText: {
-    fontSize: 11, // Reduced from 12
-    fontWeight: '500',
-  },
-  attractionDescription: {
-    fontSize: 13, // Reduced from 14
-    lineHeight: 18, // Reduced from 20
-    opacity: 0.8,
-  },
-  priceBadge: {
-    position: 'absolute',
-    top: 8, // Reduced from 12
-    right: 8, // Reduced from 12
-    paddingHorizontal: 6, // Reduced from 8
-    paddingVertical: 3, // Reduced from 4
-    borderRadius: 6, // Reduced from 8
-    zIndex: 1,
-  },
-  priceBadgeText: {
-    color: 'white',
-    fontSize: 10, // Reduced from 12
+  infoPillText: {
+    fontSize: 9,
     fontWeight: '600',
   },
   popularBadge: {
     position: 'absolute',
-    top: 8, // Reduced from 12
-    left: 8, // Reduced from 12
+    top: 6,
+    left: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6, // Reduced from 8
-    paddingVertical: 3, // Reduced from 4
-    borderRadius: 8, // Reduced from 12
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
+    gap: 2,
     zIndex: 1,
   },
   popularBadgeText: {
     color: 'white',
-    fontSize: 9, // Reduced from 11
+    fontSize: 8,
     fontWeight: '600',
-    marginLeft: 2,
   },
   loadingMore: {
     marginTop: 16,

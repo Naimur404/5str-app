@@ -3458,147 +3458,107 @@ export const SimpleReviewsSkeleton = ({ colors }: SkeletonProps) => (
   </View>
 );
 
-// Attraction List Skeleton
-export const AttractionListSkeleton = ({ colors }: SkeletonProps) => (
-  <View style={{ padding: 16, gap: 16 }}>
-    {[...Array(6)].map((_, index) => (
-      <View key={index} style={[
-        { 
-          backgroundColor: colors.card, 
-          borderRadius: 16, 
-          overflow: 'hidden',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 4,
-        }
-      ]}>
-        {/* Attraction Image */}
+// Attraction List Skeleton - 2 Column Grid
+export const AttractionListSkeleton = ({ colors }: SkeletonProps) => {
+  const { width } = Dimensions.get('window');
+  const cardWidth = (width - 48) / 2; // Same as real cards: 16 + 8 + 8 + 16 = 48
+
+  const renderSkeletonCard = (index: number) => (
+    <View key={index} style={{
+      width: cardWidth,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    }}>
+      {/* Image */}
+      <SkeletonBox 
+        width="100%" 
+        height={120} 
+        borderRadius={0}
+        backgroundColor={colors.icon + "15"} 
+      />
+      
+      {/* Content */}
+      <View style={{ padding: 8, gap: 6 }}>
+        {/* Title */}
         <SkeletonBox 
-          width="100%" 
-          height={160} 
-          borderRadius={0}
+          width={cardWidth - 32} 
+          height={13} 
+          borderRadius={6}
+          backgroundColor={colors.icon + "20"} 
+        />
+        
+        {/* Location */}
+        <SkeletonBox 
+          width={cardWidth - 48} 
+          height={11} 
+          borderRadius={5}
           backgroundColor={colors.icon + "15"} 
         />
         
-        {/* Attraction Content */}
-        <View style={{ padding: 16, gap: 12 }}>
-          {/* Main Info */}
-          <View style={{ gap: 4 }}>
+        {/* Category & Rating Row */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <SkeletonBox 
+            width={50} 
+            height={11} 
+            borderRadius={5}
+            backgroundColor={colors.icon + "15"} 
+          />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <SkeletonBox 
-              width={200 + (index * 20)} 
-              height={20} 
-              borderRadius={10}
+              width={10} 
+              height={10} 
+              borderRadius={5}
+              backgroundColor="#FFD700" 
+            />
+            <SkeletonBox 
+              width={20} 
+              height={10} 
+              borderRadius={5}
               backgroundColor={colors.icon + "20"} 
-            />
-            <SkeletonBox 
-              width={150} 
-              height={14} 
-              borderRadius={7}
-              backgroundColor={colors.icon + "15"} 
-            />
-            <SkeletonBox 
-              width={120} 
-              height={14} 
-              borderRadius={7}
-              backgroundColor={colors.icon + "15"} 
-            />
-          </View>
-          
-          {/* Meta Info (Rating & Distance) */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <SkeletonBox 
-                width={14} 
-                height={14} 
-                borderRadius={7}
-                backgroundColor="#FFD700" 
-              />
-              <SkeletonBox 
-                width={25} 
-                height={14} 
-                borderRadius={7}
-                backgroundColor={colors.icon + "20"} 
-              />
-              <SkeletonBox 
-                width={30} 
-                height={12} 
-                borderRadius={6}
-                backgroundColor={colors.icon + "15"} 
-              />
-            </View>
-            <SkeletonBox 
-              width={45} 
-              height={14} 
-              borderRadius={7}
-              backgroundColor={colors.buttonPrimary + "40"} 
-            />
-          </View>
-          
-          {/* Details (Duration, Difficulty, Views) */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <SkeletonBox 
-                width={14} 
-                height={14} 
-                borderRadius={7}
-                backgroundColor={colors.icon + "20"} 
-              />
-              <SkeletonBox 
-                width={40} 
-                height={12} 
-                borderRadius={6}
-                backgroundColor={colors.icon + "15"} 
-              />
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <SkeletonBox 
-                width={14} 
-                height={14} 
-                borderRadius={7}
-                backgroundColor={colors.icon + "20"} 
-              />
-              <SkeletonBox 
-                width={35} 
-                height={12} 
-                borderRadius={6}
-                backgroundColor={colors.icon + "15"} 
-              />
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <SkeletonBox 
-                width={14} 
-                height={14} 
-                borderRadius={7}
-                backgroundColor={colors.icon + "20"} 
-              />
-              <SkeletonBox 
-                width={40} 
-                height={12} 
-                borderRadius={6}
-                backgroundColor={colors.icon + "15"} 
-              />
-            </View>
-          </View>
-          
-          {/* Description */}
-          <View style={{ gap: 4 }}>
-            <SkeletonBox 
-              width="100%" 
-              height={14} 
-              borderRadius={7}
-              backgroundColor={colors.icon + "15"} 
-            />
-            <SkeletonBox 
-              width="75%" 
-              height={14} 
-              borderRadius={7}
-              backgroundColor={colors.icon + "15"} 
             />
           </View>
         </View>
+        
+        {/* Info Pills Row */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+          <SkeletonBox 
+            width={35} 
+            height={18} 
+            borderRadius={9}
+            backgroundColor={colors.icon + "10"} 
+          />
+          <SkeletonBox 
+            width={30} 
+            height={18} 
+            borderRadius={9}
+            backgroundColor={colors.icon + "10"} 
+          />
+          <SkeletonBox 
+            width={40} 
+            height={18} 
+            borderRadius={9}
+            backgroundColor={colors.icon + "10"} 
+          />
+        </View>
       </View>
-    ))}
-  </View>
-);
+    </View>
+  );
+
+  return (
+    <View style={{ padding: 16 }}>
+      {/* Render 8 cards in 4 rows of 2 */}
+      {[...Array(4)].map((_, rowIndex) => (
+        <View key={rowIndex} style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          {renderSkeletonCard(rowIndex * 2)}
+          {renderSkeletonCard(rowIndex * 2 + 1)}
+        </View>
+      ))}
+    </View>
+  );
+};
