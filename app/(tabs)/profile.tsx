@@ -315,6 +315,92 @@ export default function ProfileScreen() {
     });
   };
 
+  const showHelpAndSupport = () => {
+    showAlert({
+      title: 'Help & Support',
+      message: 'Need assistance? Contact our support team at:\n\nsupport@5str.xyz\n\nWe\'re here to help you!',
+      type: 'info',
+      buttons: [
+        {
+          text: 'OK',
+          style: 'default',
+        },
+      ],
+    });
+  };
+
+  const showPrivacySettings = () => {
+    showAlert({
+      title: 'Privacy Settings',
+      message: 'Manage your privacy and data preferences:',
+      type: 'info',
+      buttons: [
+        {
+          text: 'Data & Privacy',
+          onPress: () => showDataPrivacyInfo(),
+          style: 'default',
+        },
+        {
+          text: 'Account Visibility',
+          onPress: () => showAccountVisibilityInfo(),
+          style: 'default',
+        },
+        {
+          text: 'Delete My Data',
+          onPress: () => showDeleteDataConfirmation(),
+          style: 'destructive',
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+    });
+  };
+
+  const showDataPrivacyInfo = () => {
+    showAlert({
+      title: 'Data & Privacy',
+      message: 'Your privacy matters to us:\n\n• We collect only necessary information\n• Your data is encrypted and secure\n• We never sell your personal data\n• You can request your data anytime\n• Location data is used only for recommendations\n\nFor more details, contact: support@5str.xyz',
+      type: 'info',
+      buttons: [
+        {
+          text: 'OK',
+          style: 'default',
+        },
+      ],
+    });
+  };
+
+  const showAccountVisibilityInfo = () => {
+    showAlert({
+      title: 'Account Visibility',
+      message: 'Your profile visibility settings:\n\n• Public Profile: Your reviews and ratings are visible to all users\n• Profile Picture: Visible on your reviews and interactions\n• Activity: Your likes and collections are private by default\n• Username: Always visible with your reviews\n\nTo modify settings, contact: support@5str.xyz',
+      type: 'info',
+      buttons: [
+        {
+          text: 'OK',
+          style: 'default',
+        },
+      ],
+    });
+  };
+
+  const showDeleteDataConfirmation = () => {
+    showConfirm(
+      'Delete My Data',
+      'Warning: This action is irreversible!\n\nDeleting your data will:\n• Remove all your reviews\n• Delete your collections\n• Remove your account permanently\n• Erase all personal information\n\nTo proceed, please contact our support team at:\n\nsupport@5str.xyz',
+      () => {
+        showAlert({
+          title: 'Contact Support',
+          message: 'Please email us at support@5str.xyz with your account deletion request. Our team will assist you with the process.',
+          type: 'info',
+          buttons: [{ text: 'OK', style: 'default' }],
+        });
+      }
+    );
+  };
+
   // Ensure user_level exists, fallback to guestUser.user_level if not
   const currentUser = user ? {
     ...user,
@@ -380,7 +466,7 @@ export default function ProfileScreen() {
       subtitle: 'Manage your privacy preferences',
       icon: 'shield-outline',
       type: 'navigation' as const,
-      onPress: () => console.log('Privacy Settings'),
+      onPress: showPrivacySettings,
     },
     {
       id: 'help',
@@ -388,7 +474,7 @@ export default function ProfileScreen() {
       subtitle: 'Get help or contact support',
       icon: 'help-circle-outline',
       type: 'navigation' as const,
-      onPress: () => console.log('Help & Support'),
+      onPress: showHelpAndSupport,
     },
     {
       id: 'about',
