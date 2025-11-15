@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { ProfilePageSkeleton } from '@/components/SkeletonLoader';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getPublicUserProfile, PublicUserProfileResponse } from '@/services/api';
 import { getImageUrl } from '@/utils/imageUtils';
@@ -8,7 +9,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Dimensions,
     Image,
     RefreshControl,
@@ -60,20 +60,41 @@ export default function PublicUserProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.tint} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading profile...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style="light" />
+        <LinearGradient
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+          style={styles.heroHeader}
+        >
+          <View style={styles.heroTop}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text style={styles.heroTitle}>Profile</Text>
+            <View style={{ width: 44 }} />
+          </View>
+        </LinearGradient>
+        <ProfilePageSkeleton colors={colors} />
+      </View>
     );
   }
 
   if (!profile) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style="light" />
+        <LinearGradient
+          colors={[colors.headerGradientStart, colors.headerGradientEnd]}
+          style={styles.heroHeader}
+        >
+          <View style={styles.heroTop}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text style={styles.heroTitle}>Profile</Text>
+            <View style={{ width: 44 }} />
+          </View>
+        </LinearGradient>
         <View style={styles.errorContainer}>
           <Ionicons name="person-circle-outline" size={80} color={colors.icon} />
           <Text style={[styles.errorText, { color: colors.text }]}>Profile not found</Text>
@@ -84,7 +105,7 @@ export default function PublicUserProfileScreen() {
             <Text style={styles.errorButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -314,16 +335,6 @@ export default function PublicUserProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: '500',
   },
   errorContainer: {
     flex: 1,
