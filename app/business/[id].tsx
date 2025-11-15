@@ -4,6 +4,7 @@ import BusinessMapView from '@/components/BusinessMapView';
 import CustomAlert from '@/components/CustomAlert';
 import { BusinessDetailsSkeleton, SimilarBusinessesSkeleton } from '@/components/SkeletonLoader';
 import SubmitBusinessModal from '@/components/SubmitBusinessModal';
+import SubmitOfferingModal from '@/components/SubmitOfferingModal';
 import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -25,7 +26,8 @@ import {
     isAuthenticated,
     Offering,
     removeFromFavorites,
-    Review
+    Review,
+    submitOffering
 } from '@/services/api';
 import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,6 +68,7 @@ export default function BusinessDetailsScreen() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
   const [showSubmitBusinessModal, setShowSubmitBusinessModal] = useState(false);
+  const [showSubmitOfferingModal, setShowSubmitOfferingModal] = useState(false);
   const [similarBusinesses, setSimilarBusinesses] = useState<any[]>([]);
   const [similarBusinessesLoading, setSimilarBusinessesLoading] = useState(false);
 
@@ -931,8 +934,60 @@ export default function BusinessDetailsScreen() {
     );
   };
 
+  const handleSubmitOffering = async (data: any) => {
+    try {
+      const response = await submitOffering(data);
+      
+      if (response.success) {
+        setShowSubmitOfferingModal(false);
+        showSuccess(response.message || 'Offering submitted successfully!');
+      } else {
+        Alert.alert('Error', response.message || 'Failed to submit offering');
+      }
+    } catch (error: any) {
+      console.error('Error submitting offering:', error);
+      Alert.alert('Error', error?.message || 'Failed to submit offering');
+    }
+  };
+
+  const handleSubmitOfferingPress = async () => {
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      showAlert({
+        type: 'info',
+        title: 'Sign In Required',
+        message: 'Please sign in to submit an offering',
+        buttons: [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+        ]
+      });
+      return;
+    }
+    setShowSubmitOfferingModal(true);
+  };
+
   const renderMenuTab = () => (
     <View style={styles.tabInnerContent}>
+      {/* Submit Offering Banner */}
+      <TouchableOpacity
+        style={[styles.submitOfferingBanner, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '40' }]}
+        onPress={handleSubmitOfferingPress}
+      >
+        <View style={[styles.submitOfferingIcon, { backgroundColor: colors.tint }]}>
+          <Ionicons name="add-circle" size={20} color="white" />
+        </View>
+        <View style={styles.submitOfferingContent}>
+          <Text style={[styles.submitOfferingTitle, { color: colors.text }]}>
+            Missing a product or service?
+          </Text>
+          <Text style={[styles.submitOfferingText, { color: colors.icon }]}>
+            Help others by adding it here
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={colors.tint} />
+      </TouchableOpacity>
+
       {offerings.length > 0 ? (
         <View>
           <Text style={[styles.menuHeader, { color: colors.text }]}>
@@ -1689,6 +1744,18 @@ export default function BusinessDetailsScreen() {
         onSuccess={(message) => {
           showSuccess(message);
           setShowSubmitBusinessModal(false);
+        }}
+      />
+
+      {/* Submit Offering Modal */}
+      <SubmitOfferingModal
+        visible={showSubmitOfferingModal}
+        onClose={() => setShowSubmitOfferingModal(false)}
+        onSubmit={handleSubmitOffering}
+        initialData={{
+          business_id: businessId,
+          business_name: business?.business_name,
+          business_address: business?.full_address || business?.landmark || '',
         }}
       />
 
@@ -2744,5 +2811,36 @@ const styles = StyleSheet.create({
   missingBusinessSubtitle: {
     fontSize: 12,
     opacity: 0.8,
+  },
+  // Submit Offering Banner styles
+  submitOfferingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 8,
+    marginTop: 8,
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  submitOfferingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitOfferingContent: {
+    flex: 1,
+  },
+  submitOfferingTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  submitOfferingText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });

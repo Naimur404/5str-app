@@ -66,6 +66,7 @@ export const API_CONFIG = {
     BUSINESS_CATEGORIES_LIST: '/api/v1/businesses/categories',
     BUSINESS_SUBMISSION: '/api/v1/submissions/business',
     ATTRACTION_SUBMISSION: '/api/v1/submissions/attraction',
+    OFFERING_SUBMISSION: '/api/v1/submissions/offering',
     MY_SUBMISSIONS: '/api/v1/submissions/my-submissions',
     SUBMISSION_DETAILS: '/api/v1/submissions', // Type and ID appended in service
   }

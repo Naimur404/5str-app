@@ -1532,3 +1532,30 @@ export interface SubmissionDetailsResponse {
     submission: SubmissionData;
   };
 }
+
+// Offering Submission Request
+export interface OfferingSubmissionRequest {
+  business_id?: number | null;
+  business_name: string;
+  business_address: string;
+  offering_name: string;
+  offering_description: string;
+  offering_category: string;
+  price?: number | null;
+  price_type?: 'fixed' | 'range' | 'negotiable' | 'free';
+  availability?: string;
+  contact_info?: string;
+  images?: string[];
+  additional_info?: string;
+}
+
+// Offering Submission Response
+export interface OfferingSubmissionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    submission_id: number;
+    status: string;
+    estimated_review_time: string;
+  };
+}

@@ -30,6 +30,8 @@ import {
   MySubmissionsResponse,
   NotificationActionResponse,
   NotificationsResponse,
+  OfferingSubmissionRequest,
+  OfferingSubmissionResponse,
   PopularAttractionsResponse,
   PopularCollectionsResponse,
   SearchCollectionsResponse,
@@ -2289,6 +2291,23 @@ export const submitAttraction = async (
   data: AttractionSubmissionRequest
 ): Promise<AttractionSubmissionResponse> => {
   const url = API_CONFIG.ENDPOINTS.ATTRACTION_SUBMISSION;
+  return makeApiCall(
+    url,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+    true // Requires authentication
+  );
+};
+
+/**
+ * Submit a new offering for review
+ */
+export const submitOffering = async (
+  data: OfferingSubmissionRequest
+): Promise<OfferingSubmissionResponse> => {
+  const url = API_CONFIG.ENDPOINTS.OFFERING_SUBMISSION;
   return makeApiCall(
     url,
     {
