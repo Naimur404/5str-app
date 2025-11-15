@@ -1171,7 +1171,17 @@ export default function BusinessDetailsScreen() {
                     </Text>
                   </View>
                   <View>
-                    <Text style={[styles.userName, { color: colors.text }]}>{item.user?.name || 'Anonymous'}</Text>
+                    <View style={styles.userNameRow}>
+                      <Text style={[styles.userName, { color: colors.text }]}>{item.user?.name || 'Anonymous'}</Text>
+                      {item.user?.trust_level && (
+                        <View style={[styles.trustLevelBadge, { backgroundColor: colors.tint + '20', borderColor: colors.tint }]}>
+                          <Ionicons name="shield-checkmark" size={12} color={colors.tint} />
+                          <Text style={[styles.trustLevelText, { color: colors.tint }]}>
+                            Level {item.user.trust_level}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={[styles.reviewDate, { color: colors.icon }]}>
                       {new Date(item.created_at).toLocaleDateString()}
                     </Text>
@@ -2249,6 +2259,25 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  trustLevelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 3,
+  },
+  trustLevelText: {
+    fontSize: 10,
     fontWeight: '600',
   },
   reviewDate: {

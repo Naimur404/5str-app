@@ -1,6 +1,7 @@
 import { AttractionInteractionPanel } from '@/components/AttractionInteractionPanel';
 import AttractionMapView from '@/components/AttractionMapView';
 import CustomAlert from '@/components/CustomAlert';
+import ProfileAvatar from '@/components/ProfileAvatar';
 import { RecordVisitModal } from '@/components/RecordVisitModal';
 import { AttractionDetailsSkeleton } from '@/components/SkeletonLoader';
 import SmartImage from '@/components/SmartImage';
@@ -819,25 +820,6 @@ export default function AttractionDetailScreen() {
           )
         )}
 
-        {/* Submit Attraction Banner */}
-        <TouchableOpacity
-          style={[styles.submitBanner, { backgroundColor: colors.tint + '15', borderColor: colors.tint }]}
-          onPress={handleSubmitAttractionPress}
-        >
-          <View style={[styles.submitBannerIcon, { backgroundColor: colors.tint }]}>
-            <Ionicons name="add-circle" size={24} color="white" />
-          </View>
-          <View style={styles.submitBannerContent}>
-            <Text style={[styles.submitBannerTitle, { color: colors.text }]}>
-              Missing an attraction?
-            </Text>
-            <Text style={[styles.submitBannerText, { color: colors.icon }]}>
-              Help others by submitting a new attraction
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.tint} />
-        </TouchableOpacity>
-
         {/* Pricing & Hours */}
         <View style={[styles.section, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Pricing & Information</Text>
@@ -893,16 +875,36 @@ export default function AttractionDetailScreen() {
               {reviews.slice(0, 2).map((review) => (
                 <View key={review.id} style={[styles.reviewPreview, { borderBottomColor: colors.border }]}>
                   <View style={styles.reviewPreviewHeader}>
-                    <Text style={[styles.reviewUserName, { color: colors.text }]}>{review.user.name}</Text>
-                    <View style={styles.reviewRating}>
-                      {[...Array(5)].map((_, i) => (
-                        <Ionicons
-                          key={i}
-                          name="star"
-                          size={10}
-                          color={i < parseFloat(review.rating) ? "#FFD700" : colors.icon}
-                        />
-                      ))}
+                    <View style={styles.reviewUserSection}>
+                      <ProfileAvatar
+                        profileImage={review.user.profile_image}
+                        userName={review.user.name}
+                        size={36}
+                        seed={review.user.id?.toString() || review.user.name}
+                      />
+                      <View style={styles.reviewUserDetails}>
+                        <View style={styles.userNameRow}>
+                          <Text style={[styles.reviewUserName, { color: colors.text }]}>{review.user.name}</Text>
+                          {review.user?.trust_level && (
+                            <View style={[styles.trustLevelBadge, { backgroundColor: colors.tint + '20', borderColor: colors.tint }]}>
+                              <Ionicons name="shield-checkmark" size={12} color={colors.tint} />
+                              <Text style={[styles.trustLevelText, { color: colors.tint }]}>
+                                Level {review.user.trust_level}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                        <View style={styles.reviewRating}>
+                          {[...Array(5)].map((_, i) => (
+                            <Ionicons
+                              key={i}
+                              name="star"
+                              size={10}
+                              color={i < parseFloat(review.rating) ? "#FFD700" : colors.icon}
+                            />
+                          ))}
+                        </View>
+                      </View>
                     </View>
                   </View>
                   <Text style={[styles.reviewPreviewText, { color: colors.text }]} numberOfLines={2}>
@@ -1762,6 +1764,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
+  reviewUserSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  reviewUserDetails: {
+    flex: 1,
+    gap: 4,
+  },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  trustLevelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 3,
+  },
+  trustLevelText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   reviewPreviewText: {
     fontSize: 14,
     lineHeight: 18,
@@ -1777,35 +1807,6 @@ const styles = StyleSheet.create({
   viewAllReviewsText: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  submitBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    gap: 12,
-  },
-  submitBannerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitBannerContent: {
-    flex: 1,
-  },
-  submitBannerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  submitBannerText: {
-    fontSize: 13,
-    fontWeight: '500',
   },
   submitAttractionTopBanner: {
     flexDirection: 'row',
