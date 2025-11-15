@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import ProfileAvatar from '../../../components/ProfileAvatar';
 import { AllReviewsSkeleton } from '../../../components/SkeletonLoader';
 import { Colors } from '../../../constants/Colors';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -229,27 +230,39 @@ export default function AllReviewsScreen() {
             {reviews.filter(review => review && typeof review === 'object' && review.id).map((review) => (
               <View key={review.id} style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.reviewHeader}>
-                  <View style={styles.reviewUserInfo}>
-                    <Text style={[styles.reviewUserName, { color: colors.text }]}>{review.user?.name || 'Anonymous'}</Text>
-                    <View style={styles.reviewRating}>
-                      {[...Array(5)].map((_, i) => {
-                        const rating = review.rating ? parseFloat(review.rating.toString()) : 0;
-                        const isValidRating = !isNaN(rating) && rating > 0;
-                        return (
-                          <Ionicons
-                            key={i}
-                            name="star"
-                            size={14}
-                            color={isValidRating && i < Math.floor(rating) ? "#FFD700" : colors.icon}
-                          />
-                        );
-                      })}
-                      <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-                        {(() => {
+                  <View style={styles.reviewUserSection}>
+                    <TouchableOpacity onPress={() => review.user?.id && router.push(`/user/${review.user.id}` as any)}>
+                      <ProfileAvatar
+                        profileImage={review.user?.profile_image}
+                        userName={review.user?.name || 'Anonymous'}
+                        size={40}
+                        seed={review.user?.id?.toString() || review.user?.name || 'anonymous'}
+                      />
+                    </TouchableOpacity>
+                    <View style={styles.reviewUserInfo}>
+                      <TouchableOpacity onPress={() => review.user?.id && router.push(`/user/${review.user.id}` as any)}>
+                        <Text style={[styles.reviewUserName, { color: colors.tint }]}>{review.user?.name || 'Anonymous'}</Text>
+                      </TouchableOpacity>
+                      <View style={styles.reviewRating}>
+                        {[...Array(5)].map((_, i) => {
                           const rating = review.rating ? parseFloat(review.rating.toString()) : 0;
-                          return !isNaN(rating) && rating > 0 ? rating.toFixed(1) : '0.0';
-                        })()}
-                      </Text>
+                          const isValidRating = !isNaN(rating) && rating > 0;
+                          return (
+                            <Ionicons
+                              key={i}
+                              name="star"
+                              size={14}
+                              color={isValidRating && i < Math.floor(rating) ? "#FFD700" : colors.icon}
+                            />
+                          );
+                        })}
+                        <Text style={[styles.reviewRatingText, { color: colors.text }]}>
+                          {(() => {
+                            const rating = review.rating ? parseFloat(review.rating.toString()) : 0;
+                            return !isNaN(rating) && rating > 0 ? rating.toFixed(1) : '0.0';
+                          })()}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                   <Text style={[styles.reviewTime, { color: colors.icon }]}>{review.time_ago || ''}</Text>
@@ -447,6 +460,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  reviewUserSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
   reviewUserInfo: {
     flex: 1,

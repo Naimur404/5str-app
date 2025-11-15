@@ -876,15 +876,19 @@ export default function AttractionDetailScreen() {
                 <View key={review.id} style={[styles.reviewPreview, { borderBottomColor: colors.border }]}>
                   <View style={styles.reviewPreviewHeader}>
                     <View style={styles.reviewUserSection}>
-                      <ProfileAvatar
-                        profileImage={review.user.profile_image}
-                        userName={review.user.name}
-                        size={36}
-                        seed={review.user.id?.toString() || review.user.name}
-                      />
+                      <TouchableOpacity onPress={() => router.push(`/user/${review.user.id}` as any)}>
+                        <ProfileAvatar
+                          profileImage={review.user.profile_image}
+                          userName={review.user.name}
+                          size={36}
+                          seed={review.user.id?.toString() || review.user.name}
+                        />
+                      </TouchableOpacity>
                       <View style={styles.reviewUserDetails}>
                         <View style={styles.userNameRow}>
-                          <Text style={[styles.reviewUserName, { color: colors.text }]}>{review.user.name}</Text>
+                          <TouchableOpacity onPress={() => router.push(`/user/${review.user.id}` as any)}>
+                            <Text style={[styles.reviewUserName, { color: colors.tint }]}>{review.user.name}</Text>
+                          </TouchableOpacity>
                           {review.user?.trust_level && (
                             <View style={[styles.trustLevelBadge, { backgroundColor: colors.tint + '20', borderColor: colors.tint }]}>
                               <Ionicons name="shield-checkmark" size={12} color={colors.tint} />
