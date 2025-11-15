@@ -1,24 +1,24 @@
+import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/contexts/ThemeContext';
+import { getPublicUserProfile, PublicUserProfileResponse } from '@/services/api';
+import { getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/Colors';
-import { useTheme } from '@/contexts/ThemeContext';
-import { getPublicUserProfile, PublicUserProfileResponse } from '@/services/api';
-import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 
 const { width } = Dimensions.get('window');
 
