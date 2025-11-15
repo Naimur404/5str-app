@@ -96,7 +96,6 @@ const DynamicHeroSection = React.memo(({
   const sunAnimation = useRef(new Animated.Value(0)).current;
   const moonAnimation = useRef(new Animated.Value(0)).current;
   const starAnimation = useRef(new Animated.Value(0)).current;
-  const birdAnimation = useRef(new Animated.Value(0)).current;
   const cloudAnimation = useRef(new Animated.Value(0)).current;
   const weatherIconAnimation = useRef(new Animated.Value(0)).current;
 
@@ -199,15 +198,6 @@ const DynamicHeroSection = React.memo(({
       ])
     ).start();
 
-    // Bird flying animation
-    Animated.loop(
-      Animated.timing(birdAnimation, {
-        toValue: 1,
-        duration: 8000,
-        useNativeDriver: true,
-      })
-    ).start();
-
     // Cloud floating animation
     Animated.loop(
       Animated.timing(cloudAnimation, {
@@ -222,7 +212,6 @@ const DynamicHeroSection = React.memo(({
     sunAnimation.stopAnimation();
     moonAnimation.stopAnimation();
     starAnimation.stopAnimation();
-    birdAnimation.stopAnimation();
     cloudAnimation.stopAnimation();
   };
 
@@ -259,7 +248,6 @@ const DynamicHeroSection = React.memo(({
           : ['#FFE4B5', '#98D8E8', '#87CEEB'],
         textColor: 'white',
         showSun: true,
-        showBirds: true,
         showClouds: true,
         sunColor: '#FFD700',
         cloudColor: 'rgba(255, 255, 255, 0.8)'
@@ -276,7 +264,6 @@ const DynamicHeroSection = React.memo(({
           : ['#87CEEB', '#4682B4', '#1E90FF'],
         textColor: 'white',
         showSun: true,
-        showBirds: true,
         showClouds: true,
         sunColor: '#FFD700',
         cloudColor: 'rgba(255, 255, 255, 0.9)'
@@ -327,18 +314,15 @@ const DynamicHeroSection = React.memo(({
       case 'clear':
         // Keep time-based animations, just adjust for sunny weather
         weatherTheme.showClouds = false;
-        weatherTheme.showBirds = true;
         break;
       case 'partly-cloudy':
         // Show both time-based elements and clouds
         weatherTheme.showClouds = true;
-        weatherTheme.showBirds = true;
         weatherTheme.cloudOpacity = 0.6;
         break;
       case 'cloudy':
         // Cloudy weather - hide sun completely, show clouds
         weatherTheme.showClouds = true;
-        weatherTheme.showBirds = false; // Birds don't fly in heavy clouds
         weatherTheme.cloudOpacity = 0.8;
         // Hide sun completely when it's cloudy
         if (baseTheme.type !== 'night') {
@@ -348,7 +332,6 @@ const DynamicHeroSection = React.memo(({
       case 'rainy':
         // Rainy conditions - just show clouds, no rain animation
         weatherTheme.showClouds = true;
-        weatherTheme.showBirds = false;
         weatherTheme.cloudColor = 'rgba(105, 105, 105, 0.9)';
         // Dim sun but don't hide completely
         if (baseTheme.type !== 'night') {
@@ -357,7 +340,6 @@ const DynamicHeroSection = React.memo(({
         break;
       case 'stormy':
         weatherTheme.showClouds = true;
-        weatherTheme.showBirds = false;
         weatherTheme.showStorm = true;
         weatherTheme.cloudColor = 'rgba(47, 79, 79, 0.9)';
         if (baseTheme.type !== 'night') {
@@ -366,7 +348,6 @@ const DynamicHeroSection = React.memo(({
         break;
       case 'snowy':
         weatherTheme.showClouds = true;
-        weatherTheme.showBirds = false;
         weatherTheme.showSnow = true;
         weatherTheme.cloudColor = 'rgba(220, 220, 220, 0.9)';
         if (baseTheme.type !== 'night') {
@@ -412,23 +393,6 @@ const DynamicHeroSection = React.memo(({
   const starTwinkle = starAnimation.interpolate({
     inputRange: [0, 0.25, 0.5, 0.75, 1],
     outputRange: [1, 1.3, 1, 1.5, 1], // Twinkling effect
-  });
-
-  const birdTranslateX = birdAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [width + 50, -100], // Right to left movement
-  });
-
-  const birdTranslateY = birdAnimation.interpolate({
-    inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
-    outputRange: theme.type === 'morning' 
-      ? [0, -20, 15, -15, 20, -10] // More active morning flight
-      : [0, -12, 8, -8, 12, -5], // Standard flight pattern
-  });
-
-  const birdRotate = birdAnimation.interpolate({
-    inputRange: [0, 0.25, 0.5, 0.75, 1],
-    outputRange: ['0deg', '-2deg', '1deg', '-1deg', '0deg'], // Slight wing tilt
   });
 
   const cloudTranslateX = cloudAnimation.interpolate({
@@ -595,26 +559,6 @@ const DynamicHeroSection = React.memo(({
             />
           ))}
         </View>
-      )}
-
-      {/* Flying Birds Animation */}
-      {theme.showBirds && (
-        <Animated.View 
-          style={[
-            dynamicHeroStyles.birdContainer,
-            {
-              transform: [
-                { translateX: birdTranslateX },
-                { translateY: birdTranslateY },
-                { rotate: birdRotate }
-              ]
-            }
-          ]}
-        >
-          <Text style={dynamicHeroStyles.bird}>🐦</Text>
-          <Text style={[dynamicHeroStyles.bird, { marginLeft: 15, marginTop: 8 }]}>🐦</Text>
-          <Text style={[dynamicHeroStyles.bird, { marginLeft: 25, marginTop: -5 }]}>🐦</Text>
-        </Animated.View>
       )}
 
       {/* Floating Clouds Animation */}
@@ -1858,7 +1802,10 @@ export default function HomeScreen() {
     };
 
     // Format estimated duration
-    const formatDuration = (minutes: number) => {
+    const formatDuration = (minutes: number | null | undefined) => {
+      if (!minutes || minutes === 0) {
+        return 'N/A';
+      }
       if (minutes < 60) {
         return `${minutes}min`;
       }
@@ -4138,19 +4085,6 @@ const dynamicHeroStyles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 3,
     elevation: 5,
-  },
-  // Birds Animation
-  birdContainer: {
-    position: 'absolute',
-    top: 55, // Moved down to avoid status bar
-    zIndex: 2,
-    flexDirection: 'row',
-  },
-  bird: {
-    fontSize: 16,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   // Clouds Animation
   cloudContainer: {

@@ -32,6 +32,14 @@ interface ProfilePageCache {
   expiresAt: number;
 }
 
+interface DiscoverPageCache {
+  categories: any[];
+  trendingBusinesses: any[];
+  trendingOfferings: any[];
+  timestamp: number;
+  expiresAt: number;
+}
+
 class CacheService {
   private static instance: CacheService;
   private memoryCache: Map<string, any> = new Map();
@@ -41,6 +49,7 @@ class CacheService {
     HOME_DATA: 'cache_home_data',
     USER_PROFILE: 'cache_user_profile',
     PROFILE_PAGE_DATA: 'cache_profile_page_data',
+    DISCOVER_PAGE_DATA: 'cache_discover_page_data',
     CACHE_VERSION: 'cache_version'
   };
 
@@ -48,7 +57,8 @@ class CacheService {
   private readonly CACHE_DURATIONS = {
     HOME_DATA: 60 * 60 * 1000, // 1 hour
     USER_PROFILE: 2 * 60 * 60 * 1000, // 2 hours
-    PROFILE_PAGE_DATA: 2 * 60 * 60 * 1000 // 2 hours
+    PROFILE_PAGE_DATA: 2 * 60 * 60 * 1000, // 2 hours
+    DISCOVER_PAGE_DATA: 30 * 60 * 1000 // 30 minutes
   };
 
   private readonly CURRENT_CACHE_VERSION = '1.0';
@@ -309,6 +319,67 @@ class CacheService {
   public async clearProfilePageData(): Promise<void> {
     await this.removeCache(this.CACHE_KEYS.PROFILE_PAGE_DATA);
     console.log('🗑️ Profile page data cache cleared');
+  }
+
+  // Discover page cache methods
+  public async setDiscoverPageData(
+    categories: any[],
+    trendingBusinesses: any[],
+    trendingOfferings: any[]
+  ): Promise<void> {
+    const discoverPageCache: DiscoverPageCache = {
+      categories,
+      trendingBusinesses,
+      trendingOfferings,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.CACHE_DURATIONS.DISCOVER_PAGE_DATA
+    };
+
+    await this.setCache(
+      this.CACHE_KEYS.DISCOVER_PAGE_DATA, 
+      discoverPageCache, 
+      this.CACHE_DURATIONS.DISCOVER_PAGE_DATA
+    );
+    console.log('💾 Discover page data cached for 30 minutes');
+  }
+
+  public async getDiscoverPageData(): Promise<{
+    categories: any[];
+    trendingBusinesses: any[];
+    trendingOfferings: any[];
+  } | null> {
+    try {
+      const cached = await this.getCache<DiscoverPageCache>(this.CACHE_KEYS.DISCOVER_PAGE_DATA);
+      
+      if (!cached) {
+        console.log('📍 No cached discover page data found');
+        return null;
+      }
+
+      // Check if cache has expired (30 minutes)
+      if (Date.now() > cached.expiresAt) {
+        console.log('⏰ Discover page data cache expired (30 minutes), clearing');
+        await this.removeCache(this.CACHE_KEYS.DISCOVER_PAGE_DATA);
+        return null;
+      }
+
+      const age = Math.round((Date.now() - cached.timestamp) / 60000);
+      console.log(`✅ Using cached discover page data (age: ${age} minutes)`);
+      
+      return {
+        categories: cached.categories,
+        trendingBusinesses: cached.trendingBusinesses,
+        trendingOfferings: cached.trendingOfferings
+      };
+    } catch (error) {
+      console.error('Error getting discover page cache:', error);
+      return null;
+    }
+  }
+
+  public async clearDiscoverPageData(): Promise<void> {
+    await this.removeCache(this.CACHE_KEYS.DISCOVER_PAGE_DATA);
+    console.log('🗑️ Discover page data cache cleared');
   }
 
   // Utility methods

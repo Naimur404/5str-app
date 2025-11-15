@@ -3,6 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { useLocation } from '@/contexts/LocationContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getCategories, getTodayTrending } from '@/services/api';
+import cacheService from '@/services/cacheService';
 import { Category, TrendingBusiness, TrendingOffering } from '@/types/api';
 import { getFallbackImageUrl, getImageUrl } from '@/utils/imageUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,8 +40,31 @@ export default function DiscoverScreen() {
   const { getCoordinatesForAPI } = useLocation();
 
   useEffect(() => {
-    fetchAllData();
+    loadDiscoverData();
   }, []);
+
+  const loadDiscoverData = async () => {
+    try {
+      // Try to get cached data first
+      const cachedData = await cacheService.getDiscoverPageData();
+      
+      if (cachedData) {
+        console.log('📦 Using cached discover page data');
+        setCategories(cachedData.categories);
+        setTrendingBusinesses(cachedData.trendingBusinesses);
+        setTrendingOfferings(cachedData.trendingOfferings);
+        setLoading(false);
+        return;
+      }
+
+      // If no cache, fetch fresh data
+      console.log('🌐 Fetching fresh discover page data');
+      await fetchAllData();
+    } catch (error) {
+      console.error('Error loading discover data:', error);
+      await fetchAllData();
+    }
+  };
 
   const fetchAllData = async (isRefresh: boolean = false) => {
     try {
@@ -64,6 +88,13 @@ export default function DiscoverScreen() {
         setTrendingBusinesses(trendingResponse.data.trending_businesses || []);
         setTrendingOfferings(trendingResponse.data.trending_offerings || []);
       }
+
+      // Cache the fetched data
+      await cacheService.setDiscoverPageData(
+        categoriesResponse.data || [],
+        trendingResponse.data.trending_businesses || [],
+        trendingResponse.data.trending_offerings || []
+      );
     } catch (error) {
       console.error('Error fetching data:', error);
       Alert.alert('Error', 'Unable to load data. Please check your internet connection.');
