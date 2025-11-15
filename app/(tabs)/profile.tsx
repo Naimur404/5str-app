@@ -81,7 +81,6 @@ export default function ProfileScreen() {
   const [locationEnabled, setLocationEnabled] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [personalizedRecommendations, setPersonalizedRecommendations] = useState<any[]>([]);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState<{ [key: string]: boolean }>({});
   const router = useRouter();
   const { colorScheme, themePreference, setThemePreference, isDarkMode, isAutoMode } = useTheme();
@@ -146,74 +145,6 @@ export default function ProfileScreen() {
     loadUserData();
   }, []);
 
-  // Load recommendations when authentication state changes
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      console.log('Loading personalized recommendations due to auth state change');
-      loadPersonalizedRecommendations();
-    }
-  }, [isAuthenticated, loading]);
-
-  const loadPersonalizedRecommendations = async () => {
-    // Double-check authentication before making API call
-    if (!isAuthenticated) {
-      console.log('User not authenticated, skipping recommendations');
-      setPersonalizedRecommendations([]);
-      setRecommendationsLoading(false);
-      return;
-    }
-
-    // Also check if we have a valid auth token
-    try {
-      const token = await getAuthToken();
-      if (!token) {
-        console.log('No auth token available, skipping recommendations');
-        setPersonalizedRecommendations([]);
-        setRecommendationsLoading(false);
-        return;
-      }
-    } catch (error) {
-      console.log('Error checking auth token, skipping recommendations:', error);
-      setPersonalizedRecommendations([]);
-      setRecommendationsLoading(false);
-      return;
-    }
-    
-    try {
-      console.log('Loading personalized recommendations...');
-      setRecommendationsLoading(true);
-      // Use default coordinates for now, you can get user's location from context
-      const response = await getPersonalizedRecommendations(22.3569, 91.7832, 6);
-      
-      console.log('Recommendations response:', response);
-      
-      if (response.success && response.data) {
-        // Handle both possible response structures
-        let businessesArray: any[] = [];
-        const data = response.data as any; // Cast to handle API response structure
-        
-        if (data.businesses) {
-          // Your API response structure with businesses object
-          businessesArray = Object.values(data.businesses);
-        } else if (data.personalized_businesses) {
-          // Interface structure with personalized_businesses array
-          businessesArray = data.personalized_businesses;
-        }
-        
-        console.log('Setting recommendations:', businessesArray.length, 'businesses');
-        setPersonalizedRecommendations(businessesArray);
-      } else {
-        console.log('No recommendations data received');
-        setPersonalizedRecommendations([]);
-      }
-    } catch (error) {
-      console.error('Error loading personalized recommendations:', error);
-      setPersonalizedRecommendations([]);
-    } finally {
-      setRecommendationsLoading(false);
-    }
-  };
-
   const loadUserData = async () => {
     try {
       setLoading(true);
@@ -222,54 +153,84 @@ export default function ProfileScreen() {
       if (token) {
         setIsAuthenticated(true);
         
-        // Try to get cached user profile first
-        const cachedUser = await cacheService.getUserProfile();
-        if (cachedUser) {
-          console.log('Using cached user profile in profile page');
+        // Try to get cached profile page data first
+        const cachedData = await cacheService.getProfilePageData();
+        if (cachedData) {
+          console.log('✅ Using cached profile page data');
           // Ensure user_level exists
-          if (!cachedUser.user_level) {
-            cachedUser.user_level = guestUser.user_level;
+          if (!cachedData.user.user_level) {
+            cachedData.user.user_level = guestUser.user_level;
           }
-          setUser(cachedUser);
+          setUser(cachedData.user);
+          setReviews(cachedData.reviews);
+          setPersonalizedRecommendations(cachedData.recommendations);
+          setLoading(false);
+          return; // Exit early, use cached data
         }
 
+        console.log('🔄 No cache found, fetching fresh profile data');
+        
+        // Fetch fresh data from API
         const [userResponse, reviewsResponse] = await Promise.all([
           getUserProfile(),
           getUserReviews()
         ]);
         
+        let userData = null;
+        let reviewsData: any[] = [];
+        
         if (userResponse.success) {
-          const userData = userResponse.data.user;
+          userData = userResponse.data.user;
           // Ensure user_level exists
           if (!userData.user_level) {
             userData.user_level = guestUser.user_level;
           }
           setUser(userData);
-          // Update cache with fresh data
-          await cacheService.setUserProfile(userData);
-          console.log('User profile updated in cache');
         }
         
         if (reviewsResponse.success) {
-          setReviews(reviewsResponse.data.reviews);
+          reviewsData = reviewsResponse.data.reviews;
+          setReviews(reviewsData);
         }
 
         // Load personalized recommendations for authenticated users
-        if (isAuthenticated) {
-          await loadPersonalizedRecommendations();
+        let recommendationsData: any[] = [];
+        if (isAuthenticated && userData) {
+          try {
+            const response = await getPersonalizedRecommendations(22.3569, 91.7832, 6);
+            
+            if (response.success && response.data) {
+              const data = response.data as any;
+              
+              if (data.businesses) {
+                recommendationsData = Object.values(data.businesses);
+              } else if (data.personalized_businesses) {
+                recommendationsData = data.personalized_businesses;
+              }
+              
+              setPersonalizedRecommendations(recommendationsData);
+            }
+          } catch (error) {
+            console.error('Error loading recommendations:', error);
+          }
+        }
+
+        // Cache all profile page data for 2 hours
+        if (userData) {
+          await cacheService.setProfilePageData(userData, reviewsData, recommendationsData);
         }
       } else {
         setIsAuthenticated(false);
         setUser(null);
         setReviews([]);
-        setPersonalizedRecommendations([]); // Clear recommendations when not authenticated
+        setPersonalizedRecommendations([]);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
       setIsAuthenticated(false);
       setUser(null);
       setReviews([]);
-      setPersonalizedRecommendations([]); // Clear recommendations on error
+      setPersonalizedRecommendations([]);
     } finally {
       setLoading(false);
     }
@@ -277,11 +238,10 @@ export default function ProfileScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // Clear profile page cache to force fresh data
+    await cacheService.clearProfilePageData();
+    console.log('🔄 Refreshing profile data (cache cleared)');
     await loadUserData();
-    // Also reload recommendations on refresh for authenticated users
-    if (isAuthenticated) {
-      await loadPersonalizedRecommendations();
-    }
     setRefreshing(false);
   };
 
@@ -292,13 +252,14 @@ export default function ProfileScreen() {
       async () => {
         await logout();
         // Clear all cached data on logout
-        await cacheService.clearUserProfile();
+        await cacheService.clearAuthRelatedCache();
         await cacheService.clearHomeData();
-        console.log('Cache cleared on logout');
+        console.log('🗑️ All cache cleared on logout');
         
         setIsAuthenticated(false);
         setUser(null);
         setReviews([]);
+        setPersonalizedRecommendations([]);
         router.replace('/auth/login' as any);
       }
     );
@@ -626,11 +587,11 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
               
-              {recommendationsLoading ? (
+              {loading ? (
                 <View style={styles.recommendationsLoading}>
                   <ActivityIndicator size="small" color={colors.tint} />
                   <Text style={[styles.loadingText, { color: colors.icon }]}>
-                    Personalizing recommendations...
+                    Loading recommendations...
                   </Text>
                 </View>
               ) : personalizedRecommendations.length > 0 ? (

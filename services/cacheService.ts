@@ -21,7 +21,15 @@ interface HomeDataCache {
 interface UserProfileCache {
   data: User;
   timestamp: number;
-  // No expiration for user profile - only cleared on update/logout
+  expiresAt: number; // Now has expiration
+}
+
+interface ProfilePageCache {
+  user: User;
+  reviews: any[];
+  recommendations: any[];
+  timestamp: number;
+  expiresAt: number;
 }
 
 class CacheService {
@@ -32,13 +40,15 @@ class CacheService {
   private readonly CACHE_KEYS = {
     HOME_DATA: 'cache_home_data',
     USER_PROFILE: 'cache_user_profile',
+    PROFILE_PAGE_DATA: 'cache_profile_page_data',
     CACHE_VERSION: 'cache_version'
   };
 
   // Cache durations
   private readonly CACHE_DURATIONS = {
     HOME_DATA: 5 * 60 * 1000, // 5 minutes
-    USER_PROFILE: Infinity // Until manual clear (profile update/logout)
+    USER_PROFILE: 2 * 60 * 60 * 1000, // 2 hours
+    PROFILE_PAGE_DATA: 2 * 60 * 60 * 1000 // 2 hours
   };
 
   private readonly CURRENT_CACHE_VERSION = '1.0';
@@ -206,16 +216,29 @@ class CacheService {
   public async setUserProfile(user: User): Promise<void> {
     const userProfileCache: UserProfileCache = {
       data: user,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.CACHE_DURATIONS.USER_PROFILE
     };
 
-    await this.setCache(this.CACHE_KEYS.USER_PROFILE, userProfileCache);
+    await this.setCache(this.CACHE_KEYS.USER_PROFILE, userProfileCache, this.CACHE_DURATIONS.USER_PROFILE);
   }
 
   public async getUserProfile(): Promise<User | null> {
     try {
       const cached = await this.getCache<UserProfileCache>(this.CACHE_KEYS.USER_PROFILE);
-      return cached ? cached.data : null;
+      
+      if (!cached) {
+        return null;
+      }
+
+      // Check if cache has expired (2 hours)
+      if (Date.now() > cached.expiresAt) {
+        console.log('User profile cache expired (2 hours), clearing');
+        await this.removeCache(this.CACHE_KEYS.USER_PROFILE);
+        return null;
+      }
+
+      return cached.data;
     } catch (error) {
       console.error('Error getting user profile cache:', error);
       return null;
@@ -224,6 +247,54 @@ class CacheService {
 
   public async clearUserProfile(): Promise<void> {
     await this.removeCache(this.CACHE_KEYS.USER_PROFILE);
+  }
+
+  // Profile page data cache methods (includes user, reviews, recommendations)
+  public async setProfilePageData(user: User, reviews: any[], recommendations: any[]): Promise<void> {
+    const profilePageCache: ProfilePageCache = {
+      user,
+      reviews,
+      recommendations,
+      timestamp: Date.now(),
+      expiresAt: Date.now() + this.CACHE_DURATIONS.PROFILE_PAGE_DATA
+    };
+
+    await this.setCache(this.CACHE_KEYS.PROFILE_PAGE_DATA, profilePageCache, this.CACHE_DURATIONS.PROFILE_PAGE_DATA);
+    console.log('✅ Profile page data cached for 2 hours');
+  }
+
+  public async getProfilePageData(): Promise<{ user: User; reviews: any[]; recommendations: any[] } | null> {
+    try {
+      const cached = await this.getCache<ProfilePageCache>(this.CACHE_KEYS.PROFILE_PAGE_DATA);
+      
+      if (!cached) {
+        return null;
+      }
+
+      // Check if cache has expired (2 hours)
+      if (Date.now() > cached.expiresAt) {
+        console.log('Profile page cache expired (2 hours), clearing');
+        await this.removeCache(this.CACHE_KEYS.PROFILE_PAGE_DATA);
+        return null;
+      }
+
+      const ageInMinutes = Math.round((Date.now() - cached.timestamp) / 1000 / 60);
+      console.log(`✅ Using cached profile page data (${ageInMinutes} minutes old)`);
+
+      return {
+        user: cached.user,
+        reviews: cached.reviews,
+        recommendations: cached.recommendations
+      };
+    } catch (error) {
+      console.error('Error getting profile page cache:', error);
+      return null;
+    }
+  }
+
+  public async clearProfilePageData(): Promise<void> {
+    await this.removeCache(this.CACHE_KEYS.PROFILE_PAGE_DATA);
+    console.log('🗑️ Profile page data cache cleared');
   }
 
   // Utility methods
@@ -259,16 +330,30 @@ class CacheService {
     }
   }
 
+  public async clearAuthRelatedCache(): Promise<void> {
+    try {
+      // Clear user profile and profile page data on logout
+      await this.clearUserProfile();
+      await this.clearProfilePageData();
+      console.log('Auth-related cache cleared');
+    } catch (error) {
+      console.error('Error clearing auth-related cache:', error);
+    }
+  }
+
   public async getCacheInfo(): Promise<{
     homeData: { cached: boolean; age?: number; size?: number };
     userProfile: { cached: boolean; age?: number; size?: number };
+    profilePageData: { cached: boolean; age?: number; size?: number; expiresIn?: number };
   }> {
     const info: {
       homeData: { cached: boolean; age?: number; size?: number };
       userProfile: { cached: boolean; age?: number; size?: number };
+      profilePageData: { cached: boolean; age?: number; size?: number; expiresIn?: number };
     } = {
       homeData: { cached: false },
-      userProfile: { cached: false }
+      userProfile: { cached: false },
+      profilePageData: { cached: false }
     };
 
     try {
@@ -291,6 +376,20 @@ class CacheService {
           cached: true,
           age: Math.round((Date.now() - parsed.timestamp) / 1000),
           size: userProfile.length
+        };
+      }
+
+      // Check profile page data cache
+      const profilePageData = await AsyncStorage.getItem(this.CACHE_KEYS.PROFILE_PAGE_DATA);
+      if (profilePageData) {
+        const parsed = JSON.parse(profilePageData);
+        const ageSeconds = Math.round((Date.now() - parsed.data.timestamp) / 1000);
+        const expiresInSeconds = Math.max(0, Math.round((parsed.data.expiresAt - Date.now()) / 1000));
+        info.profilePageData = {
+          cached: true,
+          age: ageSeconds,
+          size: profilePageData.length,
+          expiresIn: expiresInSeconds
         };
       }
     } catch (error) {
