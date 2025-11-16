@@ -1,6 +1,6 @@
-import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState as RNAppState, AppStateStatus } from 'react-native';
+import * as Location from 'expo-location';
+import { AppStateStatus, AppState as RNAppState } from 'react-native';
 
 export interface UserLocation {
   latitude: number;
