@@ -96,6 +96,16 @@ export default function CustomAlert({
     }, 100); // Reduced from 150ms
   };
 
+  const handleModalClose = () => {
+    // Handle Android back button press
+    // Simply close the modal without triggering navigation
+    if (!isProcessing && onClose) {
+      onClose();
+    }
+    // Return true to prevent default back behavior
+    return true;
+  };
+
   const { icon, color, bgColor } = getIconAndColor();
 
   const handleButtonPress = (button: AlertButton) => {
@@ -155,7 +165,7 @@ export default function CustomAlert({
       transparent
       animationType="fade"
       statusBarTranslucent={false}
-      onRequestClose={handleOverlayPress}
+      onRequestClose={handleModalClose}
     >
       <Pressable 
         style={styles.overlay}

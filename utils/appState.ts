@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEYS = {
   FIRST_LAUNCH: '@5str_first_launch',
   ONBOARDING_COMPLETED: '@5str_onboarding_completed',
+  LOCATION_PERMISSION_REQUESTED: '@5str_location_permission_requested',
   USER_PREFERENCES: '@5str_user_preferences',
 };
 
@@ -47,12 +48,33 @@ export const AppState = {
     }
   },
 
+  // Check if location permission has been requested
+  async hasRequestedLocationPermission(): Promise<boolean> {
+    try {
+      const requested = await AsyncStorage.getItem(STORAGE_KEYS.LOCATION_PERMISSION_REQUESTED);
+      return requested === 'true';
+    } catch (error) {
+      console.error('Error checking location permission status:', error);
+      return false;
+    }
+  },
+
+  // Mark that location permission has been requested
+  async markLocationPermissionRequested(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.LOCATION_PERMISSION_REQUESTED, 'true');
+    } catch (error) {
+      console.error('Error marking location permission as requested:', error);
+    }
+  },
+
   // Reset app state (for development/testing)
   async resetAppState(): Promise<void> {
     try {
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.FIRST_LAUNCH,
         STORAGE_KEYS.ONBOARDING_COMPLETED,
+        STORAGE_KEYS.LOCATION_PERMISSION_REQUESTED,
       ]);
     } catch (error) {
       console.error('Error resetting app state:', error);

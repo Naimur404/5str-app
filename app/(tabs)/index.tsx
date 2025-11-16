@@ -10,6 +10,7 @@ import { useToastGlobal } from '@/contexts/ToastContext';
 import { useCustomAlert } from '@/hooks/useCustomAlert';
 import { addTrackingToPress } from '@/hooks/useFlatListTracking';
 import { fetchWithJsonValidation, getMainRecommendations, getUserProfile, isAuthenticated, RecommendationBusiness, User } from '@/services/api';
+import { AppState } from '@/utils/appState';
 import cacheService from '@/services/cacheService';
 import { handleApiError } from '@/services/errorHandler';
 import { WeatherData, weatherService } from '@/services/weatherService';
@@ -850,6 +851,79 @@ export default function HomeScreen() {
     console.log('✅ Location change listener setup complete');
     return cleanup;
   }, []); // Empty dependency array since we only want this to run once
+
+  // Check and request location permission on first home page visit
+  useEffect(() => {
+    const checkLocationPermission = async () => {
+      try {
+        const hasRequested = await AppState.hasRequestedLocationPermission();
+        
+        if (!hasRequested) {
+          console.log('📍 First time on home page, showing location permission prompt');
+          
+          // Small delay to let the home page render first
+          setTimeout(() => {
+            showAlert({
+              type: 'info',
+              title: 'Enable Location Services',
+              message: 'Allow 5str to access your location to discover amazing businesses and services near you. You can always change this in settings.',
+              buttons: [
+                {
+                  text: 'Not Now',
+                  style: 'cancel',
+                  onPress: async () => {
+                    await AppState.markLocationPermissionRequested();
+                    console.log('User declined location permission');
+                  }
+                },
+                {
+                  text: 'Allow',
+                  onPress: async () => {
+                    await AppState.markLocationPermissionRequested();
+                    console.log('User accepted, requesting location permission');
+                    
+                    // Show immediate feedback and request location in background
+                    showToast({
+                      type: 'info',
+                      text1: 'Getting your location...',
+                      text2: 'This may take a few seconds',
+                      visibilityTime: 2000,
+                    });
+                    
+                    // Request location in background without blocking UI
+                    requestLocationUpdate().then(result => {
+                      if (result.success) {
+                        showSuccess('Location updated successfully!');
+                      } else {
+                        showToast({
+                          type: 'info',
+                          text1: 'Using default location',
+                          text2: 'You can update it anytime from the location selector',
+                          visibilityTime: 3000,
+                        });
+                      }
+                    }).catch(error => {
+                      console.error('Error getting location:', error);
+                      showToast({
+                        type: 'info',
+                        text1: 'Using default location',
+                        text2: 'You can update it anytime',
+                        visibilityTime: 2500,
+                      });
+                    });
+                  }
+                }
+              ]
+            });
+          }, 1000); // 1 second delay
+        }
+      } catch (error) {
+        console.error('Error checking location permission status:', error);
+      }
+    };
+
+    checkLocationPermission();
+  }, []);
 
   // Run main initialization after login check
   useEffect(() => {
