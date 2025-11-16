@@ -230,10 +230,10 @@ class LocationService {
         this.currentLocation = { ...this.DEFAULT_LOCATION, timestamp: Date.now(), source: 'default' as const };
       }
 
-      // Request permission
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      // Check permission status WITHOUT requesting it
+      const { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted') {
-        console.log('LocationService: Permission denied, using default location');
+        console.log('LocationService: Permission not granted, using default location');
         const defaultLocation = { ...this.DEFAULT_LOCATION, timestamp: Date.now(), source: 'default' as const };
         await this.saveLocationToCache(defaultLocation);
         this.currentLocation = defaultLocation;
@@ -241,7 +241,7 @@ class LocationService {
         return defaultLocation;
       }
 
-      // Get actual location
+      // Permission already granted, get actual location
       const locationResult = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
