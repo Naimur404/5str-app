@@ -89,6 +89,34 @@ We may disclose information if required by law or to:
 ### Data Deletion
 You can request deletion of your data by contacting us at [your-email@example.com]
 
+### Data Deletion
+
+**How to Request Account and Data Deletion:**
+
+1. **Email Request**: Send an email to [support@5str.xyz] with the subject line "Account Deletion Request"
+2. **Include**: Your registered email address and username
+3. **Processing Time**: We will process your request within 30 days
+
+**What Gets Deleted:**
+- Your account and profile information
+- Your email address and authentication data
+- Your saved preferences and favorites
+- Your submitted reviews and ratings
+- Your uploaded photos and content
+- Your usage history and activity logs
+
+**What May Be Retained:**
+- Anonymized analytics data (no personal identifiers)
+- Data required for legal compliance (up to 90 days)
+- Backup copies (automatically purged within 90 days)
+
+**Important Notes:**
+- Once deleted, your account cannot be recovered
+- Your public reviews may remain visible but will show as "Anonymous User"
+- You can create a new account anytime after deletion
+
+**Alternative**: If you only want to delete specific content (like individual reviews) without deleting your entire account, you can do so directly in the app by navigating to your profile and managing your content.
+
 ## Data Security
 
 We implement appropriate security measures to protect your information:
