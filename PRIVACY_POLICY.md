@@ -14,8 +14,9 @@
 - **Profile Information**: Your preferences and saved favorites
 
 ### Location Information
-- **GPS Location**: We collect your device's location to show nearby businesses and personalized recommendations
+- **GPS Location**: We access your device's location temporarily to show nearby businesses and personalized recommendations
 - **Manual Location**: Location you manually select within the app
+- **Important**: We do not store or save your location data. Location is only used in real-time to provide relevant results
 - You can control location permissions through your device settings
 
 ### Camera and Photo Access
@@ -36,14 +37,16 @@
 ## How We Use Your Information
 
 We use the collected information to:
-- Provide personalized business recommendations based on your location
-- Display nearby businesses and services
+- Provide personalized business recommendations based on your current location (not stored)
+- Display nearby businesses and services in real-time
 - Enable you to write and share reviews
 - Allow photo uploads for reviews and business submissions
 - Improve app functionality and user experience
 - Send notifications about your account activity
 - Respond to your requests and provide customer support
 - Analyze app usage to improve our services
+
+**Note**: Your location is only used temporarily to provide relevant search results and is never stored on our servers.
 
 ## How We Share Your Information
 
@@ -71,6 +74,7 @@ We may disclose information if required by law or to:
 ### Location Control
 - Enable or disable location services in your device settings
 - Use manual location selection instead of GPS
+- Your location is never stored or tracked - only used in real-time
 - Access the app with limited functionality if location is disabled
 
 ### Camera and Photos
