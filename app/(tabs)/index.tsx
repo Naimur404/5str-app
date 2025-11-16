@@ -733,7 +733,7 @@ export default function HomeScreen() {
   const { colorScheme } = useTheme();
   const { unreadCount } = useNotifications();
   const { getCoordinatesForAPI, requestLocationUpdate, location, isUpdating, getCurrentLocationInfo, onLocationChange, manualLocation, isLocationChanging } = useLocation();
-  const { showSuccess, showToast } = useToastGlobal();
+  const { showSuccess, showToast, showInfo } = useToastGlobal();
   const colors = Colors[colorScheme];
   const { alertConfig, showAlert, hideAlert } = useCustomAlert();
 
@@ -883,33 +883,18 @@ export default function HomeScreen() {
                     console.log('User accepted, requesting location permission');
                     
                     // Show immediate feedback and request location in background
-                    showToast({
-                      type: 'info',
-                      text1: 'Getting your location...',
-                      text2: 'This may take a few seconds',
-                      visibilityTime: 2000,
-                    });
+                    showInfo('Getting your location... This may take a few seconds', 2000);
                     
                     // Request location in background without blocking UI
                     requestLocationUpdate().then(result => {
                       if (result.success) {
                         showSuccess('Location updated successfully!');
                       } else {
-                        showToast({
-                          type: 'info',
-                          text1: 'Using default location',
-                          text2: 'You can update it anytime from the location selector',
-                          visibilityTime: 3000,
-                        });
+                        showInfo('Using default location. You can update it anytime from the location selector', 3000);
                       }
                     }).catch(error => {
                       console.error('Error getting location:', error);
-                      showToast({
-                        type: 'info',
-                        text1: 'Using default location',
-                        text2: 'You can update it anytime',
-                        visibilityTime: 2500,
-                      });
+                      showInfo('Using default location. You can update it anytime', 2500);
                     });
                   }
                 }
