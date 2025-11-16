@@ -8,6 +8,7 @@ import React, { useRef, useState, useCallback, useMemo } from 'react';
 import {
     Dimensions,
     FlatList,
+    Image,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -138,12 +139,11 @@ export default function OnboardingScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <LinearGradient
-            colors={['#667eea', '#764ba2']}
+          <Image 
+            source={require('@/assets/images/icon.png')}
             style={styles.logo}
-          >
-            <Text style={styles.logoText}>5str</Text>
-          </LinearGradient>
+            resizeMode="contain"
+          />
         </View>
         
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
@@ -213,16 +213,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   logo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    width: 50,
+    height: 50,
+    borderRadius: 10,
   },
   skipButton: {
     paddingHorizontal: 16,

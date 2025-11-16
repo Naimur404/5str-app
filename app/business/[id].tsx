@@ -1159,7 +1159,21 @@ export default function BusinessDetailsScreen() {
             <TouchableOpacity 
               key={item.id} 
               style={[styles.reviewCard, { backgroundColor: colors.card }]}
-              onPress={() => router.push(`/reviews/${item.id}` as any)}
+              onPress={() => {
+                if (!isUserAuthenticated) {
+                  showAlert({
+                    type: 'info',
+                    title: 'Sign In Required',
+                    message: 'Please sign in to view review details',
+                    buttons: [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+                    ]
+                  });
+                  return;
+                }
+                router.push(`/reviews/${item.id}` as any);
+              }}
               activeOpacity={0.7}
             >
               {/* Review Header */}
@@ -1180,7 +1194,21 @@ export default function BusinessDetailsScreen() {
                   )}
                   <View style={{ flex: 1 }}>
                     <View style={styles.userNameRow}>
-                      <TouchableOpacity onPress={() => router.push(`/user/${item.user?.id}` as any)}>
+                      <TouchableOpacity onPress={() => {
+                        if (!isUserAuthenticated) {
+                          showAlert({
+                            type: 'info',
+                            title: 'Sign In Required',
+                            message: 'Please sign in to view user profiles',
+                            buttons: [
+                              { text: 'Cancel', style: 'cancel' },
+                              { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+                            ]
+                          });
+                          return;
+                        }
+                        router.push(`/user/${item.user?.id}` as any);
+                      }}>
                         <Text style={[styles.userName, { color: colors.tint }]}>{item.user?.name || 'Anonymous'}</Text>
                       </TouchableOpacity>
                       {item.user?.user_level && (
