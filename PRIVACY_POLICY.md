@@ -87,7 +87,7 @@ We may disclose information if required by law or to:
 - Request account deletion by contacting us
 
 ### Data Deletion
-You can request deletion of your data by contacting us at [your-email@example.com]
+You can request deletion of your data by contacting us at [support@5str.xyz]
 
 ### Data Deletion
 
@@ -161,8 +161,8 @@ Your information may be transferred to and processed in countries other than Ban
 
 If you have questions about this Privacy Policy or our data practices, contact us at:
 
-**Email**: [your-email@example.com]  
-**Address**: [Your Business Address]  
+**Email**: [support@5str.xyz]  
+**Address**: [Chittagong]  
 **App**: 5str Mobile Application
 
 ## Your Consent
